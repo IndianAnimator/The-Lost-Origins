@@ -101,13 +101,22 @@ def pbPrepareBattle(battle)
   # Whether the player gains/loses money at the end of the battle (default: true)
   battle.moneyGain = battleRules["moneyGain"] if !battleRules["moneyGain"].nil?
   # Whether the player is able to switch when an opponent's Pokémon faints
-  battle.switchStyle = ($PokemonSystem.battlestyle==0)
+  battle.switchStyle = ($PokemonSystem.battlestyle == 0)
   battle.switchStyle = battleRules["switchStyle"] if !battleRules["switchStyle"].nil?
   # Whether battle animations are shown
-  battle.showAnims = ($PokemonSystem.battlescene==0)
+  battle.showAnims = ($PokemonSystem.battlescene == 0)
   battle.showAnims = battleRules["battleAnims"] if !battleRules["battleAnims"].nil?
   # Terrain
-  battle.defaultTerrain = battleRules["defaultTerrain"] if !battleRules["defaultTerrain"].nil?
+  if battleRules["defaultTerrain"].nil? && Settings::SWSH_FOG_IN_BATTLES
+    case $game_screen.weather_type
+    when :Storm
+      battle.defaultTerrain = :Electric
+    when :Fog
+      battle.defaultTerrain = :Misty
+    end
+  else
+    battle.defaultTerrain = battleRules["defaultTerrain"]
+  end
   # Weather
   if battleRules["defaultWeather"].nil?
     case GameData::Weather.get($game_screen.weather_type).category
@@ -119,6 +128,8 @@ def pbPrepareBattle(battle)
       battle.defaultWeather = :Sandstorm
     when :Sun
       battle.defaultWeather = :Sun
+    when :Fog
+      battle.defaultWeather = :Fog if !Settings::SWSH_FOG_IN_BATTLES
     end
   else
     battle.defaultWeather = battleRules["defaultWeather"]
@@ -571,6 +582,7 @@ Events.onEndBattle += proc { |_sender,e|
       pbEvolutionCheck($PokemonTemp.evolutionLevels)
       $PokemonTemp.evolutionLevels = nil
     end
+    pbAfterBattleEvolutionCheck
   end
   case decision
   when 1, 4   # Win, capture
@@ -596,6 +608,18 @@ def pbEvolutionCheck(currentLevels)
     next if !newSpecies
     evo = PokemonEvolutionScene.new
     evo.pbStartScreen(pkmn,newSpecies)
+    evo.pbEvolution
+    evo.pbEndScreen
+  end
+end
+
+def pbAfterBattleEvolutionCheck
+  $Trainer.party.each do |pkmn|
+    next if !pkmn.able? && !Settings::CHECK_EVOLUTION_FOR_FAINTED_POKEMON
+    new_species = pkmn.check_evolution_after_battle
+    next if !new_species
+    evo = PokemonEvolutionScene.new
+    evo.pbStartScreen(pkmn,new_species)
     evo.pbEvolution
     evo.pbEndScreen
   end

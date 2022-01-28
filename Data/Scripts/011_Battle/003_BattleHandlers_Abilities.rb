@@ -4,7 +4,7 @@
 
 BattleHandlers::SpeedCalcAbility.add(:CHLOROPHYLL,
   proc { |ability,battler,mult|
-    next mult * 2 if [:Sun, :HarshSun].include?(battler.battle.pbWeather)
+    next mult * 2 if [:Sun, :HarshSun].include?(battler.effectiveWeather)
   }
 )
 
@@ -16,7 +16,7 @@ BattleHandlers::SpeedCalcAbility.add(:QUICKFEET,
 
 BattleHandlers::SpeedCalcAbility.add(:SANDRUSH,
   proc { |ability,battler,mult|
-    next mult * 2 if [:Sandstorm].include?(battler.battle.pbWeather)
+    next mult * 2 if [:Sandstorm].include?(battler.effectiveWeather)
   }
 )
 
@@ -28,7 +28,7 @@ BattleHandlers::SpeedCalcAbility.add(:SLOWSTART,
 
 BattleHandlers::SpeedCalcAbility.add(:SLUSHRUSH,
   proc { |ability,battler,mult|
-    next mult * 2 if [:Hail].include?(battler.battle.pbWeather)
+    next mult * 2 if [:Hail].include?(battler.effectiveWeather)
   }
 )
 
@@ -40,13 +40,13 @@ BattleHandlers::SpeedCalcAbility.add(:SURGESURFER,
 
 BattleHandlers::SpeedCalcAbility.add(:SWIFTSWIM,
   proc { |ability,battler,mult|
-    next mult * 2 if [:Rain, :HeavyRain].include?(battler.battle.pbWeather)
+    next mult * 2 if [:Rain, :HeavyRain].include?(battler.effectiveWeather)
   }
 )
 
 BattleHandlers::SpeedCalcAbility.add(:UNBURDEN,
   proc { |ability,battler,mult|
-    next mult*2 if battler.effects[PBEffects::Unburden] && !battler.item
+    next mult*2 if battler.effects[PBEffects::Unburden] && !battler.item && battler.abilityActive?
   }
 )
 
@@ -137,6 +137,8 @@ BattleHandlers::StatusImmunityAbility.add(:IMMUNITY,
   }
 )
 
+BattleHandlers::StatusImmunityAbility.copy(:IMMUNITY,:PASTELVEIL)
+
 BattleHandlers::StatusImmunityAbility.add(:INSOMNIA,
   proc { |ability,battler,status|
     next true if status == :SLEEP
@@ -147,7 +149,7 @@ BattleHandlers::StatusImmunityAbility.copy(:INSOMNIA,:SWEETVEIL,:VITALSPIRIT)
 
 BattleHandlers::StatusImmunityAbility.add(:LEAFGUARD,
   proc { |ability,battler,status|
-    next true if [:Sun, :HarshSun].include?(battler.battle.pbWeather)
+    next true if [:Sun, :HarshSun].include?(battler.effectiveWeather)
   }
 )
 
@@ -197,9 +199,15 @@ BattleHandlers::StatusImmunityAllyAbility.add(:FLOWERVEIL,
   }
 )
 
-BattleHandlers::StatusImmunityAbility.add(:SWEETVEIL,
+BattleHandlers::StatusImmunityAllyAbility.add(:SWEETVEIL,
   proc { |ability,battler,status|
     next true if status == :SLEEP
+  }
+)
+
+BattleHandlers::StatusImmunityAllyAbility.add(:PASTELVEIL,
+  proc { |ability,battler,status|
+    next true if status == :POISON
   }
 )
 
@@ -261,6 +269,8 @@ BattleHandlers::StatusCureAbility.add(:IMMUNITY,
     battler.battle.pbHideAbilitySplash(battler)
   }
 )
+
+BattleHandlers::StatusCureAbility.copy(:IMMUNITY,:PASTELVEIL)
 
 BattleHandlers::StatusCureAbility.add(:INSOMNIA,
   proc { |ability,battler|
@@ -514,7 +524,8 @@ BattleHandlers::AbilityOnStatLoss.add(:DEFIANT,
 
 BattleHandlers::PriorityChangeAbility.add(:GALEWINGS,
   proc { |ability,battler,move,pri|
-    next pri+1 if battler.hp==battler.totalhp && move.type == :FLYING
+    next pri+1 if (battler.hp == battler.totalhp || Settings::MECHANICS_GENERATION <= 6) &&
+                   move.type == :FLYING
   }
 )
 
@@ -543,11 +554,23 @@ BattleHandlers::PriorityBracketChangeAbility.add(:STALL,
   }
 )
 
+BattleHandlers::PriorityBracketChangeAbility.add(:QUICKDRAW,
+  proc { |ability,battler,subPri,battle|
+    next 1 if subPri<1 && battle.pbRandom(10)<3
+  }
+)
+
 #===============================================================================
 # PriorityBracketUseAbility handlers
 #===============================================================================
 
-# There aren't any!
+BattleHandlers::PriorityBracketUseAbility.add(:QUICKDRAW,
+  proc { |ability,battler,battle|
+    battle.pbShowAbilitySplash(battler)
+    battle.pbDisplay(_INTL("{2} made {1} move faster!",battler.pbThis,battler.abilityName))
+    battle.pbHideAbilitySplash(battler)
+  }
+)
 
 #===============================================================================
 # AbilityOnFlinch handlers
@@ -644,6 +667,7 @@ BattleHandlers::MoveImmunityTargetAbility.add(:SAPSIPPER,
 BattleHandlers::MoveImmunityTargetAbility.add(:SOUNDPROOF,
   proc { |ability,user,target,move,type,battle|
     next false if !move.soundMove?
+    next false if Settings::MECHANICS_GENERATION >= 8 && user.index == target.index
     battle.pbShowAbilitySplash(target)
     if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
       battle.pbDisplay(_INTL("It doesn't affect {1}...",target.pbThis(true)))
@@ -825,13 +849,13 @@ BattleHandlers::AccuracyCalcTargetAbility.add(:NOGUARD,
 
 BattleHandlers::AccuracyCalcTargetAbility.add(:SANDVEIL,
   proc { |ability,mods,user,target,move,type|
-    mods[:evasion_multiplier] *= 1.25 if target.battle.pbWeather == :Sandstorm
+    mods[:evasion_multiplier] *= 1.25 if target.effectiveWeather == :Sandstorm
   }
 )
 
 BattleHandlers::AccuracyCalcTargetAbility.add(:SNOWCLOAK,
   proc { |ability,mods,user,target,move,type|
-    mods[:evasion_multiplier] *= 1.25 if target.battle.pbWeather == :Hail
+    mods[:evasion_multiplier] *= 1.25 if target.effectiveWeather == :Hail
   }
 )
 
@@ -915,7 +939,7 @@ BattleHandlers::DamageCalcUserAbility.add(:FLASHFIRE,
 
 BattleHandlers::DamageCalcUserAbility.add(:FLOWERGIFT,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if move.physicalMove? && [:Sun, :HarshSun].include?(user.battle.pbWeather)
+    if move.physicalMove? && [:Sun, :HarshSun].include?(user.effectiveWeather)
       mults[:attack_multiplier] *= 1.5
     end
   }
@@ -1004,7 +1028,7 @@ BattleHandlers::DamageCalcUserAbility.add(:RIVALRY,
 
 BattleHandlers::DamageCalcUserAbility.add(:SANDFORCE,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if user.battle.pbWeather == :Sandstorm &&
+    if user.effectiveWeather == :Sandstorm &&
        [:ROCK, :GROUND, :STEEL].include?(type)
       mults[:base_damage_multiplier] *= 1.3
     end
@@ -1025,7 +1049,7 @@ BattleHandlers::DamageCalcUserAbility.add(:SLOWSTART,
 
 BattleHandlers::DamageCalcUserAbility.add(:SOLARPOWER,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if move.specialMove? && [:Sun, :HarshSun].include?(user.battle.pbWeather)
+    if move.specialMove? && [:Sun, :HarshSun].include?(user.effectiveWeather)
       mults[:attack_multiplier] *= 1.5
     end
   }
@@ -1108,6 +1132,36 @@ BattleHandlers::DamageCalcUserAbility.add(:WATERBUBBLE,
   }
 )
 
+BattleHandlers::DamageCalcUserAbility.add(:GORILLATACTICS,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:attack_multiplier] *= 1.5 if move.physicalMove?
+  }
+)
+
+BattleHandlers::DamageCalcUserAbility.add(:PUNKROCK,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:base_damage_multiplier] *= 1.3 if move.soundMove?
+  }
+)
+
+BattleHandlers::DamageCalcUserAbility.add(:STEELYSPIRIT,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:base_damage_multiplier] *= 1.5 if type == :STEEL
+  }
+)
+
+BattleHandlers::DamageCalcUserAbility.add(:DRAGONSMAW,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:attack_multiplier] *= 1.5 if type == :DRAGON
+  }
+)
+
+BattleHandlers::DamageCalcUserAbility.add(:TRANSISTOR,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:attack_multiplier] *= 1.5 if type == :ELECTRIC
+  }
+)
+
 #===============================================================================
 # DamageCalcUserAllyAbility handlers
 #===============================================================================
@@ -1121,9 +1175,21 @@ BattleHandlers::DamageCalcUserAllyAbility.add(:BATTERY,
 
 BattleHandlers::DamageCalcUserAllyAbility.add(:FLOWERGIFT,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if move.physicalMove? && [:Sun, :HarshSun].include?(user.battle.pbWeather)
+    if move.physicalMove? && [:Sun, :HarshSun].include?(user.effectiveWeather)
       mults[:attack_multiplier] *= 1.5
     end
+  }
+)
+
+BattleHandlers::DamageCalcUserAllyAbility.add(:POWERSPOT,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:final_damage_multiplier] *= 1.3
+  }
+)
+
+BattleHandlers::DamageCalcUserAllyAbility.add(:STEELYSPIRIT,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:base_damage_multiplier] *= 1.5 if type == :STEEL
   }
 )
 
@@ -1149,7 +1215,7 @@ BattleHandlers::DamageCalcTargetAbility.copy(:FILTER,:SOLIDROCK)
 
 BattleHandlers::DamageCalcTargetAbility.add(:FLOWERGIFT,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if move.specialMove? && [:Sun, :HarshSun].include?(user.battle.pbWeather)
+    if move.specialMove? && [:Sun, :HarshSun].include?(target.effectiveWeather)
       mults[:defense_multiplier] *= 1.5
     end
   }
@@ -1158,13 +1224,19 @@ BattleHandlers::DamageCalcTargetAbility.add(:FLOWERGIFT,
 BattleHandlers::DamageCalcTargetAbility.add(:FLUFFY,
   proc { |ability,user,target,move,mults,baseDmg,type|
     mults[:final_damage_multiplier] *= 2 if move.calcType == :FIRE
-    mults[:final_damage_multiplier] /= 2 if move.contactMove?
+    mults[:final_damage_multiplier] /= 2 if move.pbContactMove?(user)
   }
 )
 
 BattleHandlers::DamageCalcTargetAbility.add(:FURCOAT,
   proc { |ability,user,target,move,mults,baseDmg,type|
     mults[:defense_multiplier] *= 2 if move.physicalMove? || move.function == "122"   # Psyshock
+  }
+)
+
+  BattleHandlers::DamageCalcTargetAbility.add(:ICESCALES,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:final_damage_multiplier] /= 2 if move.specialMove?
   }
 )
 
@@ -1208,6 +1280,12 @@ BattleHandlers::DamageCalcTargetAbility.add(:WATERBUBBLE,
   }
 )
 
+BattleHandlers::DamageCalcTargetAbility.add(:PUNKROCK,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:final_damage_multiplier] /= 2 if move.soundMove?
+  }
+)
+
 #===============================================================================
 # DamageCalcTargetAbilityNonIgnorable handlers
 #===============================================================================
@@ -1234,7 +1312,7 @@ BattleHandlers::DamageCalcTargetAbilityNonIgnorable.add(:SHADOWSHIELD,
 
 BattleHandlers::DamageCalcTargetAllyAbility.add(:FLOWERGIFT,
   proc { |ability,user,target,move,mults,baseDmg,type|
-    if move.specialMove? && [:Sun, :HarshSun].include?(user.battle.pbWeather)
+    if move.specialMove? && [:Sun, :HarshSun].include?(target.effectiveWeather)
       mults[:defense_multiplier] *= 1.5
     end
   }
@@ -1321,6 +1399,7 @@ BattleHandlers::TargetAbilityOnHit.add(:ANGERPOINT,
       battle.pbDisplay(_INTL("{1}'s {2} maxed its {3}!",
          target.pbThis,target.abilityName,GameData::Stat.get(:ATTACK).name))
     end
+    target.statsRaised = true
     battle.pbHideAbilitySplash(target)
   }
 )
@@ -1525,7 +1604,7 @@ BattleHandlers::TargetAbilityOnHit.add(:MUMMY,
       battle.pbHideAbilitySplash(user) if user.opposes?(target)
     end
     battle.pbHideAbilitySplash(target) if user.opposes?(target)
-    user.pbOnAbilityChanged(oldAbil) if oldAbil != nil
+    user.pbOnAbilityChanged(oldAbil) if oldAbil
   }
 )
 
@@ -1556,6 +1635,12 @@ BattleHandlers::TargetAbilityOnHit.add(:RATTLED,
 BattleHandlers::TargetAbilityOnHit.add(:STAMINA,
   proc { |ability,user,target,move,battle|
     target.pbRaiseStatStageByAbility(:DEFENSE,1,target)
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:SANDSPIT,
+  proc { |ability,target,battler,move,battle|
+    pbBattleWeatherAbility(:Sandstorm,battler,battle)
   }
 )
 
@@ -1597,6 +1682,121 @@ BattleHandlers::TargetAbilityOnHit.add(:WEAKARMOR,
   }
 )
 
+BattleHandlers::TargetAbilityOnHit.add(:STEAMENGINE,
+  proc { |ability,user,target,move,battle|
+    next if ![:FIRE,:WATER].include?(move.calcType)
+    target.pbRaiseStatStageByAbility(:SPEED,6,target)
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:WANDERINGSPIRIT,
+  proc { |ability,user,target,move,battle|
+    next if !move.pbContactMove?(user)
+    next if user.fainted?
+    abilityBlacklist = [
+       :DISGUISE,
+       :FLOWERGIFT,
+       :GULPMISSILE,
+       :ICEFACE,
+       :IMPOSTER,
+       :RECEIVER,
+       :RKSSYSTEM,
+       :SCHOOLING,
+       :STANCECHANGE,
+       :WONDERGUARD,
+       :ZENMODE,
+       :NEUTRALIZINGGAS
+       # Abilities that are plain old blocked.
+    ]
+    next if abilityBlacklist.any? {|abil| user.ability == abil}
+    oldAbil = nil
+    battle.pbShowAbilitySplash(target) if user.opposes?(target)
+    if user.affectedByContactEffect?(PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+      oldAbil = user.ability
+      battle.pbShowAbilitySplash(user,true,false) if user.opposes?(target)
+      user.ability = :WANDERINGSPIRIT
+      target.ability = oldAbil
+      if user.opposes?(target)
+        battle.pbReplaceAbilitySplash(user)
+        battle.pbReplaceAbilitySplash(target)
+      end
+      if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1}'s Ability became {2}!",user.pbThis,user.abilityName))
+      else
+        battle.pbDisplay(_INTL("{1}'s Ability became {2} because of {3}!",
+           user.pbThis,user.abilityName,target.pbThis(true)))
+      end
+
+      battle.pbHideAbilitySplash(user)
+    end
+    battle.pbHideAbilitySplash(target) if user.opposes?(target)
+    if oldAbil
+      user.pbOnAbilityChanged(oldAbil)
+      target.pbOnAbilityChanged(:WANDERINGSPIRIT)
+    end
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:PERISHBODY,
+  proc { |ability, user, target, move, battle|
+    next if !move.pbContactMove?(user)
+    next if user.fainted?
+    next if user.effects[PBEffects::PerishSong] > 0 || target.effects[PBEffects::PerishSong] > 0
+    battle.pbShowAbilitySplash(target)
+    if user.affectedByContactEffect?(PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+      user.effects[PBEffects::PerishSong] = 4
+      user.effects[PBEffects::PerishSongUser] = target.index
+      target.effects[PBEffects::PerishSong] = 4
+      target.effects[PBEffects::PerishSongUser] = target.index
+      if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("Both Pokémon will faint in three turns!"))
+      else
+        battle.pbDisplay(_INTL("Both Pokémon will faint in three turns because of {1}'s {2}!",
+           target.pbThis(true), target.abilityName))
+      end
+    end
+    battle.pbHideAbilitySplash(target)
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:COTTONDOWN,
+  proc { |ability,user,target,move,battle|
+    splashAnim = false
+    battle.pbShowAbilitySplash(target)
+    battle.pbPriority(true).each {|b|
+      next if b.index == target.index || !b.pbCanLowerStatStage?(:SPEED,target)
+      if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+        b.pbLowerStatStageByAbility(:SPEED, 1, target, !splashAnim)
+      else
+        b.pbLowerStatStageByCause(:SPEED, 1, target, target.abilityName)
+      end
+      splashAnim = true
+    }
+    battle.pbHideAbilitySplash(target) if splashAnim
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:GULPMISSILE,
+  proc { |ability,user,target,move,battle|
+    next if !target.isSpecies?(:CRAMORANT)
+    next if target.form == 0
+    battle.pbShowAbilitySplash(target)
+    oldForm = target.form
+    target.pbChangeForm(0,"")
+    battle.pbHideAbilitySplash(target)
+    if oldForm == 1
+      battle.pbCommonAnimation("CramorantGulp",user,target)
+    elsif oldForm == 2
+      battle.pbCommonAnimation("CramorantGorge",user,target)
+    end
+    user.pbReduceHP(user.totalhp/4) if user.takesIndirectDamage?(true)
+    if oldForm == 1
+      user.pbLowerStatStageByAbility(:DEFENSE,1,target,false)
+    elsif oldForm == 2
+      user.pbParalyze(target,"")
+    end
+  }
+)
 #===============================================================================
 # UserAbilityOnHit handlers
 #===============================================================================
@@ -1696,6 +1896,35 @@ BattleHandlers::UserAbilityEndOfMove.add(:MOXIE,
   }
 )
 
+BattleHandlers::UserAbilityEndOfMove.add(:CHILLINGNEIGH,
+  proc { |ability,user,targets,move,battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    numFainted = 0
+    targets.each { |b| numFainted += 1 if b.damageState.fainted }
+    next if numFainted==0 || !user.pbCanRaiseStatStage?(:ATTACK,user)
+    user.ability_id = :CHILLINGNEIGH
+    user.pbRaiseStatStageByAbility(:ATTACK,numFainted,user)
+    user.ability_id = ability
+  }
+)
+
+BattleHandlers::UserAbilityEndOfMove.copy(:CHILLINGNEIGH, :ASONEICE)
+
+BattleHandlers::UserAbilityEndOfMove.add(:GRIMNEIGH,
+  proc { |ability,user,targets,move,battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    numFainted = 0
+    targets.each { |b| numFainted += 1 if b.damageState.fainted }
+    next if numFainted==0 || !user.pbCanRaiseStatStage?(:SPECIAL_ATTACK,user)
+    user.ability_id = :GRIMNEIGH
+    user.pbRaiseStatStageByAbility(:SPECIAL_ATTACK,numFainted,user)
+    user.ability_id = ability
+  }
+)
+
+BattleHandlers::UserAbilityEndOfMove.copy(:GRIMNEIGH, :ASONEGHOST)
+
+
 #===============================================================================
 # TargetAbilityAfterMoveUse handlers
 #===============================================================================
@@ -1717,8 +1946,8 @@ BattleHandlers::TargetAbilityAfterMoveUse.add(:COLORCHANGE,
     typeName = GameData::Type.get(move.calcType).name
     battle.pbShowAbilitySplash(target)
     target.pbChangeTypes(move.calcType)
-    battle.pbDisplay(_INTL("{1}'s {2} made it the {3} type!",target.pbThis,
-       target.abilityName,typeName))
+    battle.pbDisplay(_INTL("{1}'s type changed to {2} because of its {3}!",
+       target.pbThis, typeName, target.abilityName))
     battle.pbHideAbilitySplash(target)
   }
 )
@@ -1791,7 +2020,7 @@ BattleHandlers::EORWeatherAbility.add(:ICEBODY,
     next unless weather == :Hail
     next if !battler.canHeal?
     battle.pbShowAbilitySplash(battler)
-    battler.pbRecoverHP(battler.totalhp/16)
+    battler.pbRecoverHP(battler.totalhp/8)
     if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
       battle.pbDisplay(_INTL("{1}'s HP was restored.",battler.pbThis))
     else
@@ -1825,6 +2054,19 @@ BattleHandlers::EORWeatherAbility.add(:SOLARPOWER,
     battle.pbDisplay(_INTL("{1} was hurt by the sunlight!",battler.pbThis))
     battle.pbHideAbilitySplash(battler)
     battler.pbItemHPHealCheck
+  }
+)
+
+BattleHandlers::EORWeatherAbility.add(:ICEFACE,
+  proc { |ability, weather, battler, battle|
+    next if weather != :Hail
+    next if !battler.canRestoreIceFace || battler.form != 1
+    battle.pbShowAbilitySplash(battler)
+    if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+      battle.pbDisplay(_INTL("{1}'s {2} activated!", battler.pbThis, battler.abilityName))
+    end
+    battler.pbChangeForm(0, _INTL("{1} transformed!", battler.pbThis))
+    battle.pbHideAbilitySplash(battler)
   }
 )
 
@@ -1862,7 +2104,7 @@ BattleHandlers::EORHealingAbility.add(:HEALER,
 BattleHandlers::EORHealingAbility.add(:HYDRATION,
   proc { |ability,battler,battle|
     next if battler.status == :NONE
-    next if ![:Rain, :HeavyRain].include?(battle.pbWeather)
+    next if ![:Rain, :HeavyRain].include?(battler.effectiveWeather)
     battle.pbShowAbilitySplash(battler)
     oldStatus = battler.status
     battler.pbCureStatus(PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
@@ -1939,7 +2181,7 @@ BattleHandlers::EOREffectAbility.add(:MOODY,
   proc { |ability,battler,battle|
     randomUp = []
     randomDown = []
-    GameData::Stat.each_battle do |s|
+    GameData::Stat.each_main_battle do |s|
       randomUp.push(s.id) if battler.pbCanRaiseStatStage?(s.id, battler)
       randomDown.push(s.id) if battler.pbCanLowerStatStage?(s.id, battler)
     end
@@ -1963,9 +2205,20 @@ BattleHandlers::EOREffectAbility.add(:SPEEDBOOST,
   proc { |ability,battler,battle|
     # A Pokémon's turnCount is 0 if it became active after the beginning of a
     # round
-    if battler.turnCount>0 && battler.pbCanRaiseStatStage?(:SPEED,battler)
+    if battler.turnCount > 0 && battle.choices[battler.index][0] != :Run &&
+       battler.pbCanRaiseStatStage?(:SPEED, battler)
       battler.pbRaiseStatStageByAbility(:SPEED,1,battler)
     end
+  }
+)
+
+BattleHandlers::EOREffectAbility.add(:HUNGERSWITCH,
+  proc { |ability,battler,battle|
+    next if !battler.isSpecies?(:MORPEKO)
+    battle.pbShowAbilitySplash(battler)
+    newForm = (battler.form == 0) ? 1 : 0
+    battler.pbChangeForm(newForm,_INTL("{1} transformed!",battler.pbThis))
+    battle.pbHideAbilitySplash(battler)
   }
 )
 
@@ -1977,9 +2230,7 @@ BattleHandlers::EORGainItemAbility.add(:HARVEST,
   proc { |ability,battler,battle|
     next if battler.item
     next if !battler.recycleItem || !GameData::Item.get(battler.recycleItem).is_berry?
-    if ![:Sun, :HarshSun].include?(battle.pbWeather)
-      next unless battle.pbRandom(100)<50
-    end
+    next unless battle.pbRandom(100)<50 && [:Sun, :HarshSun].include?(battler.effectiveWeather)
     battle.pbShowAbilitySplash(battler)
     battler.item = battler.recycleItem
     battler.setRecycleItem(nil)
@@ -2014,6 +2265,21 @@ BattleHandlers::EORGainItemAbility.add(:PICKUP,
     battle.pbDisplay(_INTL("{1} found one {2}!",battler.pbThis,battler.itemName))
     battle.pbHideAbilitySplash(battler)
     battler.pbHeldItemTriggerCheck
+  }
+)
+
+BattleHandlers::EORGainItemAbility.add(:BALLFETCH,
+  proc { |ability,battler,battle|
+    next if battler.item
+    next if !battler.effects[PBEffects::BallFetch]
+    next if battle.fetchedBall
+    battle.fetchedBall = true
+    battler.item = battler.effects[PBEffects::BallFetch]
+    battler.effects[PBEffects::BallFetch] = nil
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s Ball Fetch found #{GameData::Item.get(battler.item).name}")
+    battle.pbShowAbilitySplash(battler)
+    battle.pbDisplay(_INTL("{1} found a {2}!",battler.pbThis,GameData::Item.get(battler.item).name))
+    battle.pbHideAbilitySplash(battler)
   }
 )
 
@@ -2269,8 +2535,15 @@ BattleHandlers::AbilityOnSwitchIn.add(:INTIMIDATE,
     battle.pbShowAbilitySplash(battler)
     battle.eachOtherSideBattler(battler.index) do |b|
       next if !b.near?(battler)
-      b.pbLowerAttackStatStageIntimidate(battler)
-      b.pbItemOnIntimidatedCheck
+      check_item = true; check_abil = false
+      if b.hasActiveAbility?(:CONTRARY)
+        check_item = false if b.statStageAtMax?(:ATTACK)
+      else
+        check_item = false if b.statStageAtMin?(:ATTACK)
+      end
+      check_abil = b.pbLowerAttackStatStageIntimidate(battler)
+      b.pbItemOnIntimidatedCheck if check_item
+      b.pbAbilitiesOnIntimidated if check_abil
     end
     battle.pbHideAbilitySplash(battler)
   }
@@ -2366,6 +2639,138 @@ BattleHandlers::AbilityOnSwitchIn.add(:UNNERVE,
   }
 )
 
+BattleHandlers::AbilityOnSwitchIn.add(:ASONEICE,
+  proc { |ability,battler,battle|
+    battle.pbShowAbilitySplash(battler)
+    battle.pbDisplay(_INTL("{1} has 2 Abilities!",battler.name))
+    battler.ability_id = :UNNERVE
+    battle.pbShowAbilitySplash(battler,false,true)
+    battle.pbDisplay(_INTL("{1} is too nervous to eat Berries!",battler.pbOpposingTeam))
+    battle.pbHideAbilitySplash(battler)
+    battler.ability_id = ability
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.copy(:ASONEICE,:ASONEGHOST)
+
+BattleHandlers::AbilityOnSwitchIn.add(:INTREPIDSWORD,
+  proc { |ability,battler,battle|
+    battler.pbRaiseStatStageByAbility(:ATTACK,1,battler)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:DAUNTLESSSHIELD,
+  proc { |ability,battler,battle|
+    battler.pbRaiseStatStageByAbility(:DEFENSE,1,battler)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:SCREENCLEANER,
+  proc { |ability,battler,battle|
+    splashAnim = false
+    sides = [battler.pbOwnSide, battler.pbOpposingSide]
+    team = [battler.pbTeam, battler.pbOpposingTeam]
+    effects = [:AuroraVeil, :LightScreen, :Reflect].map!{ |e| PBEffects.const_get(e) rescue nil }
+    effectNames = ["Aurora Veil", "Light Screen", "Reflect"]
+    sides.each_with_index do |side, i|
+      effects.each_with_index do |e, j|
+        next if !side.effects[e] || side.effects[e] < 1
+        battle.pbShowAbilitySplash(battler) if !splashAnim
+        side.effects[e] = 0
+        if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+          battle.pbDisplay(_INTL("{1}'s {2} wore off!", team[i], effectNames[j]))
+        else
+          battle.pbDisplay(_INTL("{1}'s {2} cleared {3}'s {4}!",
+            battler.pbThis, battler.abilityName, team[i], effectNames[j]))
+        end
+        splashAnim = true
+      end
+    end
+    battle.pbHideAbilitySplash(battler) if splashAnim
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:PASTELVEIL,
+  proc { |ability,battler,battle|
+    splashAnim = false
+    battler.eachAlly do |b|
+      next if b.status != :POISON
+      battle.pbShowAbilitySplash(battler) if !splashAnim
+      splashAnim = true
+      b.pbCureStatus(PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+      if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1}'s {2} cured its {3}'s poison!",battler.pbThis,battler.abilityName,b.pbThis(true)))
+      end
+    end
+    battle.pbHideAbilitySplash(battler)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:CURIOUSMEDICINE,
+  proc { |ability, battler, battle|
+    splashAnim = false
+    battler.eachAlly do |b|
+      next if !b.hasAlteredStatStages?
+      battle.pbShowAbilitySplash(battler) if !splashAnim
+      splashAnim = true
+      b.pbResetStatStages
+      if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1}'s stat changes were removed!", b.pbThis))
+      else
+        battle.pbDisplay(_INTL("{1}'s stat changes were removed by {2}'s {3}!",
+           b.pbThis, battler.pbThis(true), battler.abilityName))
+      end
+    end
+    battle.pbHideAbilitySplash(battler)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:NEUTRALIZINGGAS,
+  proc { |ability,battler,battle|
+    next if battle.field.effects[PBEffects::NeutralizingGas] >= 0
+    battle.pbShowAbilitySplash(battler, true)
+    if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+      battle.pbDisplay(_INTL("{1}'s {2} activated!", battler.pbThis, battler.abilityName))
+    end
+    battle.pbDisplay(_INTL("All abilities were nullified!"))
+    battle.pbHideAbilitySplash(battler)
+    battle.field.effects[PBEffects::NeutralizingGas] = battler.index
+    battle.eachBattler do |b|
+      b.effects[PBEffects::SlowStart] = 0
+      b.effects[PBEffects::Truant] = false
+      b.effects[PBEffects::ChoiceBand] = nil if !b.hasActiveItem?([:CHOICEBAND, :CHOICESPECS, :CHOICESCARF])
+      if b.effects[PBEffects::Illusion]
+        b.effects[PBEffects::Illusion] = nil
+        if !b.effects[PBEffects::Transform]
+          battle.scene.pbChangePokemon(b, b.pokemon)
+          battle.pbDisplay(_INTL("{1}'s {2} wore off!", b.pbThis, b.abilityName))
+          battle.pbSetSeen(b)
+        end
+      end
+    end
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:ICEFACE,
+  proc { |ability, battler, battle|
+    next if !battler.isSpecies?(:EISCUE) || battler.form != 1
+    next if battler.effectiveWeather != :Hail
+    battle.pbShowAbilitySplash(battler)
+    if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+      battle.pbDisplay(_INTL("{1}'s {2} activated!", battler.pbThis, battler.abilityName))
+    end
+    battler.pbChangeForm(0, _INTL("{1} transformed!", battler.pbThis))
+    battle.pbHideAbilitySplash(battler)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:MIMICRY,
+  proc { |ability, battler, battle|
+    next if battle.field.terrain == :None
+    BattleHandlers.triggerAbilityOnTerrainChange(ability, battler, battle, false)
+  }
+)
+
 #===============================================================================
 # AbilityOnSwitchOut handlers
 #===============================================================================
@@ -2384,6 +2789,50 @@ BattleHandlers::AbilityOnSwitchOut.add(:REGENERATOR,
     battler.pbRecoverHP(battler.totalhp/3,false,false)
   }
 )
+
+BattleHandlers::AbilityOnSwitchOut.add(:IMMUNITY,
+  proc { |ability, battler, endOfBattle|
+    next if battler.status != :POISON
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}")
+    battler.status = :NONE
+  }
+)
+
+BattleHandlers::AbilityOnSwitchOut.add(:INSOMNIA,
+  proc { |ability, battler, endOfBattle|
+    next if battler.status != :SLEEP
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}")
+    battler.status = :NONE
+  }
+)
+
+BattleHandlers::AbilityOnSwitchOut.copy(:INSOMNIA, :VITALSPIRIT)
+
+BattleHandlers::AbilityOnSwitchOut.add(:LIMBER,
+  proc { |ability, battler, endOfBattle|
+    next if battler.status != :PARALYSIS
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}")
+    battler.status = :NONE
+  }
+)
+
+BattleHandlers::AbilityOnSwitchOut.add(:MAGMAARMOR,
+  proc { |ability, battler, endOfBattle|
+    next if battler.status != :FROZEN
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}")
+    battler.status = :NONE
+  }
+)
+
+BattleHandlers::AbilityOnSwitchOut.add(:WATERVEIL,
+  proc { |ability, battler, endOfBattle|
+    next if battler.status != :BURN
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}")
+    battler.status = :NONE
+  }
+)
+
+BattleHandlers::AbilityOnSwitchOut.copy(:WATERVEIL, :WATERBUBBLE)
 
 #===============================================================================
 # AbilityChangeOnBattlerFainting handlers
@@ -2421,5 +2870,53 @@ BattleHandlers::AbilityOnBattlerFainting.add(:SOULHEART,
 BattleHandlers::RunFromBattleAbility.add(:RUNAWAY,
   proc { |ability,battler|
     next true
+  }
+)
+
+#===============================================================================
+# AbilityOnTerrainChange handlers
+#===============================================================================
+
+BattleHandlers::AbilityOnTerrainChange.add(:MIMICRY,
+  proc { |ability, battler, battle, ability_changed|
+    if battle.field.terrain == :None
+      # Revert to original typing
+      battle.pbShowAbilitySplash(battler)
+      battler.pbResetTypes
+      battle.pbDisplay(_INTL("{1} changed back to its regular type!", battler.pbThis))
+      battle.pbHideAbilitySplash(battler)
+    else
+      # Change to new typing
+      terrain_hash = {
+        :Electric => :ELECTRIC,
+        :Grassy   => :GRASS,
+        :Misty    => :FAIRY,
+        :Psychic  => :PSYCHIC
+      }
+      new_type = terrain_hash[battle.field.terrain]
+      new_type_name = nil
+      if new_type
+        type_data = GameData::Type.try_get(new_type)
+        new_type = nil if !type_data
+        new_type_name = type_data.name if type_data
+      end
+      if new_type
+        battle.pbShowAbilitySplash(battler)
+        battler.pbChangeTypes(new_type)
+        battle.pbDisplay(_INTL("{1}'s type changed to {2}!", battler.pbThis, new_type_name))
+        battle.pbHideAbilitySplash(battler)
+      end
+    end
+  }
+)
+
+#===============================================================================
+# AbilityOnIntimidated handlers
+#===============================================================================
+
+BattleHandlers::AbilityOnIntimidated.add(:RATTLED,
+  proc { |ability,battler,battle|
+    next if Settings::MECHANICS_GENERATION < 8
+    battler.pbRaiseStatStageByAbility(:SPEED, 1, battler)
   }
 )

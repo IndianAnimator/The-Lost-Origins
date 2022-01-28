@@ -37,10 +37,8 @@ module GameData
         type_data = GameData::Type.get(move_type)
         ret = sprintf("Graphics/Items/%s_%s", prefix, type_data.id)
         return ret if pbResolveBitmap(ret)
-        if !item_data.is_TM?
-          ret = sprintf("Graphics/Items/machine_%s", type_data.id)
-          return ret if pbResolveBitmap(ret)
-        end
+        ret = sprintf("Graphics/Items/machine_%s", type_data.id)
+        return ret if pbResolveBitmap(ret)
       end
       return "Graphics/Items/000"
     end
@@ -157,7 +155,9 @@ module GameData
          :GIRATINA => [:GRISEOUSORB],
          :GENESECT => [:BURNDRIVE, :CHILLDRIVE, :DOUSEDRIVE, :SHOCKDRIVE],
          :KYOGRE   => [:BLUEORB],
-         :GROUDON  => [:REDORB]
+         :GROUDON  => [:REDORB],
+         :ZACIAN   => [:RUSTEDSWORD],
+         :ZAMAZENTA=> [:RUSTEDSHIELD]
       }
       return combos[species] && combos[species].include?(@id)
     end

@@ -1,3 +1,6 @@
+# This stuff is compiled from the PBS, so redundant
+Data/*.dat
+
 # Common code editor folders & files
 .vscode/
 *.code-workspace

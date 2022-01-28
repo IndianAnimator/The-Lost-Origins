@@ -26,6 +26,7 @@ class PokeBattle_Battler
     raise _INTL("HP less than 0") if @hp<0
     raise _INTL("HP greater than total HP") if @hp>@totalhp
     @battle.scene.pbHPChanged(self,oldHP,anim) if anyAnim && amt>0
+    self.damage_done = 0
     return amt
   end
 
@@ -71,6 +72,7 @@ class PokeBattle_Battler
     @battle.peer.pbOnLeavingBattle(@battle,@pokemon,@battle.usedInBattle[idxOwnSide][@index/2])
     @pokemon.makeUnmega if mega?
     @pokemon.makeUnprimal if primal?
+    self.damage_done = 0
     # Do other things
     @battle.pbClearChoice(@index)   # Reset choice
     pbOwnSide.effects[PBEffects::LastRoundFainted] = @battle.turnCount
@@ -78,6 +80,7 @@ class PokeBattle_Battler
     pbAbilitiesOnFainting
     # Check for end of primordial weather
     @battle.pbEndPrimordialWeather
+    @battle.pbSetBattled(self)
   end
 
   #=============================================================================
@@ -87,8 +90,11 @@ class PokeBattle_Battler
     move.pp = pp
     # No need to care about @effects[PBEffects::Mimic], since Mimic can't copy
     # Mimic
-    if move.realMove && move.id==move.realMove.id && !@effects[PBEffects::Transform]
+    if move.realMove && move.id == move.realMove.id && !@effects[PBEffects::Transform]
       move.realMove.pp = pp
+    elsif move.realMove
+      mult = move.realMove.total_pp/move.total_pp
+      move.realMove.pp = pp * mult
     end
   end
 
@@ -117,12 +123,25 @@ class PokeBattle_Battler
       @type1 = newTypes[0]
       @type2 = (newTypes.length == 1) ? newTypes[0] : newTypes[1]
       @effects[PBEffects::Type3] = newType3
+    elsif newType.is_a?(Array)
+      newType3 = newType[2] || nil
+      @type1 = newType[0]
+      @type2 = newType[1] || newType[0]
+      @effects[PBEffects::Type3] = newType3
     else
       newType = GameData::Type.get(newType).id
       @type1 = newType
       @type2 = newType
       @effects[PBEffects::Type3] = nil
     end
+    @effects[PBEffects::BurnUp] = false
+    @effects[PBEffects::Roost]  = false
+  end
+
+  def pbResetTypes
+    @type1 = @pokemon.type1
+    @type2 = @pokemon.type2
+    @effects[PBEffects::Type3]  = nil
     @effects[PBEffects::BurnUp] = false
     @effects[PBEffects::Roost]  = false
   end
@@ -163,13 +182,13 @@ class PokeBattle_Battler
     end
   end
 
-  def pbCheckFormOnWeatherChange
+  def pbCheckFormOnWeatherChange(abil_changed = false)
     return if fainted? || @effects[PBEffects::Transform]
     # Castform - Forecast
     if isSpecies?(:CASTFORM)
       if hasActiveAbility?(:FORECAST)
         newForm = 0
-        case @battle.pbWeather
+        case effectiveWeather
         when :Sun, :HarshSun   then newForm = 1
         when :Rain, :HeavyRain then newForm = 2
         when :Hail             then newForm = 3
@@ -187,7 +206,7 @@ class PokeBattle_Battler
     if isSpecies?(:CHERRIM)
       if hasActiveAbility?(:FLOWERGIFT)
         newForm = 0
-        newForm = 1 if [:Sun, :HarshSun].include?(@battle.pbWeather)
+        newForm = 1 if [:Sun, :HarshSun].include?(effectiveWeather)
         if @form!=newForm
           @battle.pbShowAbilitySplash(self,true)
           @battle.pbHideAbilitySplash(self)
@@ -196,6 +215,10 @@ class PokeBattle_Battler
       else
         pbChangeForm(0,_INTL("{1} transformed!",pbThis))
       end
+    end
+    if !abil_changed && isSpecies?(:EISCUE) && self.ability == :ICEFACE &&
+       @form == 1 && effectiveWeather == :Hail
+      @canRestoreIceFace = true   # Changed form at end of round
     end
   end
 
@@ -208,16 +231,12 @@ class PokeBattle_Battler
     pbCheckFormOnWeatherChange if !endOfRound
     # Darmanitan - Zen Mode
     if isSpecies?(:DARMANITAN) && self.ability == :ZENMODE
-      if @hp<=@totalhp/2
-        if @form!=1
-          @battle.pbShowAbilitySplash(self,true)
-          @battle.pbHideAbilitySplash(self)
-          pbChangeForm(1,_INTL("{1} triggered!",abilityName))
-        end
-      elsif @form!=0
+      newForm = @form
+      newForm = @form + (@form < 2 ? 2 : -2) if @hp <= @totalhp/2
+      if newForm != @form
         @battle.pbShowAbilitySplash(self,true)
+        pbChangeForm(newForm,_INTL("{1} triggered!",abilityName))
         @battle.pbHideAbilitySplash(self)
-        pbChangeForm(0,_INTL("{1} triggered!",abilityName))
       end
     end
     # Minior - Shields Down

@@ -13,16 +13,17 @@ class PokeBattle_FakeBattler
     @index   = index
   end
 
-  def pokemonIndex;   return 0;                end
-  def species;        return @pokemon.species; end
-  def gender;         return @pokemon.gender;  end
-  def status;         return @pokemon.status;  end
-  def hp;             return @pokemon.hp;      end
-  def level;          return @pokemon.level;   end
-  def name;           return @pokemon.name;    end
-  def totalhp;        return @pokemon.totalhp; end
-  def displayGender;  return @pokemon.gender;  end
-  def shiny?;         return @pokemon.shiny?;  end
+  def pokemonIndex;   return 0;                      end
+  def species;        return @pokemon.species;       end
+  def gender;         return @pokemon.gender;        end
+  def status;         return @pokemon.status;        end
+  def hp;             return @pokemon.hp;            end
+  def level;          return @pokemon.level;         end
+  def name;           return @pokemon.name;          end
+  def totalhp;        return @pokemon.totalhp;       end
+  def displayGender;  return @pokemon.gender;        end
+  def shiny?;         return @pokemon.shiny?;        end
+  def square_shiny?;  return @pokemon.square_shiny?; end
   alias isShiny? shiny?
 
   def isSpecies?(check_species)
@@ -397,6 +398,19 @@ class PokeBattle_SafariZone
 
   def pbDisplayConfirm(msg)
     return @scene.pbDisplayConfirmMessage(msg)
+  end
+
+  #=============================================================================
+  # Pokedex Registration
+  #=============================================================================
+  def pbSetBattled(battler)
+    return if !battler || !@internalBattle
+    if battler.respond_to?(:opposes?)
+      return if battler.opposes?
+      pbPlayer.pokedex.register_battled(battler.displaySpecies)
+    else
+      pbPlayer.pokedex.register_battled(battler.species)
+    end
   end
 
 

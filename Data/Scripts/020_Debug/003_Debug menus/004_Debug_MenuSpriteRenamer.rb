@@ -49,7 +49,7 @@ module SpriteRenamer
       extension = "." + $~[2]
     end
     prefix = default_prefix
-    form = female = shadow = crack = ""
+    form = female = shadow = crack = gmax = ""
     if default_prefix == ""
       if name[/s/] && !name[/shadow/]
         prefix = (name[/b/]) ? "Back shiny/" : "Front shiny/"
@@ -69,13 +69,14 @@ module SpriteRenamer
       form = "_" + $~[1].to_s if name[/_(\d+)$/] || name[/_(\d+)\D/]
       female = "_female" if name[/f/]
       shadow = "_shadow" if name[/_shadow/]
+      gmax = "_gmax" if name[/_gmax/]
       if name[/egg/]
         prefix = "Eggs/"
         crack = "_icon" if default_prefix == "Icons/"
         crack = "_cracks" if name[/eggCracks/]
       end
     end
-    return prefix + species + form + female + shadow + crack + extension
+    return prefix + species + form + female + shadow + gmax + crack + extension
   end
 
   def convert_pokemon_sprites(src_dir, dest_dir)
@@ -157,7 +158,11 @@ module SpriteRenamer
           type = $~[1]
           extension = $~[2]
           File.move(src_dir + file, dest_dir + "machine_" + type + "." + extension)
-        elsif file[/^item(\d+)\.([^\.]*)$/]
+        elsif file[/^itemRecord(.+)\.([^\.]*)$/]
+          type = $~[1]
+          extension = $~[2]
+          File.move(src_dir + file, dest_dir + "machine_tr_" + type + "." + extension)
+        elsif file[/^item(\d{3})[^\.]*\.([^\.]*)$/]
           item_number = $~[1].to_i
           extension = $~[2]
           item_data = GameData::Item.try_get(item_number)

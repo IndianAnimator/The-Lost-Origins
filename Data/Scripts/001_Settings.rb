@@ -1,6 +1,6 @@
 #==============================================================================#
 #                              Pokémon Essentials                              #
-#                               Version 19.1.dev                               #
+#                                 Version 19.1                                 #
 #                https://github.com/Maruno17/pokemon-essentials                #
 #==============================================================================#
 
@@ -14,7 +14,7 @@ module Settings
   # Note that this isn't perfect. Essentials doesn't accurately replicate every
   # single generation's mechanics. It's considered to be good enough. Only
   # generations 5 and later are reasonably supported.
-  MECHANICS_GENERATION = 7
+  MECHANICS_GENERATION = 8
 
   #=============================================================================
 
@@ -28,13 +28,19 @@ module Settings
   #=============================================================================
 
   # The maximum level Pokémon can reach.
-  MAXIMUM_LEVEL        = 100
+  MAXIMUM_LEVEL            = 100
   # The level of newly hatched Pokémon.
-  EGG_LEVEL            = 1
+  EGG_LEVEL                = 1
   # The odds of a newly generated Pokémon being shiny (out of 65536).
-  SHINY_POKEMON_CHANCE = (MECHANICS_GENERATION >= 6) ? 16 : 8
+  SHINY_POKEMON_CHANCE     = (MECHANICS_GENERATION >= 6) ? 16 : 8
+  # The odds of a newly generated Pokémon being a Brilliant Pokemon (out of 65536).
+  # Set this to 0 to disable Brilliant Pokemon.
+  BRILLIANT_POKEMON_CHANCE = 64
+  # Whether square shininess is enabled (uses a different shiny animation with
+  # square sparkles).
+  SQUARE_SHINY             = (MECHANICS_GENERATION >= 8)
   # The odds of a wild Pokémon/bred egg having Pokérus (out of 65536).
-  POKERUS_CHANCE       = 3
+  POKERUS_CHANCE           = 3
   # Whether a bred baby Pokémon can inherit any TM/HM moves from its father. It
   # can never inherit TM/HM moves from its mother.
   BREEDING_CAN_INHERIT_MACHINE_MOVES         = (MECHANICS_GENERATION <= 5)
@@ -139,6 +145,9 @@ module Settings
   # whether the machine's move retains the replaced move's PP (true), or whether
   # the machine's move has full PP (false).
   TAUGHT_MACHINES_KEEP_OLD_PP          = (MECHANICS_GENERATION == 5)
+  # If a move is taught to a Pokemon using a TR and the Pokemon forgets that
+  # move, it can relearn that move at a move tutor.
+  RELEARNABLE_TR_MOVES                 = (MECHANICS_GENERATION >= 8)
   # Whether the Black/White Flutes will raise/lower the levels of wild Pokémon
   # respectively (true), or will lower/raise the wild encounter rate
   # respectively (false).
@@ -148,6 +157,26 @@ module Settings
   REPEL_COUNTS_FAINTED_POKEMON         = (MECHANICS_GENERATION >= 6)
   # Whether Rage Candy Bar acts as a Full Heal (true) or a Potion (false).
   RAGE_CANDY_BAR_CURES_STATUS_PROBLEMS = (MECHANICS_GENERATION >= 7)
+  # Whether Rare Candy can be used on a Pokémon that is already at its maximum
+  # level if it is able to evolve by level-up (if so, triggers that evolution).
+  RARE_CANDY_USABLE_AT_MAX_LEVEL       = (MECHANICS_GENERATION >= 8)
+  # Whether various HP-healing items heal the amounts they do in Gen 7+ (true)
+  # or in earlier Generations (false).
+  # Examples:
+  #  * Fresh Water heals 50 HP in Gen 5 and 30 HP in Gen 7
+  #  * Lemonade heals 80 HP in Gen 5 and 70 HP in Gen 7
+  #  * Hyper Potion and Energy Root heal 200 HP in Gen 5 and 120 HP in Gen 7
+  #  * Super Potion and Energy Powder heal 50 HP in Gen 5 and 60 HP in Gen 7
+  REBALANCED_HEALING_ITEM_AMOUNTS      = (MECHANICS_GENERATION >= 7)
+  # Whether vitamins can add EVs no matter how many that stat already has in it
+  # (true), or whether they can't make that stat's EVs greater than 100 (false).
+  NO_VITAMIN_EV_CAP                    = (MECHANICS_GENERATION < 8)
+  # Whether you get 1 Premier Ball for every 10 of any kind of Poké Ball bought
+  # at once (true), or 1 Premier Ball for buying 10+ Poké Balls (false).
+  MORE_BONUS_PREMIER_BALLS              = (MECHANICS_GENERATION >= 8)
+  # Whether Pokemon evolve when their happiness value goes above the
+  # threshold of 160 (true) or 220 (false)
+  LOWER_HAPPINESS_EVOLUTION_CAP        = (MECHANICS_GENERATION >= 8)
 
   #=============================================================================
 
@@ -156,7 +185,10 @@ module Settings
     return _INTL("Bill")
   end
   # The number of boxes in Pokémon storage.
-  NUM_STORAGE_BOXES = 30
+  NUM_STORAGE_BOXES   = 30
+  # Whether putting a Pokémon into Pokémon storage will heal it. IF false, they
+  # are healed by the Recover All: Entire Party event command (at Poké Centers).
+  HEAL_STORED_POKEMON = (MECHANICS_GENERATION < 8)
 
   #=============================================================================
 
@@ -211,10 +243,17 @@ module Settings
   # whether each form needs to be seen specifically before that form appears in
   # the Pokédex (false).
   DEX_SHOWS_ALL_FORMS = false
+  # Whether the Pokedex shows the Footprints of a Pokemon in the first page of
+  # the dex entry (true) or whether it shows the Icon Sprite of the Pokemon
+  # there (false).
+  DEX_SHOWS_FOOTPRINTS = false
   # An array of numbers, where each number is that of a Dex list (in the same
   # order as above, except the National Dex is -1). All Dex lists included here
   # will begin their numbering at 0 rather than 1 (e.g. Victini in Unova's Dex).
   DEXES_WITH_OFFSETS  = []
+  # Whether the amount of Pokemon of a particular species caught or defeated in
+  # battle by the player boosts shiny odds.
+  NUMBER_BATTLED_BOOSTS_SHINY_ODDS  = true
 
   #=============================================================================
 
@@ -297,6 +336,11 @@ module Settings
   # The Game Switch which, while ON, makes all Pokémon created considered to be
   # met via a fateful encounter.
   FATEFUL_ENCOUNTER_SWITCH  = 32
+  # The Game Switch which, while ON, blocks access to the Pokemon Box Link
+  # Storage functionality. Set this to -1 to always have Pokemon Box Link access.
+  POKEMON_BOX_LINK_SWITCH   = -1
+  # The Game Switch which, while ON, makes all wild Pokémon created be Brilliant.
+  BRILLIANT_POKEMON_SWITCH  = -1
 
   #=============================================================================
 
@@ -320,6 +364,13 @@ module Settings
   # ID of the animation played when a berry tree grows a stage while the player
   # is on the map (for new plant growth mechanics only).
   PLANT_SPARKLE_ANIMATION_ID   = 7
+
+  #=============================================================================
+
+  # The scale to zoom the front sprite of a Pokemon. (1 for no scaling)
+  FRONT_BATTLER_SPRITE_SCALE    = 2
+  # The scale to zoom the back sprite of a Pokemon. (1 for no scaling)
+  BACK_BATTLER_SPRITE_SCALE     = 3
 
   #=============================================================================
 
@@ -393,6 +444,6 @@ end
 
 # DO NOT EDIT THESE!
 module Essentials
-  VERSION = "19.1.dev"
+  VERSION = "19.1"
   ERROR_TEXT = ""
 end

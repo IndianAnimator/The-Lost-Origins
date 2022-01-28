@@ -26,11 +26,6 @@ class Pokemon
   # This Pokémon's shininess (true, false, nil). Is recalculated if made nil.
   # @param value [Boolean, nil] whether this Pokémon is shiny
   attr_writer   :shiny
-  # The index of this Pokémon's ability (0, 1 are natural abilities, 2+ are
-  # hidden abilities)as defined for its species/form. An ability may not be
-  # defined at this index. Is recalculated (as 0 or 1) if made nil.
-  # @param value [Integer, nil] forced ability index (nil if none is set)
-  attr_writer   :ability_index
   # @return [Array<Pokemon::Move>] the moves known by this Pokémon
   attr_accessor :moves
   # @return [Array<Integer>] the IDs of moves known by this Pokémon when it was obtained
@@ -80,6 +75,14 @@ class Pokemon
   attr_accessor :fused
   # @return [Integer] this Pokémon's personal ID
   attr_accessor :personalID
+  # @return [Integer] the damage dealt to the Pokémon before fainting in battle
+  attr_accessor :damage_done
+  # @return [Integer] the critical hits scored by the Pokémon before fainting in battle
+  attr_accessor :critical_hits
+  # @return [Integer] the amount of evolution candies fed to a Pokemon.
+  attr_accessor :candies_fed
+  # @return [Boolean] whether the Pokemon is a Brilliant Pokemon or no
+  attr_accessor :brilliant
 
   # Max total IVs
   IV_STAT_LIMIT = 31
@@ -122,6 +125,7 @@ class Pokemon
     @species     = new_species_data.species
     @form        = new_species_data.form if new_species_data.form != 0
     @forced_form = nil
+    @gender      = nil if singleGendered?
     @level       = nil   # In case growth rate is different for the new species
     @ability     = nil
     calc_stats
@@ -136,7 +140,7 @@ class Pokemon
 
   def form
     return @forced_form if !@forced_form.nil?
-    return @form if $game_temp.in_battle
+    return @form if $game_temp.in_battle || $game_temp.in_storage
     calc_form = MultipleForms.call("getForm", self)
     self.form = calc_form if calc_form != nil && calc_form != @form
     return @form
@@ -201,6 +205,12 @@ class Pokemon
     @level = nil
   end
 
+  # Sets this Pokémon's Exp. Points without resetting the level. Used by Exp Candies
+  # @param value [Integer] new experience points
+  def setExp(value)
+    @exp = value
+  end
+
   # @return [Boolean] whether this Pokémon is an egg
   def egg?
     return @steps_to_hatch > 0
@@ -235,7 +245,10 @@ class Pokemon
   # @param value [Integer] new HP value
   def hp=(value)
     @hp = value.clamp(0, @totalhp)
-    heal_status if @hp == 0
+    if @hp == 0
+      heal_status
+      @damage_done = 0
+    end
   end
 
   # Sets this Pokémon's status. See {GameData::Status} for all possible status effects.
@@ -263,6 +276,7 @@ class Pokemon
   def heal_HP
     return if egg?
     @hp = @totalhp
+    @damage_done = 0 if !$game_temp.in_storage
   end
 
   # Heals the status problem of this Pokémon.
@@ -330,13 +344,14 @@ class Pokemon
   # @return [0, 1, 2] this Pokémon's gender (0 = male, 1 = female, 2 = genderless)
   def gender
     if !@gender
-      gender_ratio = species_data.gender_ratio
-      case gender_ratio
-      when :AlwaysMale   then @gender = 0
-      when :AlwaysFemale then @gender = 1
-      when :Genderless   then @gender = 2
+      if species_data.single_gendered?
+        case species_data.gender_ratio
+        when :AlwaysMale   then @gender = 0
+        when :AlwaysFemale then @gender = 1
+        else                    @gender = 2
+        end
       else
-        female_chance = GameData::GenderRatio.get(gender_ratio).female_chance
+        female_chance = GameData::GenderRatio.get(species_data.gender_ratio).female_chance
         @gender = ((@personalID & 0xFF) < female_chance) ? 1 : 0
       end
     end
@@ -368,8 +383,7 @@ class Pokemon
   # @return [Boolean] whether this Pokémon species is restricted to only ever being one
   #   gender (or genderless)
   def singleGendered?
-    gender_ratio = species_data.gender_ratio
-    return [:AlwaysMale, :AlwaysFemale, :Genderless].include?(gender_ratio)
+    return species_data.single_gendered?
   end
 
   #=============================================================================
@@ -378,6 +392,7 @@ class Pokemon
 
   # @return [Boolean] whether this Pokémon is shiny (differently colored)
   def shiny?
+    return true if square_shiny?
     if @shiny.nil?
       a = @personalID ^ @owner.id
       b = a & 0xFFFF
@@ -389,14 +404,75 @@ class Pokemon
   end
 
   #=============================================================================
+  # Square Shininess
+  #=============================================================================
+  # @return [Boolean] whether this Pokémon is a square sparkle shiny
+  # (differently colored, square sparkles)
+  def square_shiny?
+    if @square_shiny.nil?
+      a = @personalID ^ @owner.id
+      b = a & 0xFFFF
+      c = (a >> 16) & 0xFFFF
+      d = b ^ c
+      @square_shiny = d < (Settings::SHINY_POKEMON_CHANCE/16)
+    end
+    return @square_shiny
+  end
+
+  # @param value [Boolean] whether this Pokémon is square shiny
+  def square_shiny=(value)
+    @square_shiny = value
+    @shiny = true if @square_shiny
+  end
+
+  #=============================================================================
+  # Brilliance
+  #=============================================================================
+  # Generate Pokemon with the following features.
+  # 2 - 6 max IVs
+  # Higher Avg Level
+  # Knows Egg Move
+  # Has a high chance to be shiny
+
+  def generateBrilliant
+    @brilliant = true
+    # 2- 6 max IVs
+    maxIVs = @iv.keys.sample(2 + (rand(@iv.keys.length) - 2))
+    maxIVs.each { |s| @iv[s] = Pokemon::IV_STAT_LIMIT }
+    # Higher Avg Level
+    self.level += (2 + rand(5))
+    # Knows Egg Move
+    babyspecies = species_data.get_baby_species
+    eggmoves = GameData::Species.get_species_form(babyspecies,form_simple).egg_moves
+    move = eggmoves.sample
+    learn_move(move); add_first_move(move)
+    # Has a chance to be shiny
+    shinyBoost = $Trainer.pokedex.number_battled_brilliant_shiny(@species)
+    random = rand(65536)
+    shinyChance = Settings::SHINY_POKEMON_CHANCE * shinyBoost
+    @shiny = random < shinyChance
+    self.square_shiny = random < (shinyChance/16)
+  end
+
+  #=============================================================================
   # Ability
   #=============================================================================
 
+  # The index of this Pokémon's ability (0, 1 are natural abilities, 2+ are
+  # hidden abilities) as defined for its species/form. An ability may not be
+  # defined at this index. Is recalculated (as 0 or 1) if made nil.
   # @return [Integer] the index of this Pokémon's ability
   def ability_index
     @ability_index = (@personalID & 1) if !@ability_index
     return @ability_index
   end
+
+  # @param value [Integer, nil] forced ability index (nil if none is set)
+  def ability_index=(value)
+    @ability_index = value
+    @ability = nil
+  end
+
 
   # @return [GameData::Ability, nil] an Ability object corresponding to this Pokémon's ability
   def ability
@@ -665,7 +741,12 @@ class Pokemon
   # @return [Boolean] whether the Pokémon is compatible with the given move
   def compatible_with_move?(move_id)
     move_data = GameData::Move.try_get(move_id)
-    return move_data && species_data.tutor_moves.include?(move_data.id)
+    return false if !move_data
+    return true if species_data.tutor_moves.include?(move_data.id)
+    return true if species_data.tutor_moves.include?(move_data.id)
+    return true if getMoveList.any? { |m| m[1] == move_data.id }
+    return true if @first_moves.include?(move_data.id)
+    return false
   end
 
   def can_relearn_move?
@@ -795,9 +876,9 @@ class Pokemon
     @owner = new_owner
   end
 
-  # @param trainer [Player, NPCTrainer] the trainer to compare to the original trainer
+  # @param trainer [Player, NPCTrainer, nil] the trainer to compare to the original trainer
   # @return [Boolean] whether the given trainer is not this Pokémon's original trainer
-  def foreign?(trainer)
+  def foreign?(trainer = $Trainer)
     return @owner.id != trainer.id || @owner.name != trainer.name
   end
 
@@ -864,6 +945,12 @@ class Pokemon
     ret = {}
     GameData::Stat.each_main { |s| ret[s.id] = this_evs[s.id] }
     return ret
+  end
+
+  # @return [Integer] the amie affection level of the Pokemon
+  def affection_level
+    return 0 if !respond_to?(:amie_stats)
+    return self.amie_stats(0)
   end
 
   # Changes the happiness of this Pokémon depending on what happened to change it.
@@ -935,6 +1022,26 @@ class Pokemon
   def check_evolution_on_trade(other_pkmn)
     return check_evolution_internal { |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_on_trade(pkmn, parameter, other_pkmn)
+      next (success) ? new_species : nil
+    }
+  end
+
+  # Checks whether this Pokemon can evolve because of certain conditions after a battle
+  # @param other_pkmn [Pokemon] the other Pokémon involved in the trade
+  # @return [Symbol, nil] the ID of the species to evolve into
+  def check_evolution_after_battle
+    return check_evolution_internal { |pkmn, new_species, method, parameter|
+      success = GameData::Evolution.get(method).call_on_battle(pkmn, parameter)
+      next (success) ? new_species : nil
+    }
+  end
+
+  # Checks whether this Pokemon can evolve because of certain conditions in an event
+  # @param other_pkmn [Pokemon] the other Pokémon involved in the trade
+  # @return [Symbol, nil] the ID of the species to evolve into
+  def check_evolution_in_event
+    return check_evolution_internal { |pkmn, new_species, method, parameter|
+      success = GameData::Evolution.get(method).call_in_event(pkmn, parameter)
       next (success) ? new_species : nil
     }
   end
@@ -1020,9 +1127,9 @@ class Pokemon
         stats[s.id] = calcStat(base_stats[s.id], this_level, this_IV[s.id], @ev[s.id], nature_mod[s.id])
       end
     end
-    hpDiff = @totalhp - @hp
+    hp_difference = stats[:HP] - @totalhp
     @totalhp = stats[:HP]
-    @hp      = @totalhp - hpDiff
+    self.hp = [@hp + hp_difference, 1].max if @hp > 0 || hp_difference > 0
     @attack  = stats[:ATTACK]
     @defense = stats[:DEFENSE]
     @spatk   = stats[:SPECIAL_ATTACK]
@@ -1058,8 +1165,8 @@ class Pokemon
   # @param species [Symbol, String, Integer] Pokémon species
   # @param level [Integer] Pokémon level
   # @param owner [Owner, Player, NPCTrainer] Pokémon owner (the player by default)
-  # @param withMoves [TrueClass, FalseClass] whether the Pokémon should have moves
-  # @param rechech_form [TrueClass, FalseClass] whether to auto-check the form
+  # @param withMoves [Boolean] whether the Pokémon should have moves
+  # @param recheck_form [Boolean] whether to auto-check the form
   def initialize(species, level, owner = $Trainer, withMoves = true, recheck_form = true)
     species_data = GameData::Species.get(species)
     @species          = species_data.species
@@ -1118,6 +1225,9 @@ class Pokemon
     @personalID       = rand(2 ** 16) | rand(2 ** 16) << 16
     @hp               = 1
     @totalhp          = 1
+    @damage_done      = 0
+    @critical_hits    = 0
+    @candies_fed      = 0
     calc_stats
     if @form == 0 && recheck_form
       f = MultipleForms.call("getFormOnCreation", self)

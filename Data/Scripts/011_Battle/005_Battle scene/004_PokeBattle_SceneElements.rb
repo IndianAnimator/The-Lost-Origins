@@ -162,6 +162,7 @@ class PokemonDataBox < SpriteWrapper
   end
 
   def exp_fraction
+    return 0.0 if @rangeExp == 0
     return (@animatingExp) ? @currentExp.to_f/@rangeExp : @battler.pokemon.exp_fraction
   end
 
@@ -180,6 +181,7 @@ class PokemonDataBox < SpriteWrapper
   end
 
   def animateExp(oldExp,newExp,rangeExp)
+    return if rangeExp == 0
     @currentExp     = oldExp
     @endExp         = newExp
     @rangeExp       = rangeExp
@@ -289,7 +291,7 @@ class PokemonDataBox < SpriteWrapper
     w = exp_fraction * @expBarBitmap.width
     # NOTE: The line below snaps the bar's width to the nearest 2 pixels, to
     #       fit in with the rest of the graphics which are doubled in size.
-    w = ((w/2).round)*2
+    w = ((w/2).round) * 2 rescue 0
     @expBar.src_rect.width = w
   end
 
@@ -454,8 +456,7 @@ class AbilitySplashBar < SpriteWrapper
     textPos.push([_INTL("{1}'s",@battler.name),textX,-4,@side==1,
        TEXT_BASE_COLOR,TEXT_SHADOW_COLOR,true])
     # Draw Pokémon's ability
-    textPos.push([@battler.abilityName,textX,26,@side==1,
-       TEXT_BASE_COLOR,TEXT_SHADOW_COLOR,true])
+    textPos.push([@battler.abilityName, textX, 32, @side==1, TEXT_BASE_COLOR, TEXT_SHADOW_COLOR,true])
     pbDrawTextPositions(self.bitmap,textPos)
   end
 

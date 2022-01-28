@@ -66,10 +66,7 @@ class PokeBattle_Battle
     # Other certain switching effects
     return true if Settings::MORE_TYPE_EFFECTS && battler.pbHasType?(:GHOST)
     # Other certain trapping effects
-    if battler.effects[PBEffects::Trapping]>0 ||
-       battler.effects[PBEffects::MeanLook]>=0 ||
-       battler.effects[PBEffects::Ingrain] ||
-       @field.effects[PBEffects::FairyLock]>0
+    if battler.trappedInBattle?
       partyScene.pbDisplay(_INTL("{1} can't be switched out!",battler.pbThis)) if partyScene
       return false
     end
@@ -310,6 +307,8 @@ class PokeBattle_Battle
   def pbOnActiveAll
     # Weather-inducing abilities, Trace, Imposter, etc.
     pbCalculatePriority(true)
+    # Neutralizing Gas activates before anything.
+    pbPriorityNeutralizingGas
     pbPriority(true).each { |b| b.pbEffectsOnSwitchIn(true) }
     pbCalculatePriority
     # Check forms are correct
@@ -330,27 +329,13 @@ class PokeBattle_Battle
     end
     # Update battlers' participants (who will gain Exp/EVs when a battler faints)
     eachBattler { |b| b.pbUpdateParticipants }
-    # Healing Wish
-    if @positions[battler.index].effects[PBEffects::HealingWish]
-      pbCommonAnimation("HealingWish",battler)
-      pbDisplay(_INTL("The healing wish came true for {1}!",battler.pbThis(true)))
-      battler.pbRecoverHP(battler.totalhp)
-      battler.pbCureStatus(false)
-      @positions[battler.index].effects[PBEffects::HealingWish] = false
-    end
-    # Lunar Dance
-    if @positions[battler.index].effects[PBEffects::LunarDance]
-      pbCommonAnimation("LunarDance",battler)
-      pbDisplay(_INTL("{1} became cloaked in mystical moonlight!",battler.pbThis))
-      battler.pbRecoverHP(battler.totalhp)
-      battler.pbCureStatus(false)
-      battler.eachMove { |m| m.pp = m.total_pp }
-      @positions[battler.index].effects[PBEffects::LunarDance] = false
-    end
+	  # Healing Wish / Lunar Dance
+	  battler.pbEffectsOnEnteringPosition
     # Entry hazards
+    _ZUD_OnActiveEffects(battler) if defined?(Settings::ZUD_COMPAT)
     # Stealth Rock
     if battler.pbOwnSide.effects[PBEffects::StealthRock] && battler.takesIndirectDamage? &&
-       GameData::Type.exists?(:ROCK)
+       GameData::Type.exists?(:ROCK) && battler.takesEntryHazardDamage?
       bTypes = battler.pbTypes(true)
       eff = Effectiveness.calculate(:ROCK, bTypes[0], bTypes[1], bTypes[2])
       if !Effectiveness.ineffective?(eff)
@@ -366,7 +351,7 @@ class PokeBattle_Battle
     end
     # Spikes
     if battler.pbOwnSide.effects[PBEffects::Spikes]>0 && battler.takesIndirectDamage? &&
-       !battler.airborne?
+       !battler.airborne? && battler.takesEntryHazardDamage?
       spikesDiv = [8,6,4][battler.pbOwnSide.effects[PBEffects::Spikes]-1]
       oldHP = battler.hp
       battler.pbReduceHP(battler.totalhp/spikesDiv,false)
@@ -382,7 +367,7 @@ class PokeBattle_Battle
       if battler.pbHasType?(:POISON)
         battler.pbOwnSide.effects[PBEffects::ToxicSpikes] = 0
         pbDisplay(_INTL("{1} absorbed the poison spikes!",battler.pbThis))
-      elsif battler.pbCanPoison?(nil,false)
+      elsif battler.pbCanPoison?(nil,false) && battler.takesEntryHazardDamage?
         if battler.pbOwnSide.effects[PBEffects::ToxicSpikes]==2
           battler.pbPoison(nil,_INTL("{1} was badly poisoned by the poison spikes!",battler.pbThis),true)
         else
@@ -392,10 +377,12 @@ class PokeBattle_Battle
     end
     # Sticky Web
     if battler.pbOwnSide.effects[PBEffects::StickyWeb] && !battler.fainted? &&
-       !battler.airborne?
+       !battler.airborne? && battler.takesEntryHazardDamage?
       pbDisplay(_INTL("{1} was caught in a sticky web!",battler.pbThis))
       if battler.pbCanLowerStatStage?(:SPEED)
-        battler.pbLowerStatStage(:SPEED,1,nil)
+        stickyuser = (battler.pbOwnSide.effects[PBEffects::StickyWebUser] > -1 ?
+  		    battlers[battler.pbOwnSide.effects[PBEffects::StickyWebUser]] : nil)
+        battler.pbLowerStatStage(:SPEED,1,stickyuser)
         battler.pbItemStatRestoreCheck
       end
     end
@@ -408,5 +395,14 @@ class PokeBattle_Battle
     end
     battler.pbCheckForm
     return true
+  end
+
+  # Called at the start of battle only; Neutralizing Gas activates before anything.
+  def pbPriorityNeutralizingGas
+    pbPriority(true).each do |b|
+      next if !b.abilityActive?
+      next if b.ability_id != :NEUTRALIZINGGAS
+      BattleHandlers.triggerAbilityOnSwitchIn(b.ability, b, self)
+    end
   end
 end

@@ -3,6 +3,7 @@ class PokeBattle_Scene
   attr_accessor :abortable   # For non-interactive battles, can quit immediately
   attr_reader   :viewport
   attr_reader   :sprites
+  attr_accessor :squareShinyAnim
 
   BLANK       = 0
   MESSAGE_BOX = 1

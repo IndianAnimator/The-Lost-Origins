@@ -45,6 +45,7 @@ class PokeBattle_Battle
       when :Sandstorm then pbDisplay(_INTL("The sandstorm subsided."))
       when :Hail      then pbDisplay(_INTL("The hail stopped."))
       when :ShadowSky then pbDisplay(_INTL("The shadow sky faded."))
+      when :Fog       then pbDisplay(_INTL("The fog disappeared."))
       end
       @field.weather = :None
       # Check for form changes caused by the weather changing
@@ -67,16 +68,14 @@ class PokeBattle_Battle
     when :ShadowSky   then pbDisplay(_INTL("The shadow sky continues."))
     end
     # Effects due to weather
-    curWeather = pbWeather
     priority.each do |b|
       # Weather-related abilities
       if b.abilityActive?
-        BattleHandlers.triggerEORWeatherAbility(b.ability,curWeather,b,self)
+        BattleHandlers.triggerEORWeatherAbility(b.ability, b.effectiveWeather, b, self)
         b.pbFaint if b.fainted?
       end
       # Weather damage
-      # NOTE:
-      case curWeather
+      case b.effectiveWeather
       when :Sandstorm
         next if !b.takesSandstormDamage?
         pbDisplay(_INTL("{1} is buffeted by the sandstorm!",b.pbThis))
@@ -122,7 +121,12 @@ class PokeBattle_Battle
       end
       @field.terrain = :None
       # Start up the default terrain
-      pbStartTerrain(nil, @field.defaultTerrain, false) if @field.defaultTerrain != :None
+      eachBattler { |b| b.pbAbilityOnTerrainChange }
+      if @field.defaultTerrain != :None
+        pbStartTerrain(nil, @field.defaultTerrain, false)
+        eachBattler { |b| b.pbAbilityOnTerrainChange }
+        eachBattler { |b| b.pbItemTerrainStatBoostCheck }
+      end
       return if @field.terrain == :None
     end
     # Terrain continues
@@ -257,10 +261,8 @@ class PokeBattle_Battle
       pbDisplay(_INTL("{1}'s wish came true!",wishMaker))
     end
     # Sea of Fire damage (Fire Pledge + Grass Pledge combination)
-    curWeather = pbWeather
     for side in 0...2
       next if sides[side].effects[PBEffects::SeaOfFire]==0
-      next if [:Rain, :HeavyRain].include?(curWeather)
       @battle.pbCommonAnimation("SeaOfFire") if side==0
       @battle.pbCommonAnimation("SeaOfFireOpp") if side==1
       priority.each do |b|
@@ -288,6 +290,28 @@ class PokeBattle_Battle
       BattleHandlers.triggerEORHealingAbility(b.ability,b,self) if b.abilityActive?
       # Black Sludge, Leftovers
       BattleHandlers.triggerEORHealingItem(b.item,b,self) if b.itemActive?
+    end
+    # Self-curing of status due to affection
+    if Settings::AFFECTION_EFFECTS && @internalBattle
+      priority.each do |b|
+        next if b.fainted? || b.status == :NONE
+        next if !b.pbOwnedByPlayer? || b.affection_level < 4 || b.mega?
+        next if pbRandom(100) < 80
+        old_status = b.status
+        b.pbCureStatus(false)
+        case old_status
+        when :SLEEP
+          pbDisplay(_INTL("{1} shook itself awake so you wouldn't worry!", b.pbThis))
+        when :POISON
+          pbDisplay(_INTL("{1} managed to expel the poison so you wouldn't worry!", b.pbThis))
+        when :BURN
+          pbDisplay(_INTL("{1} healed its burn with its sheer determination so you wouldn't worry!", b.pbThis))
+        when :PARALYSIS
+          pbDisplay(_INTL("{1} gathered all its energy to break through its paralysis so you wouldn't worry!", b.pbThis))
+        when :FROZEN
+          pbDisplay(_INTL("{1} melted the ice with its fiery determination so you wouldn't worry!", b.pbThis))
+        end
+      end
     end
     # Aqua Ring
     priority.each do |b|
@@ -340,7 +364,7 @@ class PokeBattle_Battle
       next if b.status != :POISON
       if b.statusCount>0
         b.effects[PBEffects::Toxic] += 1
-        b.effects[PBEffects::Toxic] = 15 if b.effects[PBEffects::Toxic]>15
+        b.effects[PBEffects::Toxic] = 16 if b.effects[PBEffects::Toxic]>16
       end
       if b.hasActiveAbility?(:POISONHEAL)
         if b.canHeal?
@@ -396,6 +420,13 @@ class PokeBattle_Battle
       b.pbAbilitiesOnDamageTaken(oldHP)
       b.pbFaint if b.fainted?
     end
+    # Octolock
+    priority.each do |b|
+      next if b.fainted? || b.effects[PBEffects::Octolock] < 0
+      pbCommonAnimation("Octolock", b)
+      b.pbLowerStatStage(:DEFENSE, 1, nil) if b.pbCanLowerStatStage?(:DEFENSE)
+      b.pbLowerStatStage(:SPECIAL_DEFENSE, 1, nil, false) if b.pbCanLowerStatStage?(:SPECIAL_DEFENSE)
+    end
     # Trapping attacks (Bind/Clamp/Fire Spin/Magma Storm/Sand Tomb/Whirlpool/Wrap)
     priority.each do |b|
       next if b.fainted? || b.effects[PBEffects::Trapping]==0
@@ -412,6 +443,8 @@ class PokeBattle_Battle
         when :SANDTOMB    then pbCommonAnimation("SandTomb", b)
         when :WRAP        then pbCommonAnimation("Wrap", b)
         when :INFESTATION then pbCommonAnimation("Infestation", b)
+        when :SNAPTRAP    then pbCommonAnimation("SnapTrap",b)
+        when :THUNDERCAGE then pbCommonAnimation("ThunderCage",b)
         else                   pbCommonAnimation("Wrap", b)
         end
         if b.takesIndirectDamage?
@@ -428,6 +461,7 @@ class PokeBattle_Battle
         end
       end
     end
+    _ZUD_EndOfRoundEffects(priority) if defined?(Settings::ZUD_COMPAT)
     # Taunt
     pbEORCountDownBattlerEffect(priority,PBEffects::Taunt) { |battler|
       pbDisplay(_INTL("{1}'s taunt wore off!",battler.pbThis))
@@ -586,7 +620,7 @@ class PokeBattle_Battle
       BattleHandlers.triggerEOREffectAbility(b.ability,b,self) if b.abilityActive?
       # Flame Orb, Sticky Barb, Toxic Orb
       BattleHandlers.triggerEOREffectItem(b.item,b,self) if b.itemActive?
-      # Harvest, Pickup
+      # Harvest, Pickup, Ball Fetch
       BattleHandlers.triggerEORGainItemAbility(b.ability,b,self) if b.abilityActive?
     end
     pbGainExp
@@ -609,7 +643,7 @@ class PokeBattle_Battle
       b.effects[PBEffects::CounterTarget]    = -1
       b.effects[PBEffects::Electrify]        = false
       b.effects[PBEffects::Endure]           = false
-      b.effects[PBEffects::FirstPledge]      = 0
+      b.effects[PBEffects::FirstPledge]      = nil
       b.effects[PBEffects::Flinch]           = false
       b.effects[PBEffects::FocusPunch]       = false
       b.effects[PBEffects::FollowMe]         = 0
@@ -636,10 +670,14 @@ class PokeBattle_Battle
       b.effects[PBEffects::SpikyShield]      = false
       b.effects[PBEffects::Spotlight]        = 0
       b.effects[PBEffects::ThroatChop]       -= 1 if b.effects[PBEffects::ThroatChop]>0
+      b.effects[PBEffects::Obstruct]         = false
       b.lastHPLost                           = 0
       b.lastHPLostFromFoe                    = 0
       b.tookDamage                           = false
       b.tookPhysicalHit                      = false
+      b.statsRaised                          = false
+      b.statsLowered                         = false
+      b.canRestoreIceFace                    = false
       b.lastRoundMoveFailed                  = b.lastMoveFailed
       b.lastAttacker.clear
       b.lastFoeAttacker.clear

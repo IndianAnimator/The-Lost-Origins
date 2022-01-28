@@ -491,7 +491,7 @@ DebugMenuCommands.register("fillbag", {
     params.setCancelValue(0)
     qty = pbMessageChooseNumber(_INTL("Choose the number of items."), params)
     if qty > 0
-      GameData::Item.each { |i| $PokemonBag.pbStoreItem(i.id, qty) }
+      GameData::Item.each { |i| $PokemonBag.pbStoreItem(i.id, qty, false)}
       pbMessage(_INTL("The Bag was filled with {1} of each item.", qty))
     end
   }
@@ -609,7 +609,7 @@ DebugMenuCommands.register("fillboxes", {
       f = species_data.form
       # Record each form of each species as seen and owned
       if f == 0
-        if [:AlwaysMale, :AlwaysFemale, :Genderless].include?(species_data.gender_ratio)
+        if species_data.single_gendered?
           g = (species_data.gender_ratio == :AlwaysFemale) ? 1 : 0
           $Trainer.pokedex.register(sp, g, f, false)
         else   # Both male and female

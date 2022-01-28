@@ -663,6 +663,7 @@ module TrainerPokemonProperty
        [_INTL("Form"),          LimitProperty2.new(999),                 _INTL("Form of the Pokémon.")],
        [_INTL("Gender"),        GenderProperty,                          _INTL("Gender of the Pokémon.")],
        [_INTL("Shiny"),         BooleanProperty2,                        _INTL("If set to true, the Pokémon is a different-colored Pokémon.")],
+       [_INTL("SquareShiny"),   BooleanProperty2,                        _INTL("Whether the Pokémon is square shiny (special shiny animation).")],
        [_INTL("Shadow"),        BooleanProperty2,                        _INTL("If set to true, the Pokémon is a Shadow Pokémon.")]
     ]
     Pokemon::MAX_MOVES.times do |i|
@@ -688,15 +689,16 @@ module TrainerPokemonProperty
       :form          => oldsetting[3],
       :gender        => oldsetting[4],
       :shininess     => oldsetting[5],
-      :shadowness    => oldsetting[6],
-      :ability       => oldsetting[7 + Pokemon::MAX_MOVES],
-      :ability_index => oldsetting[8 + Pokemon::MAX_MOVES],
-      :item          => oldsetting[9 + Pokemon::MAX_MOVES],
-      :nature        => oldsetting[10 + Pokemon::MAX_MOVES],
-      :iv            => oldsetting[11 + Pokemon::MAX_MOVES],
-      :ev            => oldsetting[12 + Pokemon::MAX_MOVES],
-      :happiness     => oldsetting[13 + Pokemon::MAX_MOVES],
-      :poke_ball     => oldsetting[14 + Pokemon::MAX_MOVES],
+      :square_shiny  => oldsetting[6],
+      :shadowness    => oldsetting[7],
+      :ability       => oldsetting[8 + Pokemon::MAX_MOVES],
+      :ability_index => oldsetting[9 + Pokemon::MAX_MOVES],
+      :item          => oldsetting[10 + Pokemon::MAX_MOVES],
+      :nature        => oldsetting[11 + Pokemon::MAX_MOVES],
+      :iv            => oldsetting[12 + Pokemon::MAX_MOVES],
+      :ev            => oldsetting[13 + Pokemon::MAX_MOVES],
+      :happiness     => oldsetting[14 + Pokemon::MAX_MOVES],
+      :poke_ball     => oldsetting[15 + Pokemon::MAX_MOVES],
     }
     moves = []
     Pokemon::MAX_MOVES.times do |i|
@@ -998,6 +1000,8 @@ def pbPokemonEditor
      [_INTL("BattlerAltitude"),   ReadOnlyProperty,                   _INTL("Affects positioning of the Pokémon in battle. This is edited elsewhere.")],
      [_INTL("BattlerShadowX"),    ReadOnlyProperty,                   _INTL("Affects positioning of the Pokémon in battle. This is edited elsewhere.")],
      [_INTL("BattlerShadowSize"), ReadOnlyProperty,                   _INTL("Affects positioning of the Pokémon in battle. This is edited elsewhere.")],
+     [_INTL("FrontSpriteScale"),  NonzeroLimitProperty.new(9999),     _INTL("The factor to which the front sprite of a Pokémon is scaled.")],
+     [_INTL("BackSpriteScale"),   NonzeroLimitProperty.new(9999),     _INTL("The factor to which the back sprite of a Pokémon is scaled.")],
   ]
   pbListScreenBlock(_INTL("Pokémon species"), SpeciesLister.new(0, false)) { |button, species|
     if species
@@ -1065,7 +1069,9 @@ def pbPokemonEditor
             spec.front_sprite_y,
             spec.front_sprite_altitude,
             spec.shadow_x,
-            spec.shadow_size
+            spec.shadow_size,
+            spec.front_sprite_scale,
+            spec.back_sprite_scale
           ]
           # Edit the properties
           if pbPropertyList(spec.id.to_s, data, species_properties, true)
@@ -1117,7 +1123,9 @@ def pbPokemonEditor
               :front_sprite_y        => data[40],
               :front_sprite_altitude => data[41],
               :shadow_x              => data[42],
-              :shadow_size           => data[43]
+              :shadow_size           => data[43],
+              :front_sprite_scale    => data[44],
+              :back_sprite_scale     => data[45]
             }
             # Add species' data to records
             GameData::Species.register(species_hash)

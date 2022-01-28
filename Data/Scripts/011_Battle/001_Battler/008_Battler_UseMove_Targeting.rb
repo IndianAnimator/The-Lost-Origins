@@ -92,7 +92,9 @@ class PokeBattle_Battler
     target_data = move.pbTarget(user)
     return targets if @battle.switching   # For Pursuit interrupting a switch
     return targets if move.cannotRedirect?
-    return targets if !target_data.can_target_one_foe? || targets.length != 1
+    return targets if move.function != "17C" && !target_data.can_target_one_foe? || targets.length != 1
+    # Stalwart / Propeller Tail
+    return targets if !user.canChangeMoveTargets?
     priority = @battle.pbPriority(true)
     nearOnly = !target_data.can_choose_distant_target?
     # Spotlight (takes priority over Follow Me/Rage Powder/Lightning Rod/Storm Drain)
@@ -154,6 +156,44 @@ class PokeBattle_Battler
       end
       @battle.pbHideAbilitySplash(b)
       break
+    end
+    return targets
+  end
+
+  def redirectsDragonDarts?(opponent = nil, move = nil)
+    return true if @effects[PBEffects::Protect]
+    return true if @effects[PBEffects::SpikyShield]
+    return true if @effects[PBEffects::BanefulBunker]
+    return true if @effects[PBEffects::Obstruct]
+    return true if @effects[PBEffects::QuickGuard] && @battle.choices[@index][4] > 0
+    return true if semiInvulnerable?
+    if move
+      return true if Effectiveness.ineffective_type?(move.type, @type1, @type2)
+      if opponent
+        return true if move.pbImmunityByAbility(opponent, self)
+        return true if !move.pbAccuracyCheck(opponent, self)
+      end
+    end
+    return false
+  end
+
+  def pbChangeDragonDartsTarget(move, user, targets, hitNum)
+    new_targets = []
+    neednewtarget = targets.any? { |b| b.redirectsDragonDarts?(user, move) } && hitNum == 0
+    # Redirect first use if necessary or get another target on each consecutive use
+    if hitNum == 1 || neednewtarget
+      @battle.eachSameSideBattler(targets[0].index) do |b|
+        next if b.index == user.index
+        next if b.redirectsDragonDarts?(user, move)
+        new_targets.push(b)
+        break
+      end
+    end
+    # Final target
+    if !new_targets.empty?
+      targets = new_targets
+      # Reduce PP if the new target has Pressure
+      user.pbReducePP(move) if targets[0].hasActiveAbility?(:PRESSURE)
     end
     return targets
   end

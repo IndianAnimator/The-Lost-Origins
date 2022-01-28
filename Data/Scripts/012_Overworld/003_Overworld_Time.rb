@@ -68,7 +68,13 @@ module PBDayNight
     return (time.hour>=17 && time.hour<20)
   end
 
-  # Gets a number representing the amount of daylight (0=full night, 255=full day).
+# Returns true if it's the proper time for Rainbow Alcremie
+  def self.isRainbow?(time=nil)
+    time = pbGetTimeNow if !time
+    return (time.hour>=19 && time.hour<20)
+  end
+
+# Gets a number representing the amount of daylight (0=full night, 255=full day).
   def self.getShade
     time = pbGetDayNightMinutes
     time = (24*60)-time if time>(12*60)

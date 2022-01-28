@@ -122,7 +122,7 @@ ItemHandlers::CanUseInBattle.add(:FULLHEAL,proc { |item,pokemon,battler,move,fir
 
 ItemHandlers::CanUseInBattle.copy(:FULLHEAL,
    :LAVACOOKIE,:OLDGATEAU,:CASTELIACONE,:LUMIOSEGALETTE,:SHALOURSABLE,
-   :BIGMALASADA,:LUMBERRY,:HEALPOWDER)
+   :BIGMALASADA,:PEWTERCRUNCHIES,:LUMBERRY,:HEALPOWDER)
 ItemHandlers::CanUseInBattle.copy(:FULLHEAL,:RAGECANDYBAR) if Settings::RAGE_CANDY_BAR_CURES_STATUS_PROBLEMS
 
 ItemHandlers::CanUseInBattle.add(:FULLRESTORE,proc { |item,pokemon,battler,move,firstAction,battle,scene,showMessages|
@@ -143,7 +143,7 @@ ItemHandlers::CanUseInBattle.add(:REVIVE,proc { |item,pokemon,battler,move,first
   next true
 })
 
-ItemHandlers::CanUseInBattle.copy(:REVIVE,:MAXREVIVE,:REVIVALHERB)
+ItemHandlers::CanUseInBattle.copy(:REVIVE,:MAXREVIVE,:REVIVALHERB,:MAXHONEY)
 
 ItemHandlers::CanUseInBattle.add(:ETHER,proc { |item,pokemon,battler,move,firstAction,battle,scene,showMessages|
   if !pokemon.able? || move<0 ||
@@ -278,6 +278,17 @@ ItemHandlers::CanUseInBattle.add(:POKEFLUTE,proc { |item,pokemon,battler,move,fi
     next false
   end
   next true
+})
+
+ItemHandlers::CanUseInBattle.add(:MAXMUSHROOMS, proc { |item, pokemon, battler, move, firstAction, battle, scene, showMessages|
+  failed = true
+  GameData::Stat.each_main_battle do |stat|
+    next if !pbBattleItemCanRaiseStat?(stat.id, battler, scene, false)
+    failed = false
+    break
+  end
+  scene.pbDisplay(_INTL("It won't have any effect.")) if showMessages && failed
+  next !failed
 })
 
 #===============================================================================
@@ -419,7 +430,7 @@ ItemHandlers::BattleUseOnPokemon.add(:FULLHEAL,proc { |item,pokemon,battler,choi
 
 ItemHandlers::BattleUseOnPokemon.copy(:FULLHEAL,
    :LAVACOOKIE,:OLDGATEAU,:CASTELIACONE,:LUMIOSEGALETTE,:SHALOURSABLE,
-   :BIGMALASADA,:LUMBERRY)
+   :BIGMALASADA, :PEWTERCRUNCHIES, :LUMBERRY)
 ItemHandlers::BattleUseOnPokemon.copy(:FULLHEAL,:RAGECANDYBAR) if Settings::RAGE_CANDY_BAR_CURES_STATUS_PROBLEMS
 
 ItemHandlers::BattleUseOnPokemon.add(:FULLRESTORE,proc { |item,pokemon,battler,choices,scene|
@@ -676,5 +687,14 @@ ItemHandlers::BattleUseOnBattler.add(:DIREHIT2,proc { |item,battler,scene|
 ItemHandlers::BattleUseOnBattler.add(:DIREHIT3,proc { |item,battler,scene|
   battler.effects[PBEffects::FocusEnergy] = 3
   scene.pbDisplay(_INTL("{1} is getting pumped!",battler.pbThis))
+  battler.pokemon.changeHappiness("battleitem")
+})
+
+ItemHandlers::BattleUseOnBattler.add(:MAXMUSHROOMS,proc { |item,battler,scene|
+  showAnim = true
+  GameData::Stat.each_main_battle do |stat|
+    battler.pbRaiseStatStage(stat.id,1,battler,showAnim)
+    showAnim = false
+  end
   battler.pokemon.changeHappiness("battleitem")
 })

@@ -1,6 +1,6 @@
 class PokeBattle_Move
   attr_reader   :battle
-  attr_reader   :realMove
+  attr_accessor :realMove
   attr_accessor :id
   attr_reader   :name
   attr_reader   :function
@@ -90,6 +90,8 @@ class PokeBattle_Move
 
   def damagingMove?; return @category!=2; end
   def statusMove?;   return @category==2; end
+
+  def pbPriority(user); return @priority; end
 
   def usableWhenAsleep?;       return false; end
   def unusableInGravity?;      return false; end

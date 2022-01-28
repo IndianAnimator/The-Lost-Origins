@@ -210,6 +210,7 @@ class PokemonPartyPanel < SpriteWrapper
     @pkmnsprite.setOffset(PictureOrigin::Center)
     @pkmnsprite.active = @active
     @pkmnsprite.z      = self.z+2
+    _ZUD_DynamaxSize if defined?(Settings::ZUD_COMPAT)
     @helditemsprite = HeldItemIconSprite.new(0,0,@pokemon,viewport)
     @helditemsprite.z = self.z+3
     @overlaysprite = BitmapSprite.new(Graphics.width,Graphics.height,viewport)
@@ -264,6 +265,7 @@ class PokemonPartyPanel < SpriteWrapper
   def pokemon=(value)
     @pokemon = value
     @pkmnsprite.pokemon = value if @pkmnsprite && !@pkmnsprite.disposed?
+    _ZUD_DynamaxSize if defined?(Settings::ZUD_COMPAT)
     @helditemsprite.pokemon = value if @helditemsprite && !@helditemsprite.disposed?
     @refreshBitmap = true
     refresh
@@ -335,6 +337,7 @@ class PokemonPartyPanel < SpriteWrapper
       @pkmnsprite.x        = self.x+60
       @pkmnsprite.y        = self.y+40
       @pkmnsprite.color    = self.color
+      _ZUD_DynamaxColor if defined?(Settings::ZUD_COMPAT)
       @pkmnsprite.selected = self.selected
     end
     if @helditemsprite && !@helditemsprite.disposed?
@@ -435,6 +438,8 @@ end
 # Pokémon party visuals
 #===============================================================================
 class PokemonParty_Scene
+  attr_reader :allowBox
+
   def pbStartScene(party,starthelptext,annotations=nil,multiselect=false)
     @sprites = {}
     @party = party
@@ -591,6 +596,13 @@ class PokemonParty_Scene
     end
   end
 
+  def pbChooseNumber(helptext, maximum, initnum)
+    oldtext = @sprites["helpwindow"].text
+    ret = UIHelper.pbChooseNumber(@sprites["helpwindow"], helptext, maximum, initnum) { update }
+    pbSetHelpText(oldtext)
+    return ret
+  end
+
   def pbPreSelect(item)
     @activecmd = item
   end
@@ -711,6 +723,19 @@ class PokemonParty_Scene
         return [1,@activecmd]
       elsif Input.trigger?(Input::ACTION) && canswitch==2
         return -1
+      elsif Input.trigger?(Input::SPECIAL) &&
+        GameData::Item.exists?(:POKEMONBOXLINK) &&
+        $PokemonBag.pbHasItem?(:POKEMONBOXLINK) &&
+        @allowBox                               &&
+        (Settings::POKEMON_BOX_LINK_SWITCH < 0  ||
+         !$game_switches[Settings::POKEMON_BOX_LINK_SWITCH])
+         pbPlayDecisionSE
+         pbFadeOutIn(99999) {
+           scene = PokemonStorageScene.new
+           screen = PokemonStorageScreen.new(scene,$PokemonStorage)
+           screen.pbStartScreen(0)
+         }
+         pbHardRefresh
       elsif Input.trigger?(Input::BACK)
         pbPlayCloseMenuSE if !switching
         return -1
@@ -751,7 +776,7 @@ class PokemonParty_Scene
         currentsel -= 1
         while currentsel > 0 && currentsel < Settings::MAX_PARTY_SIZE && !@party[currentsel]
           currentsel -= 1
-        end 
+        end
       else
         begin
           currentsel -= 2
@@ -820,6 +845,33 @@ class PokemonParty_Scene
         sprite.refresh
       end
     end
+  end
+
+  def allowBox=(value)
+    @allowBox = value && GameData::Item.exists?(:POKEMONBOXLINK) &&
+                         $PokemonBag.pbHasItem?(:POKEMONBOXLINK) &&
+                         (Settings::POKEMON_BOX_LINK_SWITCH < 0  ||
+                          !$game_switches[Settings::POKEMON_BOX_LINK_SWITCH])
+    if !@sprites["storage"]
+      @sprites["storage"] = SpriteWrapper.new(@viewport)
+      @sprites["storage"].bitmap = if pbResolveBitmap("Graphics/Pictures/Party/box_link")
+                                     Bitmap.new("Graphics/Pictures/Party/box_link")
+                                   else
+                                     Bitmap.new(32, 32)
+                                   end
+      @sprites["storage"].x  = Graphics.width
+      @sprites["storage"].ox = @sprites["storage"].bitmap.width
+      @sprites["storage"].y  = -@sprites["storage"].bitmap.height
+      @sprites["storage"].z += 1
+      @sprites["storage"].opacity = 200
+    end
+    factor = (@allowBox ? 1 : -1)
+    (Graphics.frame_rate/8).times do
+      Graphics.update
+      update
+      @sprites["storage"].y += factor * (@sprites["storage"].bitmap.height) / (Graphics.frame_rate/8.0)
+    end
+    @sprites["storage"].y = (@allowBox ? 0 : - @sprites["storage"].bitmap.height)
   end
 
   def update
@@ -906,6 +958,10 @@ class PokemonPartyScreen
 
   def pbConfirm(text)
     return @scene.pbDisplayConfirm(text)
+  end
+
+  def pbChooseNumber(helptext, maximum, initnum = 1)
+    return @scene.pbChooseNumber(helptext, maximum, initnum)
   end
 
   def pbShowCommands(helptext,commands,index=0)
@@ -1087,6 +1143,31 @@ class PokemonPartyScreen
     return ret
   end
 
+  def pbChooseAblePokemonHelp(helptext,ableProc,allowIneligible=false)
+    annot = []
+    eligibility = []
+    for pkmn in @party
+      elig = ableProc.call(pkmn)
+      eligibility.push(elig)
+      annot.push((elig) ? _INTL("ABLE") : _INTL("NOT ABLE"))
+    end
+    ret = -1
+    @scene.pbSetHelpText(helptext)
+    @scene.pbAnnotate(annot)
+    loop do
+      pkmnid = @scene.pbChoosePokemon
+      break if pkmnid < 0
+      if !eligibility[pkmnid] && !allowIneligible
+        pbDisplay(_INTL("This Pokémon can't be chosen."))
+      else
+        ret = pkmnid
+        break
+      end
+    end
+    pbClearAnnotations
+    return ret
+  end
+
   def pbChooseTradablePokemon(ableProc,allowIneligible=false)
     annot = []
     eligibility = []
@@ -1120,7 +1201,9 @@ class PokemonPartyScreen
        (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."),nil)
     loop do
       @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
+      @scene.allowBox = true if @scene.respond_to?(:allowBox)
       pkmnid = @scene.pbChoosePokemon(false,-1,1)
+      @scene.allowBox = false if @scene.respond_to?(:allowBox)
       break if (pkmnid.is_a?(Numeric) && pkmnid<0) || (pkmnid.is_a?(Array) && pkmnid[1]<0)
       if pkmnid.is_a?(Array) && pkmnid[0]==1   # Switch
         @scene.pbSetHelpText(_INTL("Move to where?"))
@@ -1352,7 +1435,7 @@ def pbChoosePokemon(variableNumber,nameVarNumber,ableProc=nil,allowIneligible=fa
     scene = PokemonParty_Scene.new
     screen = PokemonPartyScreen.new(scene,$Trainer.party)
     if ableProc
-      chosen=screen.pbChooseAblePokemon(ableProc,allowIneligible)
+      chosen = screen.pbChooseAblePokemon(ableProc,allowIneligible)
     else
       screen.pbStartScene(_INTL("Choose a Pokémon."),false)
       chosen = screen.pbChoosePokemon

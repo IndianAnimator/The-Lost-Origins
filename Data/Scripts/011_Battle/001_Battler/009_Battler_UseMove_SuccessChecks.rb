@@ -40,20 +40,22 @@ class PokeBattle_Battler
       end
       return false
     end
-    # Choice Band
-    if @effects[PBEffects::ChoiceBand]
-      if hasActiveItem?([:CHOICEBAND,:CHOICESPECS,:CHOICESCARF]) &&
-         pbHasMove?(@effects[PBEffects::ChoiceBand])
-        if move.id!=@effects[PBEffects::ChoiceBand]
-          if showMessages
-            msg = _INTL("{1} allows the use of only {2}!",itemName,
-               GameData::Move.get(@effects[PBEffects::ChoiceBand]).name)
-            (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
-          end
-          return false
+    # Choice Band/Gorilla Tactics
+    @effects[PBEffects::ChoiceBand] = nil if !pbHasMove?(@effects[PBEffects::ChoiceBand])
+    if @effects[PBEffects::ChoiceBand] && move.id != @effects[PBEffects::ChoiceBand]
+      choiced_move_name = GameData::Move.get(@effects[PBEffects::ChoiceBand]).name
+      if hasActiveItem?([:CHOICEBAND, :CHOICESPECS, :CHOICESCARF])
+        if showMessages
+          msg = _INTL("The {1} only allows the use of {2}!",itemName, choiced_move_name)
+          (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
         end
-      else
-        @effects[PBEffects::ChoiceBand] = nil
+        return false
+      elsif hasActiveAbility?(:GORILLATACTICS)
+        if showMessages
+          msg = _INTL("{1} can only use {2}!", pbThis, choiced_move_name)
+          (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
+        end
+        return false
       end
     end
     # Taunt
@@ -74,17 +76,20 @@ class PokeBattle_Battler
       return false
     end
     # Imprison
-    @battle.eachOtherSideBattler(@index) do |b|
-      next if !b.effects[PBEffects::Imprison] || !b.pbHasMove?(move.id)
-      if showMessages
-        msg = _INTL("{1} can't use its sealed {2}!",pbThis,move.name)
-        (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
+    if defined?(Settings::ZUD_COMPAT); _ZUD_Imprison(move,commandPhase);
+    else
+      @battle.eachOtherSideBattler(@index) do |b|
+        next if !b.effects[PBEffects::Imprison] || !b.pbHasMove?(move.id)
+        if showMessages
+          msg = _INTL("{1} can't use its sealed {2}!",pbThis,move.name)
+          (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
+        end
+        return false
       end
-      return false
     end
     # Assault Vest (prevents choosing status moves but doesn't prevent
     # executing them)
-    if hasActiveItem?(:ASSAULTVEST) && move.statusMove? && commandPhase
+    if hasActiveItem?(:ASSAULTVEST) && move.statusMove? && move.id != :MEFIRST && commandPhase
       if showMessages
         msg = _INTL("The effects of the {1} prevent status moves from being used!",
            itemName)
@@ -108,12 +113,14 @@ class PokeBattle_Battler
     return true if !@battle.internalBattle
     return true if !@battle.pbOwnedByPlayer?(@index)
     disobedient = false
-    # Pokémon may be disobedient; calculate if it is
-    badgeLevel = 10 * (@battle.pbPlayer.badge_count + 1)
-    badgeLevel = GameData::GrowthRate.max_level if @battle.pbPlayer.badge_count >= 8
-    if @pokemon.foreign?(@battle.pbPlayer) && @level>badgeLevel
-      a = ((@level+badgeLevel)*@battle.pbRandom(256)/256).floor
-      disobedient |= (a>=badgeLevel)
+    if Settings::ANY_HIGH_LEVEL_POKEMON_CAN_DISOBEY ||
+       (Settings::FOREIGN_HIGH_LEVEL_POKEMON_CAN_DISOBEY && @pokemon.foreign?(@battle.pbPlayer))
+      badgeLevel = 10 * (@battle.pbPlayer.badge_count + 1)
+      badgeLevel = GameData::GrowthRate.max_level if @battle.pbPlayer.badge_count >= 8
+      if @level > badgeLevel
+        a = ((@level+badgeLevel)*@battle.pbRandom(256)/256).floor
+        disobedient |= (a>=badgeLevel)
+      end
     end
     disobedient |= !pbHyperModeObedience(choice[2])
     return true if !disobedient
@@ -288,6 +295,8 @@ class PokeBattle_Battler
   # Includes move-specific failure conditions, protections and type immunities.
   #=============================================================================
   def pbSuccessCheckAgainstTarget(move,user,target)
+    # Unseen Fist
+    unseenfist = user.hasActiveAbility?(:UNSEENFIST) && move.contactMove?
     typeMod = move.pbCalcTypeMod(move.calcType,user,target)
     target.damageState.typeMod = typeMod
     # Two-turn attacks can't fail here in the charging turn
@@ -302,7 +311,7 @@ class PokeBattle_Battler
     end
     # Crafty Shield
     if target.pbOwnSide.effects[PBEffects::CraftyShield] && user.index!=target.index &&
-       move.statusMove? && !move.pbTarget(user).targets_all
+       move.statusMove? && !move.pbTarget(user).targets_all && !unseenfist && move.function != "18E"
       @battle.pbCommonAnimation("CraftyShield",target)
       @battle.pbDisplay(_INTL("Crafty Shield protected {1}!",target.pbThis(true)))
       target.damageState.protected = true
@@ -311,8 +320,8 @@ class PokeBattle_Battler
     end
     # Wide Guard
     if target.pbOwnSide.effects[PBEffects::WideGuard] && user.index!=target.index &&
-       move.pbTarget(user).num_targets > 1 &&
-       (Settings::MECHANICS_GENERATION >= 7 || move.damagingMove?)
+       move.pbTarget(user).num_targets > 1 && move.function != "17C" &&
+       (Settings::MECHANICS_GENERATION >= 7 || move.damagingMove?) && !unseenfist
       @battle.pbCommonAnimation("WideGuard",target)
       @battle.pbDisplay(_INTL("Wide Guard protected {1}!",target.pbThis(true)))
       target.damageState.protected = true
@@ -322,7 +331,7 @@ class PokeBattle_Battler
     if move.canProtectAgainst?
       # Quick Guard
       if target.pbOwnSide.effects[PBEffects::QuickGuard] &&
-         @battle.choices[user.index][4]>0   # Move priority saved from pbCalculatePriority
+         @battle.choices[user.index][4]>0 && !unseenfist   # Move priority saved from pbCalculatePriority
         @battle.pbCommonAnimation("QuickGuard",target)
         @battle.pbDisplay(_INTL("Quick Guard protected {1}!",target.pbThis(true)))
         target.damageState.protected = true
@@ -330,28 +339,40 @@ class PokeBattle_Battler
         return false
       end
       # Protect
-      if target.effects[PBEffects::Protect]
+      if target.effects[PBEffects::Protect] && !unseenfist
         @battle.pbCommonAnimation("Protect",target)
         @battle.pbDisplay(_INTL("{1} protected itself!",target.pbThis))
         target.damageState.protected = true
         @battle.successStates[user.index].protected = true
         return false
       end
+      if target.effects[PBEffects::Obstruct] && move.damagingMove? && !unseenfist
+        @battle.pbCommonAnimation("Obstruct",target)
+        @battle.pbDisplay(_INTL("{1} protected itself!",target.pbThis))
+        target.damageState.protected = true
+        @battle.successStates[user.index].protected = true
+        if move.pbContactMove?(user) && user.affectedByContactEffect?
+          if user.pbCanLowerStatStage?(:DEFENSE)
+            user.pbLowerStatStage(:DEFENSE,2,nil)
+          end
+        end
+        return false
+      end
       # King's Shield
-      if target.effects[PBEffects::KingsShield] && move.damagingMove?
+      if target.effects[PBEffects::KingsShield] && move.damagingMove? && !unseenfist
         @battle.pbCommonAnimation("KingsShield",target)
         @battle.pbDisplay(_INTL("{1} protected itself!",target.pbThis))
         target.damageState.protected = true
         @battle.successStates[user.index].protected = true
         if move.pbContactMove?(user) && user.affectedByContactEffect?
           if user.pbCanLowerStatStage?(:ATTACK)
-            user.pbLowerStatStage(:ATTACK,2,nil)
+            user.pbLowerStatStage(:ATTACK, (Settings::MECHANICS_GENERATION >= 8) ? 1 : 2, nil)
           end
         end
         return false
       end
       # Spiky Shield
-      if target.effects[PBEffects::SpikyShield]
+      if target.effects[PBEffects::SpikyShield] && !unseenfist
         @battle.pbCommonAnimation("SpikyShield",target)
         @battle.pbDisplay(_INTL("{1} protected itself!",target.pbThis))
         target.damageState.protected = true
@@ -365,7 +386,7 @@ class PokeBattle_Battler
         return false
       end
       # Baneful Bunker
-      if target.effects[PBEffects::BanefulBunker]
+      if target.effects[PBEffects::BanefulBunker] && !unseenfist
         @battle.pbCommonAnimation("BanefulBunker",target)
         @battle.pbDisplay(_INTL("{1} protected itself!",target.pbThis))
         target.damageState.protected = true
@@ -376,7 +397,7 @@ class PokeBattle_Battler
         return false
       end
       # Mat Block
-      if target.pbOwnSide.effects[PBEffects::MatBlock] && move.damagingMove?
+      if target.pbOwnSide.effects[PBEffects::MatBlock] && move.damagingMove? && !unseenfist
         # NOTE: Confirmed no common animation for this effect.
         @battle.pbDisplay(_INTL("{1} was blocked by the kicked-up mat!",move.name))
         target.damageState.protected = true
@@ -407,7 +428,7 @@ class PokeBattle_Battler
       return false
     end
     # Dark-type immunity to moves made faster by Prankster
-    if Settings::MECHANICS_GENERATION >= 7 && user.effects[PBEffects::Prankster] &&
+    if user.effects[PBEffects::Prankster] && Settings::MORE_TYPE_EFFECTS &&
        target.pbHasType?(:DARK) && target.opposes?(user)
       PBDebug.log("[Target immune] #{target.pbThis} is Dark-type and immune to Prankster-boosted moves")
       @battle.pbDisplay(_INTL("It doesn't affect {1}...",target.pbThis(true)))
@@ -527,12 +548,15 @@ class PokeBattle_Battler
   # Message shown when a move fails the per-hit success check above.
   #=============================================================================
   def pbMissMessage(move,user,target)
-    if move.pbTarget(user).num_targets > 1
+    if target.damageState.affection_missed
+      @battle.pbDisplay(_INTL("{1} avoided the move in time with your shout!", target.pbThis))
+    elsif move.pbTarget(user).num_targets > 1
       @battle.pbDisplay(_INTL("{1} avoided the attack!",target.pbThis))
     elsif target.effects[PBEffects::TwoTurnAttack]
       @battle.pbDisplay(_INTL("{1} avoided the attack!",target.pbThis))
     elsif !move.pbMissMessage(user,target)
       @battle.pbDisplay(_INTL("{1}'s attack missed!",user.pbThis))
     end
+    BattleHandlers.triggerUserItemOnMiss(user.item,user,target,move,@battle) if user.itemActive?
   end
 end

@@ -265,3 +265,244 @@ def pbHasEgg?(species)
   return true if species == baby   # Is an egg species without incense
   return false
 end
+
+#===============================================================================
+# Evolve a Pokemon from an event
+#===============================================================================
+def pbEvolvePokemonEvent(species,forced_form = -1,check_fainted = Settings::CHECK_EVOLUTION_FOR_FAINTED_POKEMON)
+  species = [species] if !species.is_a?(Array)
+  $Trainer.party.each do |pkmn|
+    next if !species.any? {|s| pkmn.isSpecies?(s) }
+    next if !pkmn.able? && check_fainted
+    new_species = pkmn.check_evolution_in_event
+    next if !new_species
+    $game_player.straighten
+    pkmn.form = forced_form if forced_form >= 0
+    evo = PokemonEvolutionScene.new
+    pbFadeOutIn(99999) {
+      evo.pbStartScreen(pkmn,new_species)
+      evo.pbEvolution
+      evo.pbEndScreen
+    }
+  end
+end
+
+#===============================================================================
+# Hyper Training
+#===============================================================================
+def pbHyperTrainer(standard_item ,rare_item, check_level = true,check_badges = true)
+  itemName1 = GameData::Item.get(standard_item).name_plural
+  itemName2 = GameData::Item.get(rare_item).name_plural
+  if !$PokemonBag.pbHasItem?(standard_item) && !$PokemonBag.pbHasItem?(rare_item)
+    pbMessage(_INTL("Come back when you have {1} or {2}.",itemName1,itemName2))
+    return false
+  end
+  if check_badges && $Trainer.badge_count < 8
+    pbMessage(_INTL("Come back when you have 8 or more badges."))
+    return false
+  end
+  pbMessage(_INTL("Now which Pokémon will I have undergo Hyper Training?"))
+  ret = false
+  loop do
+    pbChoosePokemon(1,3,proc { |pkmn|
+      next if !pkmn.able?
+      next if (pkmn.level != GameData::GrowthRate.max_level && check_level)
+      failed = false
+      GameData::Stat.each_main do |s|
+        next if pkmn.ivMaxed[s.id] || pkmn.iv[s.id] == Pokemon::IV_STAT_LIMIT
+        failed = true
+        break
+      end
+      next failed
+      }
+    )
+    if !pbGet(1) || pbGet(1) < 0
+      pbMessage(_INTL("Come back when you're ready to get hyped for some Hyper Training!"))
+      ret = false
+      break
+    end
+    pkmn = $Trainer.party[pbGet(1)]
+    commands = []; displayCmd = [];
+    if $PokemonBag.pbHasItem?(standard_item)
+      commands.push(0)
+      displayCmd.push(_INTL("{1} :{2}",itemName1,$PokemonBag.pbQuantity(standard_item)))
+    end
+    if $PokemonBag.pbHasItem?(rare_item)
+      commands.push(1)
+      displayCmd.push(_INTL("{1} :{2}",itemName2,$PokemonBag.pbQuantity(rare_item)))
+    end
+    commands.push(2)
+    displayCmd.push("Cancel")
+    selCmd = pbMessage(_INTL("What would you like to use?"),displayCmd)
+    cmd = commands[selCmd]
+    case cmd
+    when 0
+      pbMessage(_INTL("Which stat should I hype up?"))
+      statSelected = pbShowStatSelectionCommands(standard_item,pkmn)
+      if statSelected.length > 0
+        pbMessage(_INTL("The training starts now!"))
+        pbFadeOutIn(99999) {
+          echoln(statSelected)
+          statSelected.each do |s|
+            pkmn.ivMaxed[s] = true
+          end
+          $PokemonBag.pbDeleteItem(standard_item,statSelected.length)
+          pbWait(Graphics.frame_rate)
+        }
+        pbMessage(_INTL("Phew... {1} got stronger from the Hyper Training!",pkmn.name))
+        if pbConfirmMessage(_INTL("Want to keep the hype going with some more Hyper Training?"))
+          next
+        else
+          cmd = 2
+        end
+      else
+        cmd = 2
+      end
+    when 1
+      pbMessage(_INTL("The training starts now!"))
+      pbFadeOutIn(99999) {
+        GameData::Stat.each_main do |s|
+          pkmn.ivMaxed[s.id] = true
+        end
+        $PokemonBag.pbDeleteItem(rare_item,1)
+        pbWait(Graphics.frame_rate)
+      }
+      pbMessage(_INTL("Phew... {1} got stronger from the Hyper Training!",pkmn.name))
+      if pbConfirmMessage(_INTL("Want to keep the hype going with some more Hyper Training?"))
+        next
+      else
+        cmd = 2
+      end
+    end
+    if cmd == 2
+      pbMessage(_INTL("Come back when you're ready to get hyped for some Hyper Training!"))
+      ret = false
+      break
+    end
+  end
+  return ret
+end
+
+def pbShowStatSelectionCommands(item, pkmn)
+  commands = []; displayCmd = [];
+  cmdwindow=Window_CommandPokemonEx.new([])
+  cmdwindow.z=99999
+  cmdwindow.visible=true
+  cmdwindow.index = 0
+  statSelected = []
+  need_refresh = true
+  loop do
+    if need_refresh
+      commands = []; displayCmd = [];
+      GameData::Stat.each_main do |s|
+        next if pkmn.ivMaxed[s.id] || pkmn.iv[s.id] == Pokemon::IV_STAT_LIMIT
+        commands.push(s.id)
+        displayCmd.push(_INTL("{1} {2}",statSelected.include?(s.id) ? "[x]" : "[  ]",s.name))
+      end
+      commands.push(:NONE)
+      displayCmd.push("Lets train!")
+      cmdwindow.commands = displayCmd
+      cmdwindow.resizeToFit(cmdwindow.commands)
+      need_refresh = false
+    end
+    Graphics.update
+    Input.update
+    cmdwindow.update
+    yield if block_given?
+    if Input.trigger?(Input::USE)
+      cmd = commands[cmdwindow.index]
+      break if cmd == :NONE
+      if statSelected.include?(cmd)
+        statSelected.delete(cmd)
+      else
+        statSelected.push(cmd)
+      end
+      if statSelected.length > $PokemonBag.pbQuantity(item)
+        pbMessage(_INTL("You don't have enough {1}",GameData::Item.get(item).name_plural))
+        statSelected.delete(cmd)
+      end
+      need_refresh = true
+    elsif Input.trigger?(Input::BACK)
+      statSelected = []
+      break
+    end
+    pbUpdateSceneMap
+  end
+  cmdwindow.dispose
+  Input.update
+  return statSelected
+end
+
+#===============================================================================
+# Gen 8 Fossil Combiner
+#===============================================================================
+def pbFossilCombiner
+  combos = {
+    :DRACOZOLT => [:FOSSILIZEDDRAKE,:FOSSILIZEDBIRD],
+    :DRACOVISH => [:FOSSILIZEDDRAKE,:FOSSILIZEDFISH],
+    :ARCTOZOLT => [:FOSSILIZEDDINO,:FOSSILIZEDBIRD],
+    :ARCTOVISH => [:FOSSILIZEDDINO,:FOSSILIZEDFISH]
+  }
+  combineables = []
+  failed = true
+  combos.each do |_,fossil|
+    fossil.each { |item| combineables.push(item) if $PokemonBag.pbHasItem?(item) }
+    failed = false  if fossil.all? { |item| $PokemonBag.pbHasItem?(item) }
+  end
+  if failed
+    pbMessage(_INTL("Come back when you have 2 fossils that can be combined."))
+    return false
+  end
+  if !pbConfirmMessage(_INTL("Would you like to combine 2 fossils?"))
+    pbMessage(_INTL("Come back if you'd like to combine any fossils."))
+    return false
+  end
+  pkmn = nil
+  loop do
+    combineables.uniq!
+    combine_names = combineables.clone.map! { |item| next GameData::Item.get(item).name }
+    cmd = pbMessage(_INTL("Which fossil would you like to combine?"),combine_names)
+    fossil1 = combineables[cmd]
+    combineables2  = combineables.clone
+    combineables2.delete(fossil1)
+    combine_names2 = combineables2.clone.map! { |item| next GameData::Item.get(item).name }
+    cmd = pbMessage(_INTL("Which fossil would you like to combine with {1}?", GameData::Item.get(fossil1).name),
+                    combine_names2)
+    fossil2 = combineables2[cmd]
+    pkmn = nil
+    combos.each do |key,items|
+      next if !items.include?(fossil1) || !items.include?(fossil2)
+      pkmn = key
+      break
+    end
+    if !pkmn
+      pbMessage(_INTL("Oh... {1} and {2} cannot be combined.",GameData::Item.get(fossil1).name, GameData::Item.get(fossil2).name))
+      next if combineables.length > 2 && pbConfirmMessage(_INTL("Would you like to combine other fossils then?"))
+      pbMessage(_INTL("Come back if you'd like to combine any fossils."))
+      return false
+    end
+    if pbConfirmMessage(_INTL("Would you like to combine and restore the {1} and {2}?",GameData::Item.get(fossil1).name, GameData::Item.get(fossil2).name))
+      $PokemonBag.pbDeleteItem(fossil1)
+      $PokemonBag.pbDeleteItem(fossil2)
+      break
+    end
+    if !pbConfirmMessage(_INTL("Would you like to combine other fossils then?"))
+      pbMessage(_INTL("Come back if you'd like to combine any fossils."))
+      return false
+    end
+  end
+  pbFadeOutInWithMusic(99999) {
+    pbMEPlay("Evolution start")
+    pbWait(Graphics.frame_rate)
+    pbBGMPlay("Evolution")
+    frames = Array.new(3, "\\wt[#{Graphics.frame_rate - 4 + rand(10)}]\\se[Battle catch click]" )
+    frames.push("\\wt[#{Graphics.frame_rate + 12}]\\se[Battle ball drop]")
+    pbMessage(_INTL("Combining the fossils in 3 ...{1} 2 ...{2} 1 ... {3} and ...{4} !\\wtnp[10]",frames[0],frames[1],frames[2],frames[3]))
+    pbWait(8)
+    pbMessage(_INTL("\\me[Evolution success]Congratulations! The restoration was successful!"))
+  }
+  pbMessage(_INTL("Here's your restored Pokémon. Take good care of it!"))
+  pbAddPokemon(pkmn,10)
+  pbMessage(_INTL("Come back if you'd like to combine any fossils."))
+  return true
+end

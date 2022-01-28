@@ -1,4 +1,3 @@
-#===============================================================================
 # Power is doubled if the target's HP is down to 1/2 or less. (Brine)
 #===============================================================================
 class PokeBattle_Move_080 < PokeBattle_Move
@@ -93,7 +92,7 @@ end
 #===============================================================================
 class PokeBattle_Move_086 < PokeBattle_Move
   def pbBaseDamageMultiplier(damageMult,user,target)
-    damageMult *= 2 if !user.item
+    damageMult *= 2 if !user.item || user.effects[PBEffects::GemConsumed]
     return damageMult
   end
 end
@@ -105,13 +104,13 @@ end
 #===============================================================================
 class PokeBattle_Move_087 < PokeBattle_Move
   def pbBaseDamage(baseDmg,user,target)
-    baseDmg *= 2 if @battle.pbWeather != :None
+    baseDmg *= 2 if user.effectiveWeather != :None
     return baseDmg
   end
 
   def pbBaseType(user)
     ret = :NORMAL
-    case @battle.pbWeather
+    case user.effectiveWeather
     when :Sun, :HarshSun
       ret = :FIRE if GameData::Type.exists?(:FIRE)
     when :Rain, :HeavyRain
@@ -482,10 +481,6 @@ class PokeBattle_Move_096 < PokeBattle_Move
     return false
   end
 
-  # NOTE: The AI calls this method via pbCalcType, but it involves user.item
-  #       which here is assumed to be not nil (because item.id is called). Since
-  #       the AI won't want to use it if the user has no item anyway, perhaps
-  #       this is good enough.
   def pbBaseType(user)
     item = user.item
     ret = :NORMAL
@@ -1094,6 +1089,7 @@ class PokeBattle_Move_0AD < PokeBattle_Move
     target.effects[PBEffects::KingsShield]            = false
     target.effects[PBEffects::Protect]                = false
     target.effects[PBEffects::SpikyShield]            = false
+    target.effects[PBEffects::Obstruct]               = false
     target.pbOwnSide.effects[PBEffects::CraftyShield] = false
     target.pbOwnSide.effects[PBEffects::MatBlock]     = false
     target.pbOwnSide.effects[PBEffects::QuickGuard]   = false
@@ -1164,6 +1160,7 @@ class PokeBattle_Move_0AF < PokeBattle_Move
        "14B",   # King's Shield
        "14C",   # Spiky Shield
        "168",   # Baneful Bunker
+       "180",   # Obstruct
        # Moves that call other moves
        "0AE",   # Mirror Move
        "0AF",   # Copycat (this move)
@@ -1321,54 +1318,36 @@ class PokeBattle_Move_0B3 < PokeBattle_Move
     when :Psychic
       @npMove = :PSYCHIC if GameData::Move.exists?(:PSYCHIC)
     else
+      try_move = nil
       case @battle.environment
       when :Grass, :TallGrass, :Forest, :ForestGrass
-        if Settings::MECHANICS_GENERATION >= 6
-          @npMove = :ENERGYBALL if GameData::Move.exists?(:ENERGYBALL)
-        else
-          @npMove = :SEEDBOMB if GameData::Move.exists?(:SEEDBOMB)
-        end
+        try_move = (Settings::MECHANICS_GENERATION >= 6) ? :ENERGYBALL : :SEEDBOMB
       when :MovingWater, :StillWater, :Underwater
-        @npMove = :HYDROPUMP if GameData::Move.exists?(:HYDROPUMP)
+        try_move = :HYDROPUMP
       when :Puddle
-        @npMove = :MUDBOMB if GameData::Move.exists?(:MUDBOMB)
+        try_move = :MUDBOMB
       when :Cave
-        if Settings::MECHANICS_GENERATION >= 6
-          @npMove = :POWERGEM if GameData::Move.exists?(:POWERGEM)
-        else
-          @npMove = :ROCKSLIDE if GameData::Move.exists?(:ROCKSLIDE)
-        end
-      when :Rock
-        if Settings::MECHANICS_GENERATION >= 6
-          @npMove = :EARTHPOWER if GameData::Move.exists?(:EARTHPOWER)
-        else
-          @npMove = :ROCKSLIDE if GameData::Move.exists?(:ROCKSLIDE)
-        end
-      when :Sand
-        if Settings::MECHANICS_GENERATION >= 6
-          @npMove = :EARTHPOWER if GameData::Move.exists?(:EARTHPOWER)
-        else
-          @npMove = :EARTHQUAKE if GameData::Move.exists?(:EARTHQUAKE)
-        end
+        try_move = (Settings::MECHANICS_GENERATION >= 6) ? :POWERGEM : :ROCKSLIDE
+      when :Rock, :Sand
+        try_move = (Settings::MECHANICS_GENERATION >= 6) ? :EARTHPOWER : :EARTHQUAKE
       when :Snow
-        if Settings::MECHANICS_GENERATION >= 6
-          @npMove = :FROSTBREATH if GameData::Move.exists?(:FROSTBREATH)
-        else
-          @npMove = :BLIZZARD if GameData::Move.exists?(:BLIZZARD)
-        end
+        try_move = :BLIZZARD
+        try_move = :FROSTBREATH if Settings::MECHANICS_GENERATION == 6
+        try_move = :ICEBEAM if Settings::MECHANICS_GENERATION >= 7
       when :Ice
-        @npMove = :ICEBEAM if GameData::Move.exists?(:ICEBEAM)
+        try_move = :ICEBEAM
       when :Volcano
-        @npMove = :LAVAPLUME if GameData::Move.exists?(:LAVAPLUME)
+        try_move = :LAVAPLUME
       when :Graveyard
-        @npMove = :SHADOWBALL if GameData::Move.exists?(:SHADOWBALL)
+        try_move = :SHADOWBALL
       when :Sky
-        @npMove = :AIRSLASH if GameData::Move.exists?(:AIRSLASH)
+        try_move = :AIRSLASH
       when :Space
-        @npMove = :DRACOMETEOR if GameData::Move.exists?(:DRACOMETEOR)
+        try_move = :DRACOMETEOR
       when :UltraSpace
-        @npMove = :PSYSHOCK if GameData::Move.exists?(:PSYSHOCK)
+        try_move = :PSYSHOCK
       end
+      @npMove = try_move if GameData::Move.exists?(try_move)
     end
   end
 
@@ -1486,6 +1465,7 @@ class PokeBattle_Move_0B5 < PokeBattle_Move
        "14B",   # King's Shield
        "14C",   # Spiky Shield
        "168",   # Baneful Bunker
+       "180",   # Obstruct
        # Moves that call other moves
        "0AE",   # Mirror Move
        "0AF",   # Copycat
@@ -1608,6 +1588,7 @@ class PokeBattle_Move_0B6 < PokeBattle_Move
        "14B",   # King's Shield
        "14C",   # Spiky Shield
        "168",   # Baneful Bunker
+       "180",   # Obstruct
        # Moves that call other moves
        "0AE",   # Mirror Move
        "0AF",   # Copycat
@@ -1937,7 +1918,7 @@ class PokeBattle_Move_0BF < PokeBattle_Move
   end
 
   def pbBaseDamage(baseDmg,user,target)
-    @calcBaseDmg += baseDmg
+    @calcBaseDmg += baseDmg if !target.damageState.disguise || !target.damageState.iceface
     return @calcBaseDmg
   end
 end
@@ -1954,7 +1935,12 @@ class PokeBattle_Move_0C0 < PokeBattle_Move
     if @id == :WATERSHURIKEN && user.isSpecies?(:GRENINJA) && user.form == 2
       return 3
     end
-    hitChances = [2,2,3,3,4,5]
+    hitChances = [
+      2, 2, 2, 2, 2, 2, 2,
+      3, 3, 3, 3, 3, 3, 3,
+      4, 4, 4,
+      5, 5, 5
+    ]
     r = @battle.pbRandom(hitChances.length)
     r = hitChances.length-1 if user.hasActiveAbility?(:SKILLLINK)
     return hitChances[r]
@@ -2036,11 +2022,10 @@ class PokeBattle_Move_0C4 < PokeBattle_TwoTurnMove
   def pbIsChargingTurn?(user)
     ret = super
     if !user.effects[PBEffects::TwoTurnAttack]
-      if [:Sun, :HarshSun].include?(@battle.pbWeather)
+      if [:Sun, :HarshSun].include?(user.effectiveWeather)
         @powerHerb = false
         @chargingTurn = true
         @damagingTurn = true
-        return false
       end
     end
     return ret
@@ -2051,7 +2036,7 @@ class PokeBattle_Move_0C4 < PokeBattle_TwoTurnMove
   end
 
   def pbBaseDamageMultiplier(damageMult,user,target)
-    damageMult /= 2 if ![:None, :Sun, :HarshSun].include?(@battle.pbWeather)
+    damageMult /= 2 if ![:None, :Sun, :HarshSun].include?(user.effectiveWeather)
     return damageMult
   end
 end
@@ -2162,6 +2147,11 @@ end
 class PokeBattle_Move_0CB < PokeBattle_TwoTurnMove
   def pbChargingTurnMessage(user,targets)
     @battle.pbDisplay(_INTL("{1} hid underwater!",user.pbThis))
+    return if !user.isSpecies?(:CRAMORANT) ||
+              !user.ability != :GULPMISSILE ||
+              user.form != 0
+    newForm = (user.hp > (user.totalhp/2)) ? 1 : 2
+    user.pbChangeForm(newForm,"")
   end
 end
 
@@ -2201,6 +2191,7 @@ class PokeBattle_Move_0CD < PokeBattle_TwoTurnMove
     target.effects[PBEffects::KingsShield]            = false
     target.effects[PBEffects::Protect]                = false
     target.effects[PBEffects::SpikyShield]            = false
+    target.effects[PBEffects::Obstruct]               = false
     target.pbOwnSide.effects[PBEffects::CraftyShield] = false
     target.pbOwnSide.effects[PBEffects::MatBlock]     = false
     target.pbOwnSide.effects[PBEffects::QuickGuard]   = false
@@ -2310,6 +2301,10 @@ class PokeBattle_Move_0CF < PokeBattle_Move
       msg = _INTL("{1} became trapped by Sand Tomb!",target.pbThis)
     when :WHIRLPOOL
       msg = _INTL("{1} became trapped in the vortex!",target.pbThis)
+    when :SNAPTRAP
+      msg = _INTL("{1} was caught in the Snap Trap!",target.pbThis)
+    when :THUNDERCAGE
+      msg = _INTL("{1} trapped {2} in a Thunder Cage!",user.pbThis,target.pbThis(true))
     when :WRAP
       msg = _INTL("{1} was wrapped by {2}!",target.pbThis,user.pbThis(true))
     end
@@ -2532,9 +2527,11 @@ end
 #===============================================================================
 class PokeBattle_Move_0D8 < PokeBattle_HealingMove
   def pbOnStartUse(user,targets)
-    case @battle.pbWeather
+    case user.effectiveWeather
     when :Sun, :HarshSun
-      @healAmount = (user.totalhp*2/3.0).round
+      @healAmount = (user.totalhp/2.0).round
+    when :Rain, :HeavyRain
+      @healAmount = (user.totalhp/4.0).round
     when :None, :StrongWinds
       @healAmount = (user.totalhp/2.0).round
     else
@@ -2944,20 +2941,43 @@ end
 
 
 #===============================================================================
-# User flees from battle. Fails in trainer battles. (Teleport)
+# User flees from battle when the battle is a wild battle.
+# Switches out Pokemon when in trainer battles. (Teleport)
 #===============================================================================
 class PokeBattle_Move_0EA < PokeBattle_Move
   def pbMoveFailed?(user,targets)
-    if !@battle.pbCanRun?(user.index)
+    if Settings::MECHANICS_GENERATION < 8 || (@battle.wildBattle? && user.opposes?)
+      if !@battle.pbCanRun?(user.index)
+        @battle.pbDisplay(_INTL("But it failed!"))
+        return true
+      end
+    elsif !@battle.pbCanChooseNonActive?(user.index)
       @battle.pbDisplay(_INTL("But it failed!"))
       return true
     end
     return false
   end
 
+  def pbEndOfMoveUsageEffect(user,targets,numHits,switchedBattlers)
+    return if Settings::MECHANICS_GENERATION < 8 || (@battle.wildBattle? && user.opposes?)
+     @battle.pbDisplay(_INTL("{1} went back to {2}!",user.pbThis,
+        @battle.pbGetOwnerName(user.index)))
+     @battle.pbPursuit(user.index)
+     return if user.fainted?
+     newPkmn = @battle.pbGetReplacementPokemonIndex(user.index)   # Owner chooses
+     return if newPkmn<0
+     @battle.pbRecallAndReplace(user.index,newPkmn)
+     @battle.pbClearChoice(user.index)   # Replacement Pokémon does nothing this round
+     @battle.moldBreaker = false
+     switchedBattlers.push(user.index)
+     user.pbEffectsOnSwitchIn(true)
+  end
+
   def pbEffectGeneral(user)
-    @battle.pbDisplay(_INTL("{1} fled from battle!",user.pbThis))
-    @battle.decision = 3   # Escaped
+    if Settings::MECHANICS_GENERATION < 8 || (@battle.wildBattle? && user.opposes?)
+      @battle.pbDisplay(_INTL("{1} fled from battle!",user.pbThis))
+      @battle.decision = 3   # Escaped
+    end
   end
 end
 
@@ -3117,7 +3137,7 @@ end
 #===============================================================================
 class PokeBattle_Move_0EE < PokeBattle_Move
   def pbEndOfMoveUsageEffect(user,targets,numHits,switchedBattlers)
-    return if user.fainted? || numHits==0
+    return if user.fainted? || numHits==0 || @battle.pbAllFainted?(user.idxOpposingSide)
     targetSwitched = true
     targets.each do |b|
       targetSwitched = false if !switchedBattlers.include?(b.index)
@@ -3277,10 +3297,10 @@ class PokeBattle_Move_0F2 < PokeBattle_Move
     oldUserItem = user.item;     oldUserItemName = user.itemName
     oldTargetItem = target.item; oldTargetItemName = target.itemName
     user.item                             = oldTargetItem
-    user.effects[PBEffects::ChoiceBand]   = nil
+    user.effects[PBEffects::ChoiceBand]   = nil if user.ability_id != :GORILLATACTICS
     user.effects[PBEffects::Unburden]     = (!user.item && oldUserItem)
     target.item                           = oldUserItem
-    target.effects[PBEffects::ChoiceBand] = nil
+    target.effects[PBEffects::ChoiceBand] = nil if user.ability_id != :GORILLATACTICS
     target.effects[PBEffects::Unburden]   = (!target.item && oldTargetItem)
     # Permanently steal the item from wild Pokémon
     if @battle.wildBattle? && target.opposes? && !user.initialItem &&
@@ -3430,10 +3450,10 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               :PIXIEPLATE,:SKYPLATE,:SPLASHPLATE,:SPOOKYPLATE,:STONEPLATE,
               :TOXICPLATE,:ZAPPLATE
              ],
-       80 => [:ASSAULTVEST,:DAWNSTONE,:DUSKSTONE,:ELECTIRIZER,:MAGMARIZER,
-              :ODDKEYSTONE,:OVALSTONE,:PROTECTOR,:QUICKCLAW,:RAZORCLAW,:SACHET,
-              :SAFETYGOGGLES,:SHINYSTONE,:STICKYBARB,:WEAKNESSPOLICY,
-              :WHIPPEDDREAM
+       80 => [:ASSAULTVEST,:CHIPPEDPOT,:CRACKEDPOT,:DAWNSTONE,:DUSKSTONE,
+              :ELECTIRIZER,:HEAVYDUTYBOOTS,:MAGMARIZER,:ODDKEYSTONE,:OVALSTONE,
+              :PROTECTOR,:QUICKCLAW,:RAZORCLAW,:SACHET,:SAFETYGOGGLES,
+              :SHINYSTONE,:STICKYBARB,:WEAKNESSPOLICY,:WHIPPEDDREAM
              ],
        70 => [:DRAGONFANG,:POISONBARB,
               # EV-training items (Macho Brace is 60)
@@ -3442,7 +3462,7 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               # Drives
               :BURNDRIVE,:CHILLDRIVE,:DOUSEDRIVE,:SHOCKDRIVE
              ],
-       60 => [:ADAMANTORB,:DAMPROCK,:GRISEOUSORB,:HEATROCK,:LUSTROUSORB,
+       60 => [:ADAMANTORB,:DAMPROCK,:GRISEOUSORB,:HEATROCK,:LEEK,:LUSTROUSORB,
               :MACHOBRACE,:ROCKYHELMET,:STICK,:TERRAINEXTENDER
              ],
        50 => [:DUBIOUSDISC,:SHARPBEAK,
@@ -3469,7 +3489,7 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               :BURNHEAL,:CASTELIACONE,:ELIXIR,:ENERGYPOWDER,:ENERGYROOT,:ETHER,
               :FRESHWATER,:FULLHEAL,:FULLRESTORE,:HEALPOWDER,:HYPERPOTION,
               :ICEHEAL,:LAVACOOKIE,:LEMONADE,:LUMIOSEGALETTE,:MAXELIXIR,
-              :MAXETHER,:MAXPOTION,:MAXREVIVE,:MOOMOOMILK,:OLDGATEAU,
+              :MAXETHER,:MAXHONEY,:MAXPOTION,:MAXREVIVE,:MOOMOOMILK,:OLDGATEAU,
               :PARALYZEHEAL,:PARLYZHEAL,:PEWTERCRUNCHIES,:POTION,:RAGECANDYBAR,
               :REDFLUTE,:REVIVALHERB,:REVIVE,:SHALOURSABLE,:SODAPOP,
               :SUPERPOTION,:SWEETHEART,:YELLOWFLUTE,
@@ -3484,12 +3504,14 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               :XSPEED,:XSPEED2,:XSPEED3,:XSPEED6,
               :DIREHIT,:DIREHIT2,:DIREHIT3,
               :ABILITYURGE,:GUARDSPEC,:ITEMDROP,:ITEMURGE,:RESETURGE,
+              :MAXMUSHROOMS,
               # Vitamins
               :CALCIUM,:CARBOS,:HPUP,:IRON,:PPUP,:PPMAX,:PROTEIN,:ZINC,
               :RARECANDY,
               # Most evolution stones (see also 80)
               :EVERSTONE,:FIRESTONE,:ICESTONE,:LEAFSTONE,:MOONSTONE,:SUNSTONE,
-              :THUNDERSTONE,:WATERSTONE,
+              :THUNDERSTONE,:WATERSTONE,:SWEETAPPLE,:TARTAPPLE, :GALARICACUFF,
+              :GALARICAWREATH,
               # Repels
               :MAXREPEL,:REPEL,:SUPERREPEL,
               # Mulches
@@ -3501,9 +3523,13 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               :BALMMUSHROOM,:BIGMUSHROOM,:BIGNUGGET,:BIGPEARL,:COMETSHARD,
               :NUGGET,:PEARL,:PEARLSTRING,:RELICBAND,:RELICCOPPER,:RELICCROWN,
               :RELICGOLD,:RELICSILVER,:RELICSTATUE,:RELICVASE,:STARDUST,
-              :STARPIECE,:STRANGESOUVENIR,:TINYMUSHROOM
+              :STARPIECE,:STRANGESOUVENIR,:TINYMUSHROOM,
+              # Exp Candies
+              :EXPCANDYXS, :EXPCANDYS, :EXPCANDYM, :EXPCANDYL, :EXPCANDYXL
              ],
-       20 => [# Wings
+       20 => [# Feathers
+              :CLEVERFEATHER,:GENIUSFEATHER,:HEALTHFEATHER,:MUSCLEFEATHER,
+              :PRETTYFEATHER,:RESISTFEATHER,:SWIFTFEATHER,
               :CLEVERWING,:GENIUSWING,:HEALTHWING,:MUSCLEWING,:PRETTYWING,
               :RESISTWING,:SWIFTWING
              ],
@@ -3521,7 +3547,16 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
               :FULLINCENSE,:LAXINCENSE,:LUCKINCENSE,:ODDINCENSE,:PUREINCENSE,
               :ROCKINCENSE,:ROSEINCENSE,:SEAINCENSE,:WAVEINCENSE,
               # Scarves
-              :BLUESCARF,:GREENSCARF,:PINKSCARF,:REDSCARF,:YELLOWSCARF
+              :BLUESCARF,:GREENSCARF,:PINKSCARF,:REDSCARF,:YELLOWSCARF,
+              # Mints
+              :LONELYMINT, :ADAMANTMINT, :NAUGHTYMINT, :BRAVEMINT, :BOLDMINT,
+              :IMPISHMINT, :LAXMINT, :RELAXEDMINT, :MODESTMINT, :MILDMINT,
+              :RASHMINT, :QUIETMINT, :CALMMINT, :GENTLEMINT, :CAREFULMINT,
+              :SASSYMINT, :TIMIDMINT, :HASTYMINT, :JOLLYMINT, :NAIVEMINT,
+              :SERIOUSMINT,
+              # Sweets
+              :STRAWBERRYSWEET, :LOVESWEET, :BERRYSWEET, :CLOVERSWEET,
+              :FLOWERSWEET, :STARSWEET, :RIBBONSWEET
              ]
     }
   end
@@ -3533,6 +3568,7 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
     @willFail = true if user.item.is_berry? && !user.canConsumeBerry?
     return if @willFail
     return if user.item.is_mega_stone?
+    return if user.item.is_TR? && Settings::MECHANICS_GENERATION >= 8
     flingableItem = false
     @flingPowers.each do |_power, items|
       next if !items.include?(user.item_id)
@@ -3561,8 +3597,14 @@ class PokeBattle_Move_0F7 < PokeBattle_Move
   def pbNumHits(user,targets); return 1; end
 
   def pbBaseDamage(baseDmg,user,target)
-    return 10 if user.item && user.item.is_berry?
-    return 80 if user.item && user.item.is_mega_stone?
+    return 0 if !user.item
+    return 10 if user.item.is_berry?
+    return 80 if user.item.is_mega_stone?
+    if user.item.is_TR?
+      ret = GameData::Move.get(user.item.move).base_damage
+      ret = 10 if ret < 10
+      return ret
+    end
     @flingPowers.each do |power,items|
       return power if items.include?(user.item_id)
     end

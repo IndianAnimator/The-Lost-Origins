@@ -73,6 +73,7 @@ class PokeBattle_Battle
   attr_reader   :initialItems
   attr_reader   :recycleItems
   attr_reader   :belch
+  attr_reader   :corrodedItem
   attr_reader   :battleBond
   attr_reader   :usedInBattle     # Whether each Pokémon was used in battle (for Burmy)
   attr_reader   :successStates    # Success states
@@ -83,6 +84,7 @@ class PokeBattle_Battle
   attr_reader   :endOfRound       # True during the end of round
   attr_accessor :moldBreaker      # True if Mold Breaker applies
   attr_reader   :struggle         # The Struggle move
+  attr_accessor :fetchedBall      # For Ball Fetch. Set to true after ball has been fetched once
 
   include PokeBattle_BattleCommon
 
@@ -149,6 +151,7 @@ class PokeBattle_Battle
     ]
     @recycleItems      = [Array.new(@party1.length, nil),   Array.new(@party2.length, nil)]
     @belch             = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
+    @corrodedItem      = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
     @battleBond        = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
     @usedInBattle      = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
     @successStates     = []
@@ -399,7 +402,7 @@ class PokeBattle_Battle
     idxPartyStart, idxPartyEnd = pbTeamIndexRangeFromBattlerIndex(idxBattler)
     ret = -1
     party.each_with_index do |pkmn,i|
-      next if i<idxPartyStart || i>=idxPartyEnd   # Check the team only
+      next if i < idxPartyStart || i >= idxPartyEnd   # Check the team only
       next if !pkmn || !pkmn.able?   # Can't copy a non-fainted Pokémon or egg
       ret = i if ret < 0 || partyOrders[i] > partyOrders[ret]
     end
@@ -589,6 +592,8 @@ class PokeBattle_Battle
                      PBEffects::MeanLook,
                      PBEffects::MirrorCoatTarget,
                      PBEffects::SkyDrop,
+                     PBEffects::Octolock,
+                     PBEffects::NoRetreat,
                      PBEffects::TrappingUser]
     eachBattler do |b|
       for i in effectsToSwap
@@ -623,6 +628,16 @@ class PokeBattle_Battle
   def pbSetSeen(battler)
     return if !battler || !@internalBattle
     pbPlayer.pokedex.register(battler.displaySpecies,battler.displayGender,battler.displayForm)
+  end
+
+  def pbSetBattled(battler)
+    return if !battler || !@internalBattle
+    if battler.respond_to?(:opposes?)
+      return if battler.opposes?
+      pbPlayer.pokedex.register_battled(battler.displaySpecies)
+    else
+      pbPlayer.pokedex.register_battled(battler.species)
+    end
   end
 
   def nextPickupUse
@@ -667,6 +682,7 @@ class PokeBattle_Battle
     when :HeavyRain   then pbDisplay(_INTL("A heavy rain began to fall!"))
     when :StrongWinds then pbDisplay(_INTL("Mysterious strong winds are protecting Flying-type Pokémon!"))
     when :ShadowSky   then pbDisplay(_INTL("A shadow sky appeared!"))
+    when :Fog         then pbDisplay(_INTL("The fog is deep..."))
     end
     # Check for end of primordial weather, and weather-triggered form changes
     eachBattler { |b| b.pbCheckFormOnWeatherChange }
@@ -729,7 +745,8 @@ class PokeBattle_Battle
     when :Psychic
       pbDisplay(_INTL("The battlefield got weird!"))
     end
-    # Check for terrain seeds that boost stats in a terrain
+    # Check for abilities/items that trigger upon the terrain changing
+    eachBattler { |b| b.pbAbilityOnTerrainChange }
     eachBattler { |b| b.pbItemTerrainStatBoostCheck }
   end
 

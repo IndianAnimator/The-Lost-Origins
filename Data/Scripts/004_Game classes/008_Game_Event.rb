@@ -268,7 +268,7 @@ class Game_Event < Game_Character
       refresh
     end
     check_event_trigger_auto
-    if @interpreter != nil
+    if !@interpreter.nil?
       unless @interpreter.running?
         @interpreter.setup(@list, @event.id, @map_id)
       end

@@ -324,6 +324,8 @@ module Compiler
         f.write(sprintf("BattlerAltitude = %d\r\n", species.front_sprite_altitude)) if species.front_sprite_altitude != 0
         f.write(sprintf("BattlerShadowX = %d\r\n", species.shadow_x))
         f.write(sprintf("BattlerShadowSize = %d\r\n", species.shadow_size))
+        f.write(sprintf("FrontSpriteScale = %d\r\n", species.front_sprite_scale)) if species.front_sprite_scale != Settings::FRONT_BATTLER_SPRITE_SCALE
+        f.write(sprintf("BackSpriteScale = %d\r\n", species.back_sprite_scale)) if species.back_sprite_scale != Settings::BACK_BATTLER_SPRITE_SCALE
         if species.evolutions.any? { |evo| !evo[3] }
           f.write("Evolutions = ")
           need_comma = false
@@ -429,6 +431,8 @@ module Compiler
         f.write(sprintf("BattlerAltitude = %d\r\n", species.front_sprite_altitude)) if species.front_sprite_altitude != base_species.front_sprite_altitude
         f.write(sprintf("BattlerShadowX = %d\r\n", species.shadow_x)) if species.shadow_x != base_species.shadow_x
         f.write(sprintf("BattlerShadowSize = %d\r\n", species.shadow_size)) if species.shadow_size != base_species.shadow_size
+        f.write(sprintf("FrontSpriteScale = %d\r\n", species.front_sprite_scale)) if species.front_sprite_scale != base_species.front_sprite_scale
+        f.write(sprintf("BackSpriteScale = %d\r\n", species.back_sprite_scale)) if species.back_sprite_scale != base_species.back_sprite_scale
         if species.evolutions != base_species.evolutions && species.evolutions.any? { |evo| !evo[3] }
           f.write("Evolutions = ")
           need_comma = false
@@ -606,7 +610,8 @@ module Compiler
           f.write(sprintf("    Name = %s\r\n", pkmn[:name])) if pkmn[:name] && !pkmn[:name].empty?
           f.write(sprintf("    Form = %d\r\n", pkmn[:form])) if pkmn[:form] && pkmn[:form] > 0
           f.write(sprintf("    Gender = %s\r\n", (pkmn[:gender] == 1) ? "female" : "male")) if pkmn[:gender]
-          f.write("    Shiny = yes\r\n") if pkmn[:shininess]
+          f.write("    Shiny = yes\r\n") if pkmn[:shininess] && !pkmn[:square_shiny]
+          f.write("    SquareShiny = yes\r\n") if pkmn[:square_shiny]
           f.write("    Shadow = yes\r\n") if pkmn[:shadowness]
           f.write(sprintf("    Moves = %s\r\n", pkmn[:moves].join(","))) if pkmn[:moves] && pkmn[:moves].length > 0
           f.write(sprintf("    Ability = %s\r\n", pkmn[:ability])) if pkmn[:ability]

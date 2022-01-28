@@ -12,7 +12,6 @@ class PokeBattle_Battler
   attr_accessor :item_id
   attr_accessor :moves
   attr_accessor :gender
-  attr_accessor :iv
   attr_accessor :attack
   attr_accessor :spatk
   attr_accessor :speed
@@ -40,6 +39,9 @@ class PokeBattle_Battler
   attr_accessor :currentMove   # ID of multi-turn move currently being used
   attr_accessor :tookDamage    # Boolean for whether self took damage this round
   attr_accessor :tookPhysicalHit
+  attr_accessor :statsRaised   # Stats have been raised this round
+  attr_accessor :statsLowered  # Stats have been lowered this round
+  attr_accessor :canRestoreIceFace
   attr_accessor :damageState
   attr_accessor :initialHP     # Set at the start of each move's usage
 
@@ -107,7 +109,7 @@ class PokeBattle_Battler
 
   def status=(value)
     @effects[PBEffects::Truant] = false if @status == :SLEEP && value != :SLEEP
-    @effects[PBEffects::Toxic]  = 0 if value != :POISON
+    @effects[PBEffects::Toxic]  = 0 if value != :POISON || self.statusCount == 0
     @status = value
     @pokemon.status = value if @pokemon
     self.statusCount = 0 if value != :POISON && value != :SLEEP
@@ -122,12 +124,28 @@ class PokeBattle_Battler
     @battle.scene.pbRefreshOne(@index)
   end
 
+  attr_reader :critical_hits
+
+  def critical_hits=(value)
+    @critical_hits = value
+    @pokemon.critical_hits = value if @pokemon
+  end
+
+  attr_reader :damage_done
+
+  def damage_done=(value)
+    @damage_done = value
+    @pokemon.damage_done = value if @pokemon
+  end
+
   #=============================================================================
   # Properties from Pokémon
   #=============================================================================
-  def happiness;    return @pokemon ? @pokemon.happiness : 0;    end
-  def nature;       return @pokemon ? @pokemon.nature : 0;       end
-  def pokerusStage; return @pokemon ? @pokemon.pokerusStage : 0; end
+  def happiness;       return @pokemon ? @pokemon.happiness : 0;       end
+  def gender;          return @pokemon ? @pokemon.gender : 0;          end
+  def nature;          return @pokemon ? @pokemon.nature : nil;        end
+  def pokerusStage;    return @pokemon ? @pokemon.pokerusStage : 0;    end
+  def affection_level; return @pokemon ? @pokemon.affection_level : 0; end
 
   #=============================================================================
   # Mega Evolution, Primal Reversion, Shadow Pokémon
@@ -188,6 +206,10 @@ class PokeBattle_Battler
     return @pokemon && @pokemon.shiny?
   end
   alias isShiny? shiny?
+
+  def square_shiny?
+    return @pokemon && @pokemon.square_shiny?
+  end
 
   def owned?
     return false if !@battle.wildBattle?
@@ -335,9 +357,10 @@ class PokeBattle_Battler
   #       active, and the code for the two combined would cause an infinite loop
   #       (regardless of whether any Pokémon actualy has either the ability or
   #       the item - the code existing is enough to cause the loop).
-  def abilityActive?(ignore_fainted = false)
-    return false if fainted? && !ignore_fainted
+  def abilityActive?(ignoreFainted = false)
+    return false if fainted? && !ignoreFainted
     return false if @effects[PBEffects::GastroAcid]
+    return false if @battle.field.effects[PBEffects::NeutralizingGas] >= 0 && self.index != @battle.field.effects[PBEffects::NeutralizingGas]
     return true
   end
 
@@ -366,9 +389,13 @@ class PokeBattle_Battler
       :SHIELDSDOWN,
       :STANCECHANGE,
       :ZENMODE,
+      :ICEFACE,
       # Abilities intended to be inherent properties of a certain species
       :COMATOSE,
-      :RKSSYSTEM
+      :RKSSYSTEM,
+      :GULPMISSILE,
+      :ASONEICE,
+      :ASONEGHOST
     ]
     return ability_blacklist.include?(abil.id)
   end
@@ -395,7 +422,11 @@ class PokeBattle_Battler
       :IMPOSTER,
       # Abilities intended to be inherent properties of a certain species
       :COMATOSE,
-      :RKSSYSTEM
+      :RKSSYSTEM,
+      :ASONEICE,
+      :ASONEGHOST,
+      :NEUTRALIZINGGAS,
+      :HUNGERSWITCH
     ]
     return ability_blacklist.include?(abil.id)
   end
@@ -405,6 +436,7 @@ class PokeBattle_Battler
     return false if @effects[PBEffects::Embargo]>0
     return false if @battle.field.effects[PBEffects::MagicRoom]>0
     return false if hasActiveAbility?(:KLUTZ,ignoreFainted)
+    return false if itemCorroded?
     return true
   end
 
@@ -420,6 +452,7 @@ class PokeBattle_Battler
     return false if !check_item
     return true if GameData::Item.get(check_item).is_mail?
     return false if @effects[PBEffects::Transform]
+    return true if itemCorroded?
     # Items that change a Pokémon's form
     if mega?   # Check if item was needed for this Mega Evolution
       return true if @pokemon.species_data.mega_stone == check_item
@@ -470,6 +503,11 @@ class PokeBattle_Battler
     return ![:MULTITYPE, :RKSSYSTEM].include?(@ability_id)
   end
 
+  def canChangeMoveTargets?
+    return false if hasActiveAbility?([:STALWART, :PROPELLERTAIL])
+    return true
+  end
+
   def airborne?
     return false if hasActiveItem?(:IRONBALL)
     return false if @effects[PBEffects::Ingrain]
@@ -483,10 +521,23 @@ class PokeBattle_Battler
     return false
   end
 
+  def affectedByIronBall?
+    return false if @effects[PBEffects::Ingrain]
+    return false if @effects[PBEffects::SmackDown]
+    return false if @battle.field.effects[PBEffects::Gravity] > 0
+    return true
+  end
+
   def affectedByTerrain?
     return false if airborne?
     return false if semiInvulnerable?
     return true
+  end
+
+  def effectiveWeather
+    ret = @battle.pbWeather
+    ret = :None if [:Sun, :Rain, :HarshSun, :HeavyRain].include?(ret) && hasActiveItem?(:UTILITYUMBRELLA)
+    return ret
   end
 
   def takesIndirectDamage?(showMsg=false)
@@ -527,6 +578,11 @@ class PokeBattle_Battler
   def takesShadowSkyDamage?
     return false if fainted?
     return false if shadowPokemon?
+    return true
+  end
+
+  def takesEntryHazardDamage?
+    return false if hasActiveItem?(:HEAVYDUTYBOOTS)
     return true
   end
 
@@ -588,6 +644,18 @@ class PokeBattle_Battler
     return false
   end
 
+  def trappedInBattle?
+    return true if @effects[PBEffects::Trapping] > 0
+    return true if @effects[PBEffects::MeanLook] >= 0
+    return true if @effects[PBEffects::JawLock] >= 0
+    @battle.eachBattler { |b| return true if b.effects[PBEffects::JawLock] == @index }
+    return true if @effects[PBEffects::Octolock] >= 0
+    return true if @effects[PBEffects::Ingrain]
+    return true if @effects[PBEffects::NoRetreat]
+    return true if @battle.field.effects[PBEffects::FairyLock] > 0
+    return false
+  end
+
   def inTwoTurnAttack?(*arg)
     return false if !@effects[PBEffects::TwoTurnAttack]
     ttaFunction = GameData::Move.get(@effects[PBEffects::TwoTurnAttack]).function_code
@@ -636,6 +704,14 @@ class PokeBattle_Battler
 
   def setBelched
     @battle.belch[@index&1][@pokemonIndex] = true
+  end
+
+  def itemCorroded?
+    return @battle.corrodedItem[@index&1][@pokemonIndex]
+  end
+
+  def setCorrodedItem
+    @battle.corrodedItem[@index&1][@pokemonIndex] = true
   end
 
   #=============================================================================

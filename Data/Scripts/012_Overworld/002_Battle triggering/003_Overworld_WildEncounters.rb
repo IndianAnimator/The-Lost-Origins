@@ -272,13 +272,21 @@ class PokemonEncounters
     # If they activate, they remove all Pokémon from the encounter table that do
     # not have the type they favor. If none have that type, nothing is changed.
     first_pkmn = $Trainer.first_pokemon
-    if first_pkmn
+    if first_pkmn && rand(100) < 50
       favored_type = nil
       case first_pkmn.ability_id
       when :STATIC
-        favored_type = :ELECTRIC if GameData::Type.exists?(:ELECTRIC) && rand(100) < 50
+        favored_type = :ELECTRIC if GameData::Type.exists?(:ELECTRIC)
       when :MAGNETPULL
-        favored_type = :STEEL if GameData::Type.exists?(:STEEL) && rand(100) < 50
+        favored_type = :STEEL if GameData::Type.exists?(:STEEL)
+      when :FLASHFIRE
+        favored_type = :FIRE if GameData::Type.exists?(:FIRE)
+      when :HARVEST
+        favored_type = :GRASS if GameData::Type.exists?(:GRASS)
+      when :LIGHTNINGROD
+        favored_type = :ELECTRIC if GameData::Type.exists?(:ELECTRIC)
+      when :STORMDRAIN
+        favored_type = :WATER if GameData::Type.exists?(:WATER)
       end
       if favored_type
         new_enc_list = []
@@ -375,6 +383,7 @@ def pbGenerateWildPokemon(species,level,isRoamer=false)
   first_pkmn = $Trainer.first_pokemon
   chances = [50,5,1]
   chances = [60,20,5] if first_pkmn && first_pkmn.hasAbility?(:COMPOUNDEYES)
+  chances = [50,50,50] if first_pkmn && first_pkmn.hasAbility?(:SUPERLUCK)
   itemrnd = rand(100)
   if (items[0]==items[1] && items[1]==items[2]) || itemrnd<chances[0]
     genwildpoke.item = items[0]
@@ -383,12 +392,23 @@ def pbGenerateWildPokemon(species,level,isRoamer=false)
   elsif itemrnd<(chances[0]+chances[1]+chances[2])
     genwildpoke.item = items[2]
   end
-  # Shiny Charm makes shiny Pokémon more likely to generate
-  if GameData::Item.exists?(:SHINYCHARM) && $PokemonBag.pbHasItem?(:SHINYCHARM)
-    2.times do   # 3 times as likely
-      break if genwildpoke.shiny?
-      genwildpoke.personalID = rand(2**16) | rand(2**16) << 16
-    end
+  # Improve chances of shiny Pokémon with Shiny Charm and Number Battled
+  shiny_retries = 0
+  shiny_retries += 2 if GameData::Item.exists?(:SHINYCHARM) && $PokemonBag.pbHasItem?(:SHINYCHARM)
+  shiny_tier = $Trainer.pokedex.number_battled_shiny_tier(genwildpoke.species)
+  if Settings::NUMBER_BATTLED_BOOSTS_SHINY_ODDS && shiny_tier[1] > 1
+    shiny_retries += shiny_tier[0] if rand(1000) < shiny_tier[1]
+  end
+  shiny_retries.times do
+    break if genwildpoke.shiny?
+    genwildpoke.shiny = nil
+    genwildpoke.personalID = rand(2**16) | rand(2**16) << 16
+  end
+  # Brilliant Pokemon
+  brilliantBoost = $Trainer.pokedex.number_battled_brilliant_tier(genwildpoke.species)
+  if rand(65536) < (Settings::BRILLIANT_POKEMON_CHANCE * brilliantBoost).ceil ||
+     (Settings::BRILLIANT_POKEMON_SWITCH > 0 && $game_switches[Settings::BRILLIANT_POKEMON_SWITCH])
+     genwildpoke.generateBrilliant
   end
   # Give Pokérus
   genwildpoke.givePokerus if rand(65536) < Settings::POKERUS_CHANCE
@@ -402,7 +422,7 @@ def pbGenerateWildPokemon(species,level,isRoamer=false)
         (rand(3)<2) ? genwildpoke.makeMale : genwildpoke.makeFemale
       end
     elsif first_pkmn.hasAbility?(:SYNCHRONIZE)
-      genwildpoke.nature = first_pkmn.nature if !isRoamer && rand(100)<50
+      genwildpoke.nature = first_pkmn.nature if !isRoamer && (rand(100)<50 || Settings::MECHANICS_GENERATION >= 8)
     end
   end
   # Trigger events that may alter the generated Pokémon further

@@ -101,6 +101,7 @@ module Compiler
       if lineno==1 && line[0].ord==0xEF && line[1].ord==0xBB && line[2].ord==0xBF
         line = line[3,line.length-3]
       end
+      line.force_encoding(Encoding::UTF_8)
       if !line[/^\#/] && !line[/^\s*$/]
         if line[/^\s*\[\s*(.*)\s*\]\s*$/]   # Of the format: [something]
           yield lastsection,sectionname if havesection
@@ -152,6 +153,7 @@ module Compiler
       if lineno==1 && line[0].ord==0xEF && line[1].ord==0xBB && line[2].ord==0xBF
         line = line[3,line.length-3]
       end
+      line.force_encoding(Encoding::UTF_8)
       if !line[/^\#/] && !line[/^\s*$/]
         if line[/^\s*\[\s*(.+?)\s*\]\s*$/]
           yield lastsection,sectionname  if havesection
@@ -192,6 +194,7 @@ module Compiler
         if lineno==1 && line[0].ord==0xEF && line[1].ord==0xBB && line[2].ord==0xBF
           line = line[3,line.length-3]
         end
+        line.force_encoding(Encoding::UTF_8)
         if !line[/^\#/] && !line[/^\s*$/]
           FileLineData.setLine(line,lineno)
           yield line, lineno
@@ -223,6 +226,7 @@ module Compiler
         if lineno==1 && line[0].ord==0xEF && line[1].ord==0xBB && line[2].ord==0xBF
           line = line[3,line.length-3]
         end
+        line.force_encoding(Encoding::UTF_8)
         line = prepline(line)
         if !line[/^\#/] && !line[/^\s*$/]
           FileLineData.setLine(line,lineno)
@@ -700,6 +704,12 @@ module Compiler
     compile_pokemon                # Depends on Move, Item, Type, Ability
     yield(_INTL("Compiling Pokémon forms data"))
     compile_pokemon_forms          # Depends on Species, Move, Item, Type, Ability
+    if defined?(Settings::ZUD_COMPAT)
+      yield(_INTL("Compiling ZUD compatibility data"))
+      compile_ZUD_Habitats           # Depends on Species
+      compile_ZUD_PowerMoves         # Depends on Move, Item, Type, Species
+      compile_ZUD_Metrics            # Depends on Species, Power Moves
+    end
     yield(_INTL("Compiling machine data"))
     compile_move_compatibilities   # Depends on Species, Move
     yield(_INTL("Compiling shadow moveset data"))
@@ -739,7 +749,6 @@ module Compiler
       dataFiles = [
          "berry_plants.dat",
          "encounters.dat",
-         "form2species.dat",
          "items.dat",
          "map_connections.dat",
          "metadata.dat",
@@ -749,11 +758,6 @@ module Compiler
          "ribbons.dat",
          "shadow_movesets.dat",
          "species.dat",
-         "species_eggmoves.dat",
-         "species_evolutions.dat",
-         "species_metrics.dat",
-         "species_movesets.dat",
-         "tm.dat",
          "town_map.dat",
          "trainer_lists.dat",
          "trainer_types.dat",
@@ -780,6 +784,10 @@ module Compiler
          "trainertypes.txt",
          "types.txt"
       ]
+      if defined?(Settings::ZUD_COMPAT)
+        dataFiles.push("ZUD_PowerMoves.dat")
+        textFiles.push("ZUD_PowerMoves.txt")
+      end
       latestDataTime = 0
       latestTextTime = 0
       mustCompile = false
@@ -794,13 +802,17 @@ module Compiler
       # Check data files and PBS files, and recompile if any PBS file was edited
       # more recently than the data files were last created
       dataFiles.each do |filename|
-        next if !safeExists?("Data/" + filename)
-        begin
-          File.open("Data/#{filename}") { |file|
-            latestDataTime = [latestDataTime, file.mtime.to_i].max
-          }
-        rescue SystemCallError
+        if safeExists?("Data/" + filename)
+          begin
+            File.open("Data/#{filename}") { |file|
+              latestDataTime = [latestDataTime, file.mtime.to_i].max
+            }
+          rescue SystemCallError
+            mustCompile = true
+          end
+        else
           mustCompile = true
+          break
         end
       end
       textFiles.each do |filename|

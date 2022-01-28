@@ -46,7 +46,7 @@ class PokeBattle_Move
                                                    Effectiveness.ineffective_type?(moveType, defType)
     end
     # Delta Stream's weather
-    if @battle.pbWeather == :StrongWinds
+    if target.effectiveWeather == :StrongWinds
       ret = Effectiveness::NORMAL_EFFECTIVE_ONE if defType == :FLYING &&
                                                    Effectiveness.super_effective_type?(moveType, defType)
     end
@@ -54,13 +54,16 @@ class PokeBattle_Move
     if !target.airborne?
       ret = Effectiveness::NORMAL_EFFECTIVE_ONE if defType == :FLYING && moveType == :GROUND
     end
+    if target.effects[PBEffects::TarShot] && moveType == :FIRE
+      ret *= Effectiveness::SUPER_EFFECTIVE_ONE.to_f / Effectiveness::NORMAL_EFFECTIVE_ONE
+    end
     return ret
   end
 
   def pbCalcTypeMod(moveType,user,target)
     return Effectiveness::NORMAL_EFFECTIVE if !moveType
     return Effectiveness::NORMAL_EFFECTIVE if moveType == :GROUND &&
-       target.pbHasType?(:FLYING) && target.hasActiveItem?(:IRONBALL)
+       target.pbHasType?(:FLYING) && target.hasActiveItem?(:IRONBALL) && target.affectedByIronBall?
     # Determine types
     tTypes = target.pbTypes(true)
     # Get effectivenesses
@@ -115,8 +118,16 @@ class PokeBattle_Move
     accuracy = (accuracy * modifiers[:accuracy_multiplier]).round
     evasion  = (evasion  * modifiers[:evasion_multiplier]).round
     evasion = 1 if evasion < 1
+    threshold = modifiers[:base_accuracy] * accuracy / evasion
     # Calculation
-    return @battle.pbRandom(100) < modifiers[:base_accuracy] * accuracy / evasion
+    r = @battle.pbRandom(100)
+    if Settings::AFFECTION_EFFECTS && @battle.internalBattle &&
+       target.pbOwnedByPlayer? && target.affection_level == 5 && !target.mega?
+      return true if r < threshold - 10
+      target.damageState.affection_missed = true if r < threshold
+      return false
+    end
+    return r < threshold
   end
 
   def pbCalcAccuracyModifiers(user,target,modifiers)
@@ -154,6 +165,7 @@ class PokeBattle_Move
     end
     modifiers[:evasion_stage] = 0 if target.effects[PBEffects::Foresight] && modifiers[:evasion_stage] > 0
     modifiers[:evasion_stage] = 0 if target.effects[PBEffects::MiracleEye] && modifiers[:evasion_stage] > 0
+    modifiers[:accuracy_multiplier] *= 0.6 if @battle.pbWeather == :Fog
   end
 
   #=============================================================================
@@ -196,10 +208,19 @@ class PokeBattle_Move
     return true if user.effects[PBEffects::LaserFocus]>0
     c += 1 if highCriticalRate?
     c += user.effects[PBEffects::FocusEnergy]
+    c += user.effects[PBEffects::CriticalBoost] if defined?(Settings::ZUD_COMPAT)
     c += 1 if user.inHyperMode? && @type == :SHADOW
     c = ratios.length-1 if c>=ratios.length
     # Calculation
-    return @battle.pbRandom(ratios[c])==0
+    return true if ratios[c] == 1
+    r = @battle.pbRandom(ratios[c])
+    return true if r == 0
+    if r == 1 && Settings::AFFECTION_EFFECTS && @battle.internalBattle &&
+       user.pbOwnedByPlayer? && user.affection_level == 5 && !target.mega?
+      target.damageState.affection_critical = true
+      return true
+    end
+    return false
   end
 
   #=============================================================================
@@ -225,7 +246,7 @@ class PokeBattle_Move
 
   def pbCalcDamage(user,target,numTargets=1)
     return if statusMove?
-    if target.damageState.disguise
+    if target.damageState.disguise || target.damageState.iceface
       target.damageState.calcDamage = 1
       return
     end
@@ -312,8 +333,8 @@ class PokeBattle_Move
          user,target,self,multipliers,baseDmg,type)
     end
     # Parental Bond's second attack
-    if user.effects[PBEffects::ParentalBond]==1
-      multipliers[:base_damage_multiplier] /= 4
+    if user.effects[PBEffects::ParentalBond] == 1
+      multipliers[:base_damage_multiplier] /= (Settings::MECHANICS_GENERATION >= 7) ? 4 : 2
     end
     # Other
     if user.effects[PBEffects::MeFirst]
@@ -348,13 +369,14 @@ class PokeBattle_Move
       end
     end
     # Terrain moves
+    terrain_damage_boost = Settings::NERFED_TERRAIN_DAMAGE ? 1.3 : 1.5
     case @battle.field.terrain
     when :Electric
-      multipliers[:base_damage_multiplier] *= 1.5 if type == :ELECTRIC && user.affectedByTerrain?
+      multipliers[:base_damage_multiplier] *= terrain_damage_boost if type == :ELECTRIC && user.affectedByTerrain?
     when :Grassy
-      multipliers[:base_damage_multiplier] *= 1.5 if type == :GRASS && user.affectedByTerrain?
+      multipliers[:base_damage_multiplier] *= terrain_damage_boost if type == :GRASS && user.affectedByTerrain?
     when :Psychic
-      multipliers[:base_damage_multiplier] *= 1.5 if type == :PSYCHIC && user.affectedByTerrain?
+      multipliers[:base_damage_multiplier] *= terrain_damage_boost if type == :PSYCHIC && user.affectedByTerrain?
     when :Misty
       multipliers[:base_damage_multiplier] /= 2 if type == :DRAGON && target.affectedByTerrain?
     end
@@ -380,7 +402,7 @@ class PokeBattle_Move
       multipliers[:final_damage_multiplier] *= 0.75
     end
     # Weather
-    case @battle.pbWeather
+    case user.effectiveWeather
     when :Sun, :HarshSun
       if type == :FIRE
         multipliers[:final_damage_multiplier] *= 1.5
@@ -418,6 +440,12 @@ class PokeBattle_Move
       else
         multipliers[:final_damage_multiplier] *= 1.5
       end
+    end
+    # Recalculate the type modifier for Dragon Darts else it does 1 damage on its
+    # second hit on a different target
+    if @function == "17C" && @battle.pbSideSize(target.index)>1
+      typeMod = self.pbCalcTypeMod(self.calcType,user,target)
+      target.damageState.typeMod = typeMod
     end
     # Type effectiveness
     multipliers[:final_damage_multiplier] *= target.damageState.typeMod.to_f / Effectiveness::NORMAL_EFFECTIVE
