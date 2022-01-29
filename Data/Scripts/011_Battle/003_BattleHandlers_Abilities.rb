@@ -1,4 +1,25 @@
 #===============================================================================
+# New Abilities added by PTLO dev team
+#===============================================================================
+BattleHandlers::AbilityOnSwitchIn.add(:THUNDERSTORM,
+  proc { |ability,battler,battle|
+    pbBattleWeatherAbility(:Rain, battler, battle)
+    next if battle.field.terrain == :Electric
+    battle.pbShowAbilitySplash(battler)
+    battle.pbStartTerrain(battler, :Electric)
+  }
+)
+
+BattleHandlers::AbilityOnSwitchIn.add(:SOLSTICE,
+  proc { |ability,battler,battle|
+    pbBattleWeatherAbility(:Sun, battler, battle)
+    next if battle.field.terrain == :Grassy
+    battle.pbShowAbilitySplash(battler)
+    battle.pbStartTerrain(battler, :Grassy)
+  }
+)  
+  
+#===============================================================================
 # SpeedCalcAbility handlers
 #===============================================================================
 
