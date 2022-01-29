@@ -54,6 +54,8 @@ class PokemonGlobalMetadata
   attr_accessor :pokerusTime
   # Save file
   attr_accessor :safesave
+  # Speed up
+  attr_accessor :GameSpeed
 
   def initialize
     # Movement
@@ -110,6 +112,8 @@ class PokemonGlobalMetadata
     @pokerusTime          = nil
     # Save file
     @safesave             = false
+    # Speed up
+    @GameSpeed = 0
   end
   
   def encounter_version=(value)

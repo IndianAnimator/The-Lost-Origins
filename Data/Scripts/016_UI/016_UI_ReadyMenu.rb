@@ -9,10 +9,13 @@ class ReadyMenuButton < SpriteWrapper
   def initialize(index,command,selected,side,viewport=nil)
     super(viewport)
     @index = index
-    @command = command   # Item/move ID, name, mode (T move/F item), pkmnIndex
+    @command = command   # Item/move ID, name, mode (T move/F item, leave 2 terms for save game), pkmnIndex
     @selected = selected
     @side = side
-    if @command[2]
+    @issave = @command.length == 2
+    if @issave
+      @button = AnimatedBitmap.new("Graphics/Pictures/Ready Menu/icon_savebutton")
+    elsif @command[2]
       @button = AnimatedBitmap.new("Graphics/Pictures/Ready Menu/icon_movebutton")
     else
       @button = AnimatedBitmap.new("Graphics/Pictures/Ready Menu/icon_itembutton")
@@ -26,6 +29,9 @@ class ReadyMenuButton < SpriteWrapper
     else
       @icon = ItemIconSprite.new(0,0,@command[0],viewport)
     end
+    if @issave
+      @icon.visible = false
+    end
     @icon.z = self.z+1
     refresh
   end
@@ -38,7 +44,7 @@ class ReadyMenuButton < SpriteWrapper
   end
 
   def visible=(val)
-    @icon.visible = val
+    @icon.visible = val && !@issave
     super(val)
   end
 
@@ -55,7 +61,7 @@ class ReadyMenuButton < SpriteWrapper
   end
 
   def refresh
-    sel = (@selected==@index && (@side==0)==@command[2])
+    sel = (@selected==@index && (@side==0)==(@command[2] ? true : false))
     self.y = (Graphics.height-@button.height/2)/2 - (@selected-@index)*(@button.height/2+4)
     if @command[2]   # Pokémon
       self.x = (sel) ? 0 : -16
@@ -69,12 +75,12 @@ class ReadyMenuButton < SpriteWrapper
     self.bitmap.clear
     rect = Rect.new(0,(sel) ? @button.height/2 : 0,@button.width,@button.height/2)
     self.bitmap.blt(0,0,@button.bitmap,rect)
-    textx = (@command[2]) ? 164 : (GameData::Item.get(@command[0]).is_important?) ? 146 : 124
+    textx = (@issave) ? 92 : (@command[2]) ? 164 : (GameData::Item.get(@command[0]).is_important?) ? 146 : 124
     textpos = [
        [@command[1],textx,16,2,Color.new(248,248,248),Color.new(40,40,40),1],
     ]
     if !@command[2]
-      if !GameData::Item.get(@command[0]).is_important?
+      if !@issave && !GameData::Item.get(@command[0]).is_important?
         qty = $PokemonBag.pbQuantity(@command[0])
         if qty>99
           textpos.push([_INTL(">99"),230,16,1,
@@ -248,6 +254,7 @@ class PokemonReadyMenu
       commands[1].push([i, GameData::Item.get(i).name, false])
     end
     commands[1].sort! { |a,b| a[1]<=>b[1] }
+    commands[1].unshift([0, "Save Game"])
     @scene.pbStartScene(commands)
     loop do
       command = @scene.pbShowCommands
@@ -283,7 +290,22 @@ class PokemonReadyMenu
       else   # Use an item
         item = commands[1][command[1]][0]
         pbHideMenu
-        if ItemHandlers.triggerConfirmUseInField(item)
+        if item == 0 # save the game
+          sscene = PokemonSave_Scene.new
+          sscene.pbStartScreen
+          if pbConfirmMessage(_INTL('Would you like to save the game?'))
+            $PokemonTemp.begunNewGame = false
+            pbSEPlay('GUI save choice')
+            if Game.save
+              # pbMessage(_INTL("\\se[]{1} saved the game.\\me[GUI save game]\\wtnp[30]", $Trainer.name))
+            else
+              pbMessage(_INTL("\\se[]Save failed.\\wtnp[30]"))
+            end
+            sscene.pbEndScreen
+            break
+          end
+          sscene.pbEndScreen
+        elsif ItemHandlers.triggerConfirmUseInField(item)
           $game_temp.in_menu = false
           break if pbUseKeyItemInField(item)
           $game_temp.in_menu = true
@@ -314,14 +336,15 @@ def pbUseKeyItem
     itm = GameData::Item.get(i).id
     real_items.push(itm) if $PokemonBag.pbHasItem?(itm)
   end
-  if real_items.length == 0 && real_moves.length == 0
-    pbMessage(_INTL("An item in the Bag can be registered to this key for instant use."))
-  else
-    $game_temp.in_menu = true
-    $game_map.update
-    sscene = PokemonReadyMenu_Scene.new
-    sscreen = PokemonReadyMenu.new(sscene)
-    sscreen.pbStartReadyMenu(real_moves, real_items)
-    $game_temp.in_menu = false
-  end
+  # if clause removed because the game is always savable!
+#  if real_items.length == 0 && real_moves.length == 0
+#    pbMessage(_INTL("An item in the Bag can be registered to this key for instant use."))
+#  else
+  $game_temp.in_menu = true
+  $game_map.update
+  sscene = PokemonReadyMenu_Scene.new
+  sscreen = PokemonReadyMenu.new(sscene)
+  sscreen.pbStartReadyMenu(real_moves, real_items)
+  $game_temp.in_menu = false
+#  end
 end
