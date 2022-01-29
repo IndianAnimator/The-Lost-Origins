@@ -361,7 +361,7 @@ class PokemonOption_Scene
            MessageConfig.pbSetSystemFrame("Graphics/Windowskins/" + Settings::MENU_WINDOWSKINS[value])
          }
        ),
-       EnumOption.new(_INTL("Text Entry"),[_INTL("Cursor"),_INTL("Keyboard")],
+       EnumOption.new(_INTL("Text Entry"),[_INTL("Keyboard"),_INTL("Cursor")],
          proc { $PokemonSystem.textinput },
          proc { |value| $PokemonSystem.textinput = value }
        ),
