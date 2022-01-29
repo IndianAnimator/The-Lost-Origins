@@ -463,9 +463,7 @@ MultipleForms.copy(:ESPURR,:MEOWSTIC)
 
 MultipleForms.register(:AEGISLASH,{
   "getFormOnLeavingBattle" => proc { |pkmn,battle,usedInBattle,endBattle|
-    next pkmn.form-2 if pkmn.form>=2
     next 0
-    
   }
 })
 
