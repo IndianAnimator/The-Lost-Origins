@@ -1,3 +1,5 @@
+$DEBUG = true
+
 class Scene_DebugIntro
   def main
     Graphics.transition(0)

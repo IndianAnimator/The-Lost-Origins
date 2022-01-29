@@ -744,7 +744,7 @@ module Compiler
   end
 
   def main
-    return if !$DEBUG
+    return if !$DEBUG || !Input.press?(Input::CTRL)
     begin
       dataFiles = [
          "berry_plants.dat",
