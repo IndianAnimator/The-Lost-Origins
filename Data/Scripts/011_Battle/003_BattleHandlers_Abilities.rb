@@ -19,6 +19,18 @@ BattleHandlers::AbilityOnSwitchIn.add(:SOLSTICE,
   }
 )  
   
+BattleHandlers::DamageCalcTargetAbility.add(:TWINKLETOES,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:final_damage_multiplier] *= 2 if move.calcType == :FLYING
+    mults[:final_damage_multiplier] /= 2 if move.calcType == :GROUND
+  }
+)  
+  
+BattleHandlers::DamageCalcUserAbility.add(:ASCENDEDWINGS,
+  proc { |ability,user,target,move,mults,baseDmg,type|
+    mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
+  }
+)  
 #===============================================================================
 # SpeedCalcAbility handlers
 #===============================================================================
