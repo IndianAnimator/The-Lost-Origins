@@ -267,3 +267,7 @@
 265,GRIMNEIGH,Grim Neigh,"Boosts Sp. Atk after knocking out any Pokémon."
 266,ASONEICE,As One,"Possesses 2 abilities, Unnerve and Chilling Neigh"
 267,ASONEGHOST,As One,"Possesses 2 abilities, Unnerve and Grim Neigh"
+268,THUNDERSTORM,Thunderstorm,"Possesses 2 abilities, Drizzle and Electric Surge"
+269,SOLSTICE,Solstice,"Possesses 2 abilities,Drought and Grassy Surge"
+270,ASCENDEDWINGS,Ascended Wings,"Boosts the power of Wing moves."
+271,TWINKLETOES,Twinkle Toes,"Resists ground type moves, however makes it more weak to flying type moves."
