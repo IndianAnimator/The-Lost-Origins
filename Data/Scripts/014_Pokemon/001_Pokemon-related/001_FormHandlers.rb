@@ -758,7 +758,8 @@ MultipleForms.copy(:SIRFETCHD, :MRRIME, :CURSOLA, :OBSTAGOON, :RUNERIGUS)
 
 MultipleForms.register(:SOLROCK,{
   "getForm" => proc { |pkmn|
-    next 1 if $Trainer && $Trainer.has_species?(:LUNATONE)
+    next if !$Trainer
+    next 1 if $Trainer.has_species?(:LUNATONE)
     next 0
   }
 })
