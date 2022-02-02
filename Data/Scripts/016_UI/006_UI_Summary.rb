@@ -367,6 +367,7 @@ class PokemonSummary_Scene
     when 3 then drawPageThree
     when 4 then drawPageFour
     when 5 then drawPageFive
+    when 6 then drawPageSix
     end
   end
 
@@ -840,6 +841,45 @@ class PokemonSummary_Scene
   end
 
   def drawPageFive
+    overlay = @sprites["overlay"].bitmap
+    base   = Color.new(248,248,248)
+    shadow = Color.new(104,104,104)
+    # Determine which stats are boosted and lowered by the Pokémon's nature
+    statshadows = {}
+    GameData::Stat.each_main { |s| statshadows[s.id] = shadow }
+    if !@pokemon.shadowPokemon? || @pokemon.heartStage > 3
+      @pokemon.nature_for_stats.stat_changes.each do |change|
+        statshadows[change[0]] = Color.new(136,96,72) if change[1] > 0
+        statshadows[change[0]] = Color.new(64,120,152) if change[1] < 0
+      end
+    end
+    # Write various bits of text
+    textpos = [
+       [_INTL("HP"),292,82,2,base,statshadows[:HP]],
+       [sprintf("%d / %d",@pokemon.ev[:HP],@pokemon.iv[:HP]),456,82,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Attack"),248,114,0,base,statshadows[:ATTACK]],
+       [sprintf("%d / %d",@pokemon.ev[:ATTACK],@pokemon.iv[:ATTACK]),456,114,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Defense"),248,146,0,base,statshadows[:DEFENSE]],
+       [sprintf("%d / %d",@pokemon.ev[:DEFENSE],@pokemon.iv[:DEFENSE]),456,146,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Sp. Atk"),248,178,0,base,statshadows[:SPECIAL_ATTACK]],
+       [sprintf("%d / %d",@pokemon.ev[:SPECIAL_ATTACK],@pokemon.iv[:SPECIAL_ATTACK]),456,178,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Sp. Def"),248,210,0,base,statshadows[:SPECIAL_DEFENSE]],
+       [sprintf("%d / %d",@pokemon.ev[:SPECIAL_DEFENSE],@pokemon.iv[:SPECIAL_DEFENSE]),456,210,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Speed"),248,242,0,base,statshadows[:SPEED]],
+       [sprintf("%d / %d",@pokemon.ev[:SPEED],@pokemon.iv[:SPEED]),456,242,1,Color.new(64,64,64),Color.new(176,176,176)],
+       [_INTL("Ability"),224,278,0,base,shadow]
+    ]
+    # Draw ability name and description
+    ability = @pokemon.ability
+      if ability
+        textpos.push([ability.name,362,278,0,Color.new(64,64,64),Color.new(176,176,176)])
+        drawTextEx(overlay,224,320,282,2,ability.description,Color.new(64,64,64),Color.new(176,176,176))
+      end
+  # Draw all text
+    pbDrawTextPositions(overlay,textpos)
+  end
+
+  def drawPageSix
     overlay = @sprites["overlay"].bitmap
     @sprites["uparrow"].visible   = false
     @sprites["downarrow"].visible = false
