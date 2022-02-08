@@ -1,15 +1,15 @@
-# See the documentation on the wiki to learn how to edit this file.
+﻿# See the documentation on the wiki to learn how to edit this file.
 #-------------------------------
 [0]
 Name = Normal
 InternalName = NORMAL
-Weaknesses = FIGHTING
+Weaknesses = FIGHTING, DEMON, DIVINE
 Immunities = GHOST
 #-------------------------------
 [1]
 Name = Fighting
 InternalName = FIGHTING
-Weaknesses = FLYING,PSYCHIC,FAIRY
+Weaknesses = FLYING,PSYCHIC,FAIRY,DEMON
 Resistances = ROCK,BUG,DARK
 #-------------------------------
 [2]
@@ -22,7 +22,7 @@ Immunities = GROUND
 [3]
 Name = Poison
 InternalName = POISON
-Weaknesses = GROUND,PSYCHIC
+Weaknesses = GROUND,PSYCHIC, DIVINE
 Resistances = FIGHTING,POISON,BUG,GRASS,FAIRY
 #-------------------------------
 [4]
@@ -47,14 +47,14 @@ Resistances = FIGHTING,GROUND,GRASS
 [7]
 Name = Ghost
 InternalName = GHOST
-Weaknesses = GHOST,DARK
+Weaknesses = GHOST,DARK, DEMON
 Resistances = POISON,BUG
 Immunities = NORMAL,FIGHTING
 #-------------------------------
 [8]
 Name = Steel
 InternalName = STEEL
-Weaknesses = FIGHTING,GROUND,FIRE
+Weaknesses = FIGHTING,GROUND,FIRE,DIVINE
 Resistances = NORMAL,FLYING,ROCK,BUG,STEEL,GRASS,PSYCHIC,ICE,DRAGON,FAIRY
 Immunities = POISON
 #-------------------------------
@@ -109,21 +109,37 @@ Resistances = ICE
 Name = Dragon
 InternalName = DRAGON
 IsSpecialType = true
-Weaknesses = ICE,DRAGON,FAIRY
-Resistances = FIRE,WATER,GRASS,ELECTRIC
+Weaknesses = ICE,DRAGON,FAIRY,DIVINE
+Resistances = FIRE,WATER,GRASS,ELECTRIC,DEMON
 #-------------------------------
 [17]
 Name = Dark
 InternalName = DARK
 IsSpecialType = true
 Weaknesses = FIGHTING,BUG,FAIRY
-Resistances = GHOST,DARK
+Resistances = GHOST,DARK,DEMON
 Immunities = PSYCHIC
 #-------------------------------
 [18]
 Name = Fairy
 InternalName = FAIRY
 IsSpecialType = true
-Weaknesses = POISON,STEEL
+Weaknesses = POISON,STEEL,DEMON
 Resistances = FIGHTING,BUG,DARK
 Immunities = DRAGON
+#-------------------------------
+[19]
+Name = Divine
+InternalName = DIVINE
+IsSpecialType = true
+Weaknesses = PSYCHIC,NORMAL
+Resistances = DEMON,DARK,DRAGON,STEEL,DIVINE
+Immunities = FAIRY
+#-------------------------------
+[20]
+Name = Demon
+InternalName = DEMON
+IsSpecialType = true
+Weaknesses = DIVINE,DRAGON
+Resistances = DEMON,GHOST,FIGHTING,FIRE
+Immunities = DARK
