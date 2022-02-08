@@ -22,7 +22,7 @@ MapPosition = 0,13,12
 BattleBack = field
 #-------------------------------
 [003]
-# \PN's house
+# xxxxxxxxxx's house
 HealingSpot = 2,8,8
 MapPosition = 0,13,12
 #-------------------------------
@@ -362,7 +362,7 @@ BattleBack = underwater
 Environment = Underwater
 #-------------------------------
 [071]
-# Harbor
+# Harbour
 MapPosition = 0,13,13
 #-------------------------------
 [072]
@@ -390,3 +390,6 @@ MapPosition = 0,12,10
 Outdoor = true
 MapPosition = 1,13,16
 BattleBack = city
+#-------------------------------
+[076]
+# Route 1
