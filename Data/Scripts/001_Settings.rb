@@ -384,6 +384,11 @@ module Settings
 
   #=============================================================================
 
+  # On/off switches to custom changes I might go back on
+  SPECIALFREEZE = true
+
+  #=============================================================================
+
   # Available speech frames. These are graphic files in "Graphics/Windowskins/".
   SPEECH_WINDOWSKINS = [
     "speech hgss 1",

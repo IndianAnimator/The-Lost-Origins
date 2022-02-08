@@ -187,7 +187,7 @@ module PokeBattle_BattleCommon
     b = battler.hp
     x = ((3*a-2*b)*catch_rate.to_f)/(3*a)
     # Calculation modifiers
-    if battler.status == :SLEEP || battler.status == :FROZEN
+    if battler.status == :SLEEP || (battler.status == :FROZEN && !Settings::SPECIALFREEZE)
       x *= 2.5
     elsif battler.status != :NONE
       x *= 1.5

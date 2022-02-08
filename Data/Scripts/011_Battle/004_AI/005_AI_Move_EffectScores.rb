@@ -197,7 +197,11 @@ class PokeBattle_AI
       when :BURN, :PARALYSIS
         score += 40
       else
-        score -= 90
+        if Settings::SPECIALFREEZE && user.status == :FROZEN
+          score += 40
+        else
+          score -= 90
+        end
       end
     #---------------------------------------------------------------------------
     when "019"

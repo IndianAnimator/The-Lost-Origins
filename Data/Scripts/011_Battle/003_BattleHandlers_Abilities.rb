@@ -283,6 +283,16 @@ BattleHandlers::AbilityOnStatusInflicted.add(:SYNCHRONIZE,
         user.pbParalyze(nil,msg)
         battler.battle.pbHideAbilitySplash(battler)
       end
+    when :FROZEN
+      if user.pbCanFreezeSynchronize?(battler)
+        battler.battle.pbShowAbilitySplash(battler)
+        msg = nil
+        if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+          msg = _INTL("{1}'s {2} froze {3} solid!",battler.pbThis,battler.abilityName,user.pbThis(true))
+        end
+        user.pbBurn(nil,msg)
+        battler.battle.pbHideAbilitySplash(battler)
+      end
     end
   }
 )
