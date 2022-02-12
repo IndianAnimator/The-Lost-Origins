@@ -453,6 +453,8 @@ class PokeBattle_Move
     if user.status == :BURN && physicalMove? && damageReducedByBurn? &&
        !user.hasActiveAbility?(:GUTS)
       multipliers[:final_damage_multiplier] /= 2
+    elsif Settings::SPECIALFREEZE && user.status == :FROZEN && specialMove?
+      multipliers[:final_damage_multiplier] /= 2
     end
     # Aurora Veil, Reflect, Light Screen
     if !ignoresReflect? && !target.damageState.critical &&

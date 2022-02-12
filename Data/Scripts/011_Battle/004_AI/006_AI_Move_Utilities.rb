@@ -484,6 +484,8 @@ class PokeBattle_AI
          !user.hasActiveAbility?(:GUTS) &&
          !(Settings::MECHANICS_GENERATION >= 6 && move.function == "07E")   # Facade
         multipliers[:final_damage_multiplier] /= 2
+      elsif Settings::SPECIALFREEZE && user.status == :FROZEN && move.specialMove?(type)
+        multipliers[:final_damage_multiplier] /= 2
       end
     end
     # Aurora Veil, Reflect, Light Screen

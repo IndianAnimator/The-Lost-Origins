@@ -388,12 +388,12 @@ class PokeBattle_Battle
         b.pbFaint if b.fainted?
       end
     end
-    # Damage from burn
+    # Damage from burn and freeze
     priority.each do |b|
-      next if b.status != :BURN || !b.takesIndirectDamage?
+      next if (b.status != :BURN && !(b.status == :FREEZE || Settings::SPECIALFREEZE)) || !b.takesIndirectDamage?
       oldHP = b.hp
       dmg = (Settings::MECHANICS_GENERATION >= 7) ? b.totalhp/16 : b.totalhp/8
-      dmg = (dmg/2.0).round if b.hasActiveAbility?(:HEATPROOF)
+      dmg = (dmg/2.0).round if b.hasActiveAbility?(:HEATPROOF) && b.status == :BURN
       b.pbContinueStatus { b.pbReduceHP(dmg,false) }
       b.pbItemHPHealCheck
       b.pbAbilitiesOnDamageTaken(oldHP)

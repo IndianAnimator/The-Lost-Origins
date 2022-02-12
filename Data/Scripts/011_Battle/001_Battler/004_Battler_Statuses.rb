@@ -188,6 +188,8 @@ class PokeBattle_Battler
       hasImmuneType |= pbHasType?(:FIRE)
     when :PARALYSIS
       hasImmuneType |= pbHasType?(:ELECTRIC) && Settings::MORE_TYPE_EFFECTS
+    when :FROZEN
+      hasImmuneType |= pbHasType?(:ICE)
     end
     return false if hasImmuneType
     # Ability immunity
@@ -391,6 +393,10 @@ class PokeBattle_Battler
     return pbCanInflictStatus?(:FROZEN, user, showMessages, move)
   end
 
+  def pbCanFreezeSynchronize?(target)
+    return Settings::SPECIALFREEZE && pbCanSynchronizeStatus?(:FROZEN, target)
+  end
+
   def pbFreeze(msg = nil)
     pbInflictStatus(:FROZEN, 0, msg)
   end
@@ -416,7 +422,7 @@ class PokeBattle_Battler
     when :PARALYSIS
       @battle.pbDisplay(_INTL("{1} is paralyzed! It can't move!", pbThis))
     when :FROZEN
-      @battle.pbDisplay(_INTL("{1} is frozen solid!", pbThis))
+      @battle.pbDisplay(_INTL(Settings::SPECIALFREEZE ? "{1} was hurt by its chilled body!" : "{1} is frozen solid!", pbThis))
     end
     PBDebug.log("[Status continues] #{pbThis}'s sleep count is #{@statusCount}") if self.status == :SLEEP
   end
