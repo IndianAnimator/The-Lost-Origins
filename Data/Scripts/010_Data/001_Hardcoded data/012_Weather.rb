@@ -161,3 +161,12 @@ GameData::Weather.register({
   :tile_delta_y     => 0,
   :graphics         => [nil, ["fog_tile"]]
 })
+
+GameData::Weather.register({ #added by IA
+  :id               => :Moon,
+  :id_number        => 7,
+  :category         => :Sun,
+  :tone_proc        => proc { |strength|
+    next Tone.new(64, 64, 32, 0)
+  }
+})

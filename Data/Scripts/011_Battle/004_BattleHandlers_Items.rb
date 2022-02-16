@@ -1477,6 +1477,12 @@ BattleHandlers::WeatherExtenderItem.add(:SMOOTHROCK,
   }
 )
 
+BattleHandlers::WeatherExtenderItem.add(:DARKROCK,
+  proc { |item,weather,duration,battler,battle|
+    next 8 if weather == :Moon #added by IA
+  }
+)
+
 #===============================================================================
 # TerrainExtenderItem handlers
 #===============================================================================

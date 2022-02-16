@@ -85,3 +85,9 @@ GameData::BattleWeather.register({
   :name      => _INTL("Fog"),
   :animation => "Fog"
 })
+
+GameData::BattleWeather.register({ #added by IA
+  :id        => :Moon,
+  :name      => _INTL("Fog"),
+  :animation => "Fog"
+})

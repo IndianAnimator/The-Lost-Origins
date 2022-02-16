@@ -17,20 +17,20 @@ BattleHandlers::AbilityOnSwitchIn.add(:SOLSTICE,
     battle.pbShowAbilitySplash(battler)
     battle.pbStartTerrain(battler, :Grassy)
   }
-)  
-  
+)
+
 BattleHandlers::DamageCalcTargetAbility.add(:TWINKLETOES,
   proc { |ability,user,target,move,mults,baseDmg,type|
     mults[:final_damage_multiplier] *= 2 if move.calcType == :FLYING
     mults[:final_damage_multiplier] /= 2 if move.calcType == :GROUND
   }
-)  
-  
+)
+
 BattleHandlers::DamageCalcUserAbility.add(:ASCENDEDWINGS,
   proc { |ability,user,target,move,mults,baseDmg,type|
     mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
   }
-)  
+)
 #===============================================================================
 # SpeedCalcAbility handlers
 #===============================================================================
@@ -2652,9 +2652,9 @@ BattleHandlers::AbilityOnSwitchIn.add(:SLOWSTART,
   }
 )
 
-BattleHandlers::AbilityOnSwitchIn.add(:SNOWWARNING,
+BattleHandlers::AbilityOnSwitchIn.add(:TWILIGHT, #added by IA
   proc { |ability,battler,battle|
-    pbBattleWeatherAbility(:Hail, battler, battle)
+    pbBattleWeatherAbility(:Moon, battler, battle)
   }
 )
 

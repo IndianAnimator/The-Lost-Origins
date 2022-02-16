@@ -130,6 +130,8 @@ def pbPrepareBattle(battle)
       battle.defaultWeather = :Sun
     when :Fog
       battle.defaultWeather = :Fog if !Settings::SWSH_FOG_IN_BATTLES
+    when :Moon #added by IA
+      battle.defaultWeather = :Fog
     end
   else
     battle.defaultWeather = battleRules["defaultWeather"]

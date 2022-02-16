@@ -283,6 +283,7 @@ class PokeBattle_Battle
     when :StrongWinds then pbDisplay(_INTL("The wind is strong."))
     when :ShadowSky   then pbDisplay(_INTL("The sky is shadowy."))
     when :Fog         then pbDisplay(_INTL("The fog is deep..."))
+    when :Moon        then pbDisplay(_INTL("The moon shines overhead")) #added by IA
     end
     # Terrain announcement
     terrain_data = GameData::BattleTerrain.try_get(@field.terrain)

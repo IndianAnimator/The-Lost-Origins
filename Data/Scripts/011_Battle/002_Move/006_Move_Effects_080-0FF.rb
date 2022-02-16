@@ -119,6 +119,8 @@ class PokeBattle_Move_087 < PokeBattle_Move
       ret = :ROCK if GameData::Type.exists?(:ROCK)
     when :Hail
       ret = :ICE if GameData::Type.exists?(:ICE)
+    when :Moon #added by IA
+      ret = :DARK if GameData::Type.exists?(:DARK)
     end
     return ret
   end

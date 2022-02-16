@@ -369,7 +369,6 @@ class PokemonSummary_Scene
     when 3 then drawPageThree
     when 4 then drawPageFour
     when 5 then drawPageFive
-    when 6 then drawPageSix
     end
   end
 
