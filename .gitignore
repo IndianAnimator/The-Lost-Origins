@@ -1,3 +1,7 @@
+# just some personal shortcuts for navigating easier
+*.lnk
+!Saved Games.lnk
+
 # my rpg maker version keeps making this change versions so im just gitignoring it
 Game.ini
 Game.rxproj
