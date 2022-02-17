@@ -391,7 +391,7 @@ class PokeBattle_Battle
     end
     # Damage from burn and freeze
     priority.each do |b|
-      next if (b.status != :BURN && !(b.status == :FREEZE || Settings::SPECIALFREEZE)) || !b.takesIndirectDamage?
+      next if (b.status != :BURN && !(b.status == :FREEZE && Settings::SPECIALFREEZE)) || !b.takesIndirectDamage?
       oldHP = b.hp
       dmg = (Settings::MECHANICS_GENERATION >= 7) ? b.totalhp/16 : b.totalhp/8
       dmg = (dmg/2.0).round if b.hasActiveAbility?(:HEATPROOF) && b.status == :BURN
