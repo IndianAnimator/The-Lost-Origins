@@ -226,7 +226,7 @@ class Wordle
     end
 
     # debug
-    pbMessage(pbToWord(@word)) if Input.trigger?(Input::SPECIAL)
+    # pbMessage(pbToWord(@word)) if Input.trigger?(Input::SPECIAL)
 
     # warning animation gradually gets dimmer but shouldn't interfere with getting input
     @sprites[:warn].opacity-=10 if @sprites[:warn].opacity>0
@@ -334,7 +334,7 @@ class Wordle
       @sprites[:warn].opacity=250
     else
       pbSEPlay("Voltorb Flip tile")
-      
+
       @curGuess.pop
       @letters.pop
       @sprites[:letters].bitmap.clear
