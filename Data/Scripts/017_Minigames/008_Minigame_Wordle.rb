@@ -20,7 +20,7 @@ class Wordle
     pbUpdateSpriteHash(@sprites)
   end
 
-  def initialize(darkmode=false)
+  def initialize(darkmode=true)
     @darkMode=darkmode
     @directory="Graphics/Pictures/Wordle/"+(@darkMode?"dark/":"light/")
   end
@@ -417,7 +417,7 @@ end
 
 
 def pbWordle(darkmode=nil)
-  darkmode=pbConfirmMessageSerious(_INTL("Dark Mode?")) if darkmode.nil?
+  darkmode=pbConfirmMessage(_INTL("Dark Mode?")) if darkmode.nil?
   pbFadeOutIn do
     scene=Wordle.new(darkmode)
     screen=WordleScreen.new(scene)
