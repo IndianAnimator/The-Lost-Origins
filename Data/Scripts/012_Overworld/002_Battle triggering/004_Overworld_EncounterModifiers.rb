@@ -36,3 +36,18 @@ Events.onWildPokemonCreate += proc { |_sender, e|
 #    YOUR CODE HERE
 #  end
 #}
+
+Events.onTrainerPartyLoad += proc { |_sender, trainer|
+  if trainer[0] #trainer
+    party = trainer[0].party #trainers party
+    for i in party
+      newlevel = pbBalancedLevel($Trainer.party) - 4 + rand(5) #Copy pasted stuff
+      if newlevel > 100
+        newlevel = 100 #level should never be lv 100
+      end
+      i.level = newlevel
+      i.calc_stats
+      i.reset_moves
+    end
+  end
+}
