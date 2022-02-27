@@ -10,7 +10,7 @@ BattleHandlers::AbilityOnSwitchIn.add(:THUNDERSTORM,
   }
 )
 
-BattleHandlers::AbilityOnSwitchIn.add(:SOLSTICE,
+BattleHandlers::AbilityOnSwitchIn.add(:SUNRISE,
   proc { |ability,battler,battle|
     pbBattleWeatherAbility(:Sun, battler, battle)
     next if battle.field.terrain == :Grassy
@@ -31,6 +31,51 @@ BattleHandlers::DamageCalcUserAbility.add(:ASCENDEDWINGS,
     mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
   }
 )
+
+BattleHandlers::AbilityOnSwitchIn.add(:TWILIGHT,
+  proc { |ability,battler,battle|
+    pbBattleWeatherAbility(:Moon, battler, battle)
+  }
+)
+
+BattleHandlers::TargetAbilityOnHit.add(:NEUROTOXIN,
+  proc { |ability,user,target,move,battle|
+    # NOTE: This ability has a 30% chance of triggering, not a 30% chance of
+    #       inflicting a status condition. It can try (and fail) to inflict a
+    #       status condition that the user is immune to.
+    next if move.bitingMove?
+    next if battle.pbRandom(100)>=30
+    r = battle.pbRandom(2)
+    next if r==0 && user.poisoned?
+    next if r==1 && user.paralyzed?
+    battle.pbShowAbilitySplash(target)
+    if user.affectedByPowder?(PokeBattle_SceneConstants::USE_ABILITY_SPLASH) &&
+       user.affectedByContactEffect?(PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+      case r
+      when 0
+        if user.pbCanPoison?(target,PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+          msg = nil
+          if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+            msg = _INTL("{1}'s {2} poisoned {3}!",target.pbThis,
+               target.abilityName,user.pbThis(true))
+          end
+          user.pbPoison(target,msg)
+        end
+      when 1
+        if user.pbCanParalyze?(target,PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+          msg = nil
+          if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+            msg = _INTL("{1}'s {2} paralyzed {3}! It may be unable to move!",
+               target.pbThis,target.abilityName,user.pbThis(true))
+          end
+          user.pbParalyze(target,msg)
+        end
+      end
+    end
+    battle.pbHideAbilitySplash(target)
+  }
+)
+
 #===============================================================================
 # SpeedCalcAbility handlers
 #===============================================================================
@@ -2649,12 +2694,6 @@ BattleHandlers::AbilityOnSwitchIn.add(:SLOWSTART,
          battler.pbThis,battler.abilityName))
     end
     battle.pbHideAbilitySplash(battler)
-  }
-)
-
-BattleHandlers::AbilityOnSwitchIn.add(:TWILIGHT, #added by IA
-  proc { |ability,battler,battle|
-    pbBattleWeatherAbility(:Moon, battler, battle)
   }
 )
 
