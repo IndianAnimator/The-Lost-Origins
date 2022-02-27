@@ -40,11 +40,11 @@ BattleHandlers::AbilityOnSwitchIn.add(:TWILIGHT,
 
 BattleHandlers::TargetAbilityOnHit.add(:NEUROTOXIN,
   proc { |ability,user,target,move,battle|
-    # NOTE: This ability has a 30% chance of triggering, not a 30% chance of
+    # NOTE: This ability has a 15% chance of triggering, not a 15% chance of
     #       inflicting a status condition. It can try (and fail) to inflict a
     #       status condition that the user is immune to.
     next if move.bitingMove?
-    next if battle.pbRandom(100)>=30
+    next if battle.pbRandom(100)>=15
     r = battle.pbRandom(2)
     next if r==0 && user.poisoned?
     next if r==1 && user.paralyzed?
