@@ -29728,3 +29728,36 @@ BattlerEnemyX = 2
 BattlerEnemyY = 9
 BattlerShadowX = 0
 BattlerShadowSize = 1
+#-------------------------------
+[899]
+Name = Zeus
+InternalName = ZEUS
+Type1 = ELECTRIC
+Type2 = DIVINE
+BaseStats = 100,100,100,150,150,130
+GenderRate = AlwaysMale
+GrowthRate = Fluctuating
+BaseEXP = 100
+EffortPoints = 0,0,0,0,1,0
+Rareness = 0
+Happiness = 0
+Abilities = THUNDERSTORM
+Moves = 1,THUNDER,1,ANCIENTGRUDGE,1,THUNDEROUSKICK,1,HURRICANE
+Compatibility = Undiscovered
+StepsToHatch = 100000000000
+Height = 0.7
+Weight = 6.9
+Color = White
+Shape = Bipedal
+Habitat = None
+Kind = Lord of Storms
+Pokedex = In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
+Generation = 9
+BattlerPlayerX = 0
+BattlerPlayerY = 58
+BattlerEnemyX = 1
+BattlerEnemyY = 36
+BattlerShadowX = 0
+BattlerShadowSize = 1
+
+

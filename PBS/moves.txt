@@ -758,3 +758,8 @@
 739,LIFEDEW,Life Dew,17E,0,WATER,Status,0,10,0,UserAndAllies,0,d,"The user scatters mysterious water around and restores the HP of itself."
 740,SURGINGSTRIKES,Surging Strikes,188,25,WATER,Physical,100,5,0,NearOther,0,abef,"Strikes the target thrice, with mastery of the Water style. Always results in a critical hit."
 741,FLIPTURN,Flip Turn,0EE,60,WATER,Physical,100,20,0,NearOther,0,abef,"After making its attack, the user rushes back to switch places with a party Pokémon in waiting."
+#DIVINE TYPE MOVES
+742,ANCIENTGRUDGE,Ancient Grudge,07E,90,DIVINE,Physical,100,20,0,NearOther,0,abef,"An attack move that doubles its power if the user is poisoned, burned, or has paralysis."
+743,SMITE,Smite,00F,90,DIVINE,Special,100,15,30,NearOther,0,abe,"The foe slams the target with its steel-hard head. It may also make the target flinch."
+#DEMON TYPE MOVES
+744,DEVOUR,Devour,0DD,85,DEMON,Physical,100,10,0,NearOther,0,abefj,"An energy-draining punch. The user's HP is restored by half the damage taken by the target."
