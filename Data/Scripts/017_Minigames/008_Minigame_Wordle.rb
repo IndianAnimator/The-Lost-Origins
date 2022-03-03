@@ -40,7 +40,7 @@ class Wordle
 
   def initialize(darkmode=true)
     @darkMode=darkmode
-    @directory="Graphics/Pictures/Wordle/"+(@darkMode? "dark/":"light/")
+    @directory="Graphics/Pictures/Wordle/"+(@darkMode?"dark/":"light/")
   end
 
   def pbNewGame
@@ -58,7 +58,7 @@ class Wordle
     @letterNum=0
     @curGuess=[]
     # false - no data, 0 - DNE, 1 - yellow, 2 - green
-    @keyData=Array.new(26) { |z| false }
+    @keyData=Array.new(26,false)
 
     # not game over
     @ongoing=true
@@ -268,7 +268,9 @@ class Wordle
     if @letterNum<5 || !(ANSWERS.include?(@curGuess))
       @sprites[:warn].opacity=250
     else
+      pbSEPlay("Voltorb Flip tile")
       @sprites[:warn].opacity=0
+
       # false - no matches, 0 - yellow, 1 - green
       worddata=[false,false,false,false,false]
       5.times do |i|
