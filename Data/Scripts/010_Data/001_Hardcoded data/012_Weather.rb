@@ -164,9 +164,9 @@ GameData::Weather.register({
 
 GameData::Weather.register({ #added by IA
   :id               => :Moon,
-  :id_number        => 7,
-  :category         => :Sun,
+  :id_number        => 9,
+  :category         => :Fog,
   :tone_proc        => proc { |strength|
-    next Tone.new(64, 64, 32, 0)
+    next Tone.new(-32, -32,- 32, 0)
   }
 })
