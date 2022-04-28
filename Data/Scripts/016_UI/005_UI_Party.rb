@@ -1329,9 +1329,6 @@ class PokemonPartyScreen
             pbRefreshSingle(pkmnid)
           end
         end
-      #added by IA
-      elsif cmdRelearn>=0 && command == cmdRelearn
-        pbRelearnMoveScreen(pkmn)
       elsif cmdItem>=0 && command==cmdItem
         itemcommands = []
         cmdUseItem   = -1
@@ -1411,6 +1408,13 @@ class PokemonPartyScreen
             end
           end
         end
+        #added by IA
+        elsif cmdRelearn>=0 && command == cmdRelearn
+          if pbHasRelearnableMoves?(pkmn)
+            pbRelearnMoveScreen(pkmn)
+          else
+            pbDisplay(_INTL("This Pokémon doesn't have any moves to remember yet."))
+          end
       end
     end
     @scene.pbEndScene
