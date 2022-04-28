@@ -1225,6 +1225,9 @@ class PokemonPartyScreen
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
+      #added by IA
+      #relearn moves
+      commands[cmdRelearn = commands.length]      = _INTL("Relearn")
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
         pkmn.moves.each_with_index do |m, i|
@@ -1326,6 +1329,9 @@ class PokemonPartyScreen
             pbRefreshSingle(pkmnid)
           end
         end
+      #added by IA
+      elsif cmdRelearn>=0 && command == cmdRelearn
+        pbRelearnMoveScreen(pkmn)
       elsif cmdItem>=0 && command==cmdItem
         itemcommands = []
         cmdUseItem   = -1
@@ -1383,7 +1389,7 @@ class PokemonPartyScreen
               break
             elsif GameData::Item.get(newpkmn.item).is_mail?
               pbDisplay(_INTL("{1}'s mail must be removed before giving it an item.",newpkmn.name))
-            else
+            elsif
               newitem = newpkmn.item
               newitemname = newitem.name
               if newitem == :LEFTOVERS
