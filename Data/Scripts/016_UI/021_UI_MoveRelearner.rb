@@ -152,10 +152,6 @@ class MoveRelearnerScreen
     @scene = scene
   end
 
-  def pbHasRelearnableMoves?(pkmn)
-    return pbGetRelearnableMoves(pkmn).length > 0
-  end
-
   def pbGetRelearnableMoves(pkmn)
     return [] if !pkmn || pkmn.egg? || pkmn.shadowPokemon?
     moves = []

@@ -1386,7 +1386,7 @@ class PokemonPartyScreen
               break
             elsif GameData::Item.get(newpkmn.item).is_mail?
               pbDisplay(_INTL("{1}'s mail must be removed before giving it an item.",newpkmn.name))
-            elsif
+            else
               newitem = newpkmn.item
               newitemname = newitem.name
               if newitem == :LEFTOVERS
@@ -1410,10 +1410,10 @@ class PokemonPartyScreen
         end
         #added by IA
         elsif cmdRelearn>=0 && command == cmdRelearn
-          if pbHasRelearnableMoves?(pkmn)
-            pbRelearnMoveScreen(pkmn)
-          else
+          if pbGetRelearnableMoves(pkmn).empty?
             pbDisplay(_INTL("This Pokémon doesn't have any moves to remember yet."))
+          else
+            pbRelearnMoveScreen(pkmn)
           end
       end
     end
