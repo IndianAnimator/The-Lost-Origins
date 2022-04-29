@@ -170,7 +170,7 @@ class MoveRelearnerScreen
   end
 
   def pbStartScreen(pkmn)
-    moves = self.pbGetRelearnableMoves(pkmn)
+    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)
     @scene.pbStartScene(pkmn, moves)
     loop do
       move = @scene.pbChooseMove
