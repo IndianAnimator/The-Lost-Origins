@@ -1,0 +1,4 @@
+Name      = LA Moverelearner
+Version   = 1.0
+Link      = https://reliccastle.com/resources/933/
+Credits   = Kotaro,IndianAnimator
