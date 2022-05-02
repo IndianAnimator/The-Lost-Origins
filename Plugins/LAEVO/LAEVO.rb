@@ -119,17 +119,19 @@ class PokemonPartyScreen
         end
 
       elsif cmdEvolve>=0 && command==cmdEvolve
-
+        def item
+          return GameData::Item.try_get(@item)
+        end
         species_data = GameData::Species.get(pkmn.species)
         species_data.get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-          if evo[2] == pkmn.level
-            newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
-          else
+          if evo[2] != pkmn.level
             ItemHandlers::UseOnPokemon.addIf(proc { |item| GameData::Item.get(item).is_evolution_stone? },
               proc { |item,pkmn,scene|
                 newspecies = pkmn.check_evolution_on_use_item(item)
               }
             )
+          else evo[2] <= pkmn.level
+            newspecies = pkmn.check_evolution_on_level_up
           end
           if newspecies
             pbFadeOutInWithMusic {
@@ -146,6 +148,7 @@ class PokemonPartyScreen
             pbDisplay(_INTL("This Pokémon can't evolve."))
           end
         end
+
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
       elsif cmdSwitch>=0 && command==cmdSwitch
