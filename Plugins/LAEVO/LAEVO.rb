@@ -1,4 +1,12 @@
+#===============================================================================
+GameData::Species.each do |species|
+  species.evolutions.each do |evo|
+    Compiler.param_type = GameData::Evolution.get(evolutions.each[1]).parameter
+  end
+end
+#===============================================================================
 class PokemonPartyScreen
+  include Compiler
   def pbPokemonScreen
     @scene.pbStartScene(@party,
       (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."),nil)
@@ -116,7 +124,11 @@ class PokemonPartyScreen
         end
       elsif cmdEvolve>=0 && command==cmdEvolve
         evo = PokemonEvolutionScene.new
-        newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
+        if param_type == Integer
+          newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
+        else
+          newspecies = pkmn.check_evolution_on_use_item(item_used)
+        end
         if newspecies
           pbFadeOutInWithMusic {
             evo = PokemonEvolutionScene.new
