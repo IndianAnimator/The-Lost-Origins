@@ -125,11 +125,9 @@ class PokemonPartyScreen
         species_data = GameData::Species.get(pkmn.species)
         species_data.get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
           if evo[2] != pkmn.level
-            ItemHandlers::UseOnPokemon.addIf(proc { |item| GameData::Item.get(item).is_evolution_stone? },
-              proc { |item,pkmn,scene|
-                newspecies = pkmn.check_evolution_on_use_item(item)
-              }
-            )
+            if $PokemonBag.pbHasItem?(GameData::Item.get(item).is_evolution_stone?)
+              newspecies = pkmn.check_evolution_on_use_item(item)
+            end
           else evo[2] <= pkmn.level
             newspecies = pkmn.check_evolution_on_level_up
           end
