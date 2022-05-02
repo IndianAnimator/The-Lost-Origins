@@ -116,11 +116,18 @@ class PokemonPartyScreen
         end
       elsif cmdEvolve>=0 && command==cmdEvolve
         evo = PokemonEvolutionScene.new
-        newspecies = pbGetEvolvedFormData(pkmn.species)     # Gets evolutions
-        evo.pbStartScreen(pkmn,newspecies)
-        evo.pbEvolution
-        evo.pbEndScreen
-        scene.pbRefresh
+        newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
+        if newspecies
+          pbFadeOutInWithMusic {
+            evo = PokemonEvolutionScene.new
+            evo.pbStartScreen(pkmn,newspecies)
+            evo.pbEvolution
+            evo.pbEndScreen
+            scene.pbRefresh
+          }
+        else
+          pbDisplay(_INTL("This Pokémon can't evolve."))
+        end
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
       elsif cmdSwitch>=0 && command==cmdSwitch

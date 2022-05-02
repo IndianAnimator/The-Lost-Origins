@@ -1054,7 +1054,7 @@ class Pokemon
       break if GameData::Evolution.get(evo[1]).call_after_evolution(self, evo[0], evo[2], new_species)
     end
   end
-
+  
   # The core method that performs evolution checks. Needs a block given to it,
   # which will provide either a GameData::Species ID (the species to evolve
   # into) or nil (keep checking).
