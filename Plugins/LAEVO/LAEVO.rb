@@ -125,7 +125,7 @@ class PokemonPartyScreen
         species_data = GameData::Species.get(pkmn.species)
         species_data.get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
           if evo[2] != pkmn.level
-            if $PokemonBag.pbHasItem?(GameData::Item.get(item).is_evolution_stone?)
+            if $PokemonBag.pbHasItem?(:FIRESTONE||:THUNDERSTONE||:WATERSTONE||:LEAFSTONE||:MOONSTONE||:SUNSTONE||:DUSKSTONE||:DAWNSTONE||:SHINYSTONE||:ICESTONE||:GALARICACUFF||:GALARICAWREATH||:SWEETAPPLE||:TARTAPPLE||:CHIPPEDPOT||:CRACKEDPOT||:STRAWBERRYSWEET||:LOVESWEET||:BERRYSWEET||:CLOVERSWEET||:FLOWERSWEET||:STARSWEET||:RIBBONSWEET)
               newspecies = pkmn.check_evolution_on_use_item(item)
             end
           else evo[2] <= pkmn.level
