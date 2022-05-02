@@ -511,12 +511,9 @@ module Compiler
       species.evolutions.each do |evo|
         evo[0] = csvEnumField!(evo[0], :Species, "Evolutions", species.id_number)
         param_type = GameData::Evolution.get(evo[1]).parameter
-        def Compiler.paramType?
-          self.param_type = GameData::Evolution.get(evo[1]).parameter
-        end
-        if Compiler.paramType?nil?
+        if param_type.nil?
           evo[2] = nil
-        elsif Compiler.paramType? == Integer
+        elsif param_type == Integer
           evo[2] = csvPosInt!(evo[2])
         else
           evo[2] = csvEnumField!(evo[2], param_type, "Evolutions", species.id_number)
