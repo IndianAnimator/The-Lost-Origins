@@ -510,13 +510,13 @@ module Compiler
       pbSetWindowText(_INTL("Processing {1} evolution line {2}", FileLineData.file, species.id_number)) if species.id_number % 50 == 0
       species.evolutions.each do |evo|
         evo[0] = csvEnumField!(evo[0], :Species, "Evolutions", species.id_number)
-        param_type = GameData::Evolution.get(evo[1]).parameter
-        if param_type.nil?
+        self.param_type = GameData::Evolution.get(evo[1]).parameter
+        if self.param_type.nil?
           evo[2] = nil
-        elsif param_type == Integer
+        elsif self.param_type == Integer
           evo[2] = csvPosInt!(evo[2])
         else
-          evo[2] = csvEnumField!(evo[2], param_type, "Evolutions", species.id_number)
+          evo[2] = csvEnumField!(evo[2], self.param_type, "Evolutions", species.id_number)
         end
       end
     end
@@ -623,14 +623,14 @@ module Compiler
           when "Evolutions"
             evo_array = []
             for i in 0...value.length / 3
-              param_type = GameData::Evolution.get(value[i * 3 + 1]).parameter
+              self.param_type = GameData::Evolution.get(value[i * 3 + 1]).parameter
               param = value[i * 3 + 2]
-              if param_type.nil?
+              if self.param_type.nil?
                 param = nil
-              elsif param_type == Integer
+              elsif self.param_type == Integer
                 param = csvPosInt!(param)
               else
-                param = csvEnumField!(param, param_type, "Evolutions", section_name)
+                param = csvEnumField!(param, self.param_type, "Evolutions", section_name)
               end
               evo_array.push([value[i * 3], value[i * 3 + 1], param, false])
             end

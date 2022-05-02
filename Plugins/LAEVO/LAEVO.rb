@@ -124,7 +124,7 @@ class PokemonPartyScreen
         end
       elsif cmdEvolve>=0 && command==cmdEvolve
         evo = PokemonEvolutionScene.new
-        if param_type == Integer
+        if Compiler.param_type == Integer
           newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
         else
           newspecies = pkmn.check_evolution_on_use_item(item_used)
