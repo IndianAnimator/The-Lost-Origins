@@ -1739,7 +1739,6 @@ class PokemonPartyScreen
           pbRelearnMoveScreen(pkmn)
         end
       elsif cmdEvolve>=0 && command==cmdEvolve
-        evo = PokemonEvolutionScene.new
         def paramType?
           getParamType
         end
@@ -1750,10 +1749,10 @@ class PokemonPartyScreen
         end
         if newspecies
           pbFadeOutInWithMusic {
-            evo = PokemonEvolutionScene.new
-            evo.pbStartScreen(pkmn,newspecies)
-            evo.pbEvolution
-            evo.pbEndScreen
+            evolution = PokemonEvolutionScene.new
+            evolution.pbStartScreen(pkmn,newspecies)
+            evolution.pbEvolution
+            evolution.pbEndScreen
             scene.pbRefresh
           }
         else
