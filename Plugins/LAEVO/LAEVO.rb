@@ -117,28 +117,35 @@ class PokemonPartyScreen
         else
           pbRelearnMoveScreen(pkmn)
         end
+
       elsif cmdEvolve>=0 && command==cmdEvolve
+
         species_data = GameData::Species.get(pkmn.species)
         species_data.get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-          next if evo[3]   # Prevolution
-          ret = yield self, evo[0], evo[1], evo[2]   # pkmn, new_species, method, parameter
-        end
-        evoType = GameData::Evolution.get(evo.each[1]).method
-        if evoType == :Level
-          newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
-        #else
-        #  newspecies = pkmn.check_evolution_on_use_item(item_used)
-        end
-        if newspecies
-          pbFadeOutInWithMusic {
-            evolution = PokemonEvolutionScene.new
-            evolution.pbStartScreen(pkmn,newspecies)
-            evolution.pbEvolution
-            evolution.pbEndScreen
-            scene.pbRefresh
-          }
-        else
-          pbDisplay(_INTL("This Pokémon can't evolve."))
+
+          if evo[2] == Integer
+            newspecies = pkmn.check_evolution_on_level_up    # Gets level-up evolutions
+          else
+            ItemHandlers::UseOnPokemon.addIf(proc { |item| GameData::Item.get(item).is_evolution_stone? },
+              proc { |item,pkmn,scene|
+                newspecies = pkmn.check_evolution_on_use_item(item)
+              }
+            )
+          end
+          if newspecies
+            pbFadeOutInWithMusic {
+              evolution = PokemonEvolutionScene.new
+              evolution.pbStartScreen(pkmn,newspecies)
+              evolution.pbEvolution
+              evolution.pbEndScreen
+              if newspecies = pkmn.check_evolution_on_level_up
+                scene.pbRefreshAnnotations(proc { |p| !p.check_evolution_on_use_item(item).nil? })
+              end
+              scene.pbRefresh
+            }
+          else
+            pbDisplay(_INTL("This Pokémon can't evolve."))
+          end
         end
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
