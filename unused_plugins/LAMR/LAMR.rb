@@ -1,5 +1,5 @@
 #==============================================================================
-# Config	
+# Config
 # LA Move Relearner base by IndianAnimator script by Kotaro
 EGGMOVES = true
 TMMOVES = true
@@ -23,10 +23,10 @@ class MoveRelearnerScreen
     if EGGMOVES==true
       babyspecies = species_data.get_baby_species
       GameData::Species.get(babyspecies).egg_moves.each { |m| moves.push(m) }
-    end  
+    end
     if TMMOVES==true
       species_data.tutor_moves.each { |m| moves.push(m) }
-    end  
+    end
     moves = tmoves + moves
     return moves | []   # remove duplicates
   end
@@ -37,13 +37,13 @@ class MoveRelearnerScreen
     loop do
       move = @scene.pbChooseMove
       if move
-        if @scene.pbConfirm(_INTL("Teach {1}?", GameData::Move.get(move).name))
+        if @scene.pbConfirmMessage(_INTL("Teach {1}?", GameData::Move.get(move).name))
           if pbLearnMove(pkmn, move)
             @scene.pbEndScene
             return true
           end
         end
-      elsif @scene.pbConfirm(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
+      elsif @scene.pbConfirmMessage(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
         @scene.pbEndScene
         return false
       end
@@ -136,7 +136,7 @@ class PokemonPartyScreen
           pbRefresh
           break
         elsif pbCanUseHiddenMove?(pkmn,pkmn.moves[i].id)
-          if pbConfirmUseHiddenMove(pkmn,pkmn.moves[i].id)
+          if pbConfirmMessageUseHiddenMove(pkmn,pkmn.moves[i].id)
             @scene.pbEndScene
             if pkmn.moves[i].id == :FLY
               scene = PokemonRegionMap_Scene.new(-1,false)
@@ -163,7 +163,7 @@ class PokemonPartyScreen
         if MoveRelearnerScreen.pbGetRelearnableMoves(pkmn).empty?
           pbDisplay(_INTL("This Pokémon doesn't have any moves to remember yet."))
         else
-          pbRelearnMoveScreen(pkmn) 
+          pbRelearnMoveScreen(pkmn)
         end
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
@@ -255,7 +255,7 @@ class PokemonPartyScreen
               else
                 pbDisplay(_INTL("{1} is already holding a {2}.\1",newpkmn.name,newitemname))
               end
-              if pbConfirm(_INTL("Would you like to switch the two items?"))
+              if pbConfirmMessage(_INTL("Would you like to switch the two items?"))
                 newpkmn.item = item
                 pkmn.item = newitem
                 @scene.pbClearSwitching

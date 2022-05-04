@@ -956,7 +956,7 @@ class PokemonPartyScreen
     @scene.pbDisplay(text)
   end
 
-  def pbConfirm(text)
+  def pbConfirmMessage(text)
     return @scene.pbDisplayConfirm(text)
   end
 
@@ -1282,7 +1282,7 @@ class PokemonPartyScreen
           pbRefresh
           break
         elsif pbCanUseHiddenMove?(pkmn,pkmn.moves[i].id)
-          if pbConfirmUseHiddenMove(pkmn,pkmn.moves[i].id)
+          if pbConfirmMessageUseHiddenMove(pkmn,pkmn.moves[i].id)
             @scene.pbEndScene
             if pkmn.moves[i].id == :FLY
               scene = PokemonRegionMap_Scene.new(-1,false)
@@ -1333,7 +1333,7 @@ class PokemonPartyScreen
           )]
         end
         if evoreqs[newspecies] # requires an item
-          next unless @scene.pbConfirm(_INTL(
+          next unless @scene.pbConfirmMessage(_INTL(
             "This will consume a {1}. Do you want to continue?",
             GameData::Item.get(evoreqs[newspecies]).name
           ))
@@ -1436,7 +1436,7 @@ class PokemonPartyScreen
               else
                 pbDisplay(_INTL("{1} is already holding a {2}.\1",newpkmn.name,newitemname))
               end
-              if pbConfirm(_INTL("Would you like to switch the two items?"))
+              if pbConfirmMessage(_INTL("Would you like to switch the two items?"))
                 newpkmn.item = item
                 pkmn.item = newitem
                 @scene.pbClearSwitching
