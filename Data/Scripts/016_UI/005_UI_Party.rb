@@ -956,7 +956,7 @@ class PokemonPartyScreen
     @scene.pbDisplay(text)
   end
 
-  def pbConfirmMessage(text)
+  def pbConfirm(text)
     return @scene.pbDisplayConfirm(text)
   end
 
@@ -1282,7 +1282,7 @@ class PokemonPartyScreen
           pbRefresh
           break
         elsif pbCanUseHiddenMove?(pkmn,pkmn.moves[i].id)
-          if pbConfirmMessageUseHiddenMove(pkmn,pkmn.moves[i].id)
+          if pbConfirmUseHiddenMove(pkmn,pkmn.moves[i].id)
             @scene.pbEndScene
             if pkmn.moves[i].id == :FLY
               scene = PokemonRegionMap_Scene.new(-1,false)
@@ -1316,6 +1316,8 @@ class PokemonPartyScreen
         GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
           if evo[1].to_s.start_with?('Item')
             evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+          elsif evo[1].to_s.start_with?('Trade')
+            evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
           elsif pkmn.check_evolution_on_level_up
             evoreqs[evo[0]] = nil
           end
