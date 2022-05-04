@@ -22,7 +22,7 @@ class PokemonPartyScreen
       commands   = []
       cmdSummary = -1
       cmdRelearn = -1   #by Kota
-      cmdEvolve = -1
+      cmdEvolve  = -1
       cmdDebug   = -1
       cmdMoves   = [-1] * pkmn.numMoves
       cmdSwitch  = -1
@@ -31,7 +31,7 @@ class PokemonPartyScreen
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
       commands[cmdRelearn = commands.length]      = _INTL("Relearn")  #by Kota
-      commands[cmdEvolve = commands.length]      = _INTL("Evolve")
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve")
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
@@ -117,36 +117,41 @@ class PokemonPartyScreen
         else
           pbRelearnMoveScreen(pkmn)
         end
-
       elsif cmdEvolve>=0 && command==cmdEvolve
-        def item
-          return GameData::Item.try_get(@item)
-        end
-        species_data = GameData::Species.get(pkmn.species)
-        species_data.get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-          if evo[2] != pkmn.level
-            if $PokemonBag.pbHasItem?(:FIRESTONE||:THUNDERSTONE||:WATERSTONE||:LEAFSTONE||:MOONSTONE||:SUNSTONE||:DUSKSTONE||:DAWNSTONE||:SHINYSTONE||:ICESTONE||:GALARICACUFF||:GALARICAWREATH||:SWEETAPPLE||:TARTAPPLE||:CHIPPEDPOT||:CRACKEDPOT||:STRAWBERRYSWEET||:LOVESWEET||:BERRYSWEET||:CLOVERSWEET||:FLOWERSWEET||:STARSWEET||:RIBBONSWEET)
-              newspecies = pkmn.check_evolution_on_use_item(item)
-            end
-          else evo[2] <= pkmn.level
-            newspecies = pkmn.check_evolution_on_level_up
-          end
-          if newspecies
-            pbFadeOutInWithMusic {
-              evolution = PokemonEvolutionScene.new
-              evolution.pbStartScreen(pkmn,newspecies)
-              evolution.pbEvolution
-              evolution.pbEndScreen
-              if newspecies = pkmn.check_evolution_on_level_up
-                scene.pbRefreshAnnotations(proc { |p| !p.check_evolution_on_use_item(item).nil? })
-              end
-              scene.pbRefresh
-            }
-          else
-            pbDisplay(_INTL("This Pokémon can't evolve."))
+        evoreqs = {}
+        GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+          if evo[1].to_s.start_with?('Item')
+            evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+          elsif pkmn.check_evolution_on_level_up
+            evoreqs[evo[0]] = nil
           end
         end
-
+        case evoreqs.length
+        when 0
+          pbDisplay(_INTL("This Pokémon can't evolve."))
+          next
+        when 1
+          newspecies = evoreqs.keys[0]
+        else
+          newspecies = evoreqs.keys[@scene.pbShowCommands(
+            _INTL("Which species would you like to evolve into?"),
+            evoreqs.keys.map { |id| _INTL(GameData::Species.get(id).real_name) }
+          )]
+        end
+        if evoreqs[newspecies] # requires an item
+          next unless @scene.pbConfirm(_INTL(
+            "This will consume a {1}. Do you want to continue?",
+            GameData::Item.get(evoreqs[newspecies]).name
+          ))
+          $PokemonBag.pbDeleteItem(evoreqs[newspecies])
+        end
+        pbFadeOutInWithMusic {
+          evo = PokemonEvolutionScene.new
+          evo.pbStartScreen(pkmn,newspecies)
+          evo.pbEvolution
+          evo.pbEndScreen
+          scene.pbRefresh
+        }
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
       elsif cmdSwitch>=0 && command==cmdSwitch

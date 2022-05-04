@@ -1198,12 +1198,10 @@ class PokemonPartyScreen
 
   def pbPokemonScreen
     @scene.pbStartScene(@party,
-       (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."),nil)
+      (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."),nil)
     loop do
       @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
-      @scene.allowBox = true if @scene.respond_to?(:allowBox)
       pkmnid = @scene.pbChoosePokemon(false,-1,1)
-      @scene.allowBox = false if @scene.respond_to?(:allowBox)
       break if (pkmnid.is_a?(Numeric) && pkmnid<0) || (pkmnid.is_a?(Array) && pkmnid[1]<0)
       if pkmnid.is_a?(Array) && pkmnid[0]==1   # Switch
         @scene.pbSetHelpText(_INTL("Move to where?"))
@@ -1217,6 +1215,8 @@ class PokemonPartyScreen
       pkmn = @party[pkmnid]
       commands   = []
       cmdSummary = -1
+      cmdRelearn = -1   #by Kota
+      cmdEvolve  = -1
       cmdDebug   = -1
       cmdMoves   = [-1] * pkmn.numMoves
       cmdSwitch  = -1
@@ -1224,15 +1224,14 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
+      commands[cmdRelearn = commands.length]      = _INTL("Relearn")  #by Kota
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve")
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
-      #added by IA
-      #relearn moves
-      commands[cmdRelearn = commands.length]      = _INTL("Relearn")
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
         pkmn.moves.each_with_index do |m, i|
           if [:MILKDRINK, :SOFTBOILED].include?(m.id) ||
-             HiddenMoveHandlers.hasHandler(m.id)
+            HiddenMoveHandlers.hasHandler(m.id)
             commands[cmdMoves[i] = commands.length] = [m.name, 1]
           end
         end
@@ -1294,7 +1293,7 @@ class PokemonPartyScreen
                 return [pkmn,pkmn.moves[i].id]
               end
               @scene.pbStartScene(@party,
-                 (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
+                (@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
               break
             end
             return [pkmn,pkmn.moves[i].id]
@@ -1305,6 +1304,47 @@ class PokemonPartyScreen
       if cmdSummary>=0 && command==cmdSummary
         @scene.pbSummary(pkmnid) {
           @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
+        }
+      elsif cmdRelearn>=0 && command==cmdRelearn
+        if MoveRelearnerScreen.pbGetRelearnableMoves(pkmn).empty?
+          pbDisplay(_INTL("This Pokémon doesn't have any moves to remember yet."))
+        else
+          pbRelearnMoveScreen(pkmn)
+        end
+      elsif cmdEvolve>=0 && command==cmdEvolve
+        evoreqs = {}
+        GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+          if evo[1].to_s.start_with?('Item')
+            evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+          elsif pkmn.check_evolution_on_level_up
+            evoreqs[evo[0]] = nil
+          end
+        end
+        case evoreqs.length
+        when 0
+          pbDisplay(_INTL("This Pokémon can't evolve."))
+          next
+        when 1
+          newspecies = evoreqs.keys[0]
+        else
+          newspecies = evoreqs.keys[@scene.pbShowCommands(
+            _INTL("Which species would you like to evolve into?"),
+            evoreqs.keys.map { |id| _INTL(GameData::Species.get(id).real_name) }
+          )]
+        end
+        if evoreqs[newspecies] # requires an item
+          next unless @scene.pbConfirm(_INTL(
+            "This will consume a {1}. Do you want to continue?",
+            GameData::Item.get(evoreqs[newspecies]).name
+          ))
+          $PokemonBag.pbDeleteItem(evoreqs[newspecies])
+        end
+        pbFadeOutInWithMusic {
+          evo = PokemonEvolutionScene.new
+          evo.pbStartScreen(pkmn,newspecies)
+          evo.pbEvolution
+          evo.pbEndScreen
+          scene.pbRefresh
         }
       elsif cmdDebug>=0 && command==cmdDebug
         pbPokemonDebug(pkmn,pkmnid)
@@ -1317,7 +1357,7 @@ class PokemonPartyScreen
         end
       elsif cmdMail>=0 && command==cmdMail
         command = @scene.pbShowCommands(_INTL("Do what with the mail?"),
-           [_INTL("Read"),_INTL("Take"),_INTL("Cancel")])
+          [_INTL("Read"),_INTL("Take"),_INTL("Cancel")])
         case command
         when 0   # Read
           pbFadeOutIn {
@@ -1340,7 +1380,7 @@ class PokemonPartyScreen
         itemcommands[cmdGiveItem=itemcommands.length] = _INTL("Give")
         itemcommands[cmdTakeItem=itemcommands.length] = _INTL("Take") if pkmn.hasItem?
         itemcommands[cmdMoveItem=itemcommands.length] = _INTL("Move") if pkmn.hasItem? &&
-                                                                         !GameData::Item.get(pkmn.item).is_mail?
+                                                                        !GameData::Item.get(pkmn.item).is_mail?
         itemcommands[itemcommands.length]             = _INTL("Cancel")
         command = @scene.pbShowCommands(_INTL("Do what with an item?"),itemcommands)
         if cmdUseItem>=0 && command==cmdUseItem   # Use
