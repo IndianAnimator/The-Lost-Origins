@@ -223,9 +223,6 @@ class PokemonPartyPanel < SpriteWrapper
     @text          = nil
     @refreshBitmap = true
     @refreshing    = false
-    if @evoreqs
-      @evolutionpossible = AnimatedBitmap.new("Plugins/LAEVO/Graphics/icon_evo")
-    end
     refresh
   end
 
