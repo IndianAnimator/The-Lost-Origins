@@ -59,7 +59,10 @@ class PokemonPartyPanel < SpriteWrapper
     @refreshBitmap = true
     @refreshing    = false
     if @eqoreqs == 0
-      @evolutionpossible = AnimatedBitmap.new("Plugins/LAEVO/Graphics/icon_evo")
+      @evoballsprite = ChangelingSprite.new(0,0,viewport)
+      @evoballsprite.z = self.z+1
+      @evoballsprite.AnimatedBitmap.new("evodesel","Plugins/LEAVO/Graphics/icon_ball")
+      @evoballsprite.AnimatedBitmap.new("evosel","Plugins/LEAVO/Graphics/icon_ball_sel")
     end
     refresh
   end
@@ -74,6 +77,7 @@ class PokemonPartyPanel < SpriteWrapper
     @overlaysprite.dispose
     @hpbar.dispose
     @statuses.dispose
+    @evoballsprite
     super
   end
 
@@ -170,6 +174,12 @@ class PokemonPartyPanel < SpriteWrapper
       @ballsprite.x     = self.x+10
       @ballsprite.y     = self.y
       @ballsprite.color = self.color
+    end
+    if @evoballsprite && !@evoballsprite.disposed?
+      @evoballsprite.changeBitmap((self.selected) ? "evosel" : "evodesel")
+      @evoballsprite.x     = self.x+10
+      @evoballsprite.y     = self.y
+      @evoballsprite.color = self.color
     end
     if @pkmnsprite && !@pkmnsprite.disposed?
       @pkmnsprite.x        = self.x+60
@@ -269,6 +279,7 @@ class PokemonPartyPanel < SpriteWrapper
     @ballsprite.update if @ballsprite && !@ballsprite.disposed?
     @pkmnsprite.update if @pkmnsprite && !@pkmnsprite.disposed?
     @helditemsprite.update if @helditemsprite && !@helditemsprite.disposed?
+    @evoballsprite.update if @evoballsprite && !@evoballsprite.disposed?
   end
 end
 
@@ -300,7 +311,7 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
-      commands[cmdEvolve = commands.length]       = _INTL("Evolve") if @eqoreqs == 0
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve") 
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
@@ -381,7 +392,6 @@ class PokemonPartyScreen
           @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
         }
       elsif cmdEvolve>=0 && command==cmdEvolve
-        @canevo = false
         evoreqs = {}
         GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
           if evo[1].to_s.start_with?('Item')
@@ -394,11 +404,9 @@ class PokemonPartyScreen
         end
         case evoreqs.length
         when 0
-          @canevo = false
           pbDisplay(_INTL("This Pokémon can't evolve."))
           next
         when 1
-          @canevo = true
           newspecies = evoreqs.keys[0]
         else
           newspecies = evoreqs.keys[@scene.pbShowCommands(
