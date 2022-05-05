@@ -223,6 +223,9 @@ class PokemonPartyPanel < SpriteWrapper
     @text          = nil
     @refreshBitmap = true
     @refreshing    = false
+    if @evoreqs
+      @evolutionpossible = AnimatedBitmap.new("Plugins/LAEVO/Graphics/icon_evo")
+    end
     refresh
   end
 
@@ -1225,7 +1228,7 @@ class PokemonPartyScreen
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
       commands[cmdRelearn = commands.length]      = _INTL("Relearn")  #by Kota
-      commands[cmdEvolve = commands.length]       = _INTL("Evolve") 
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve")
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found

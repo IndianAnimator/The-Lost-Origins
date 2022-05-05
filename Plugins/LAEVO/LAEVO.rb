@@ -58,7 +58,7 @@ class PokemonPartyPanel < SpriteWrapper
     @text          = nil
     @refreshBitmap = true
     @refreshing    = false
-    if @evoreqs
+    if @eqoreqs == 0
       @evolutionpossible = AnimatedBitmap.new("Plugins/LAEVO/Graphics/icon_evo")
     end
     refresh
@@ -300,7 +300,7 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
-      commands[cmdEvolve = commands.length]       = _INTL("Evolve")
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve") if @eqoreqs == 0
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
@@ -381,6 +381,7 @@ class PokemonPartyScreen
           @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
         }
       elsif cmdEvolve>=0 && command==cmdEvolve
+        @canevo = false
         evoreqs = {}
         GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
           if evo[1].to_s.start_with?('Item')
@@ -393,9 +394,11 @@ class PokemonPartyScreen
         end
         case evoreqs.length
         when 0
+          @canevo = false
           pbDisplay(_INTL("This Pokémon can't evolve."))
           next
         when 1
+          @canevo = true
           newspecies = evoreqs.keys[0]
         else
           newspecies = evoreqs.keys[@scene.pbShowCommands(
