@@ -1224,7 +1224,7 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
-      commands[cmdRelearn = commands.length]      = _INTL("Relearn")  #by Kota
+      commands[cmdRelearn = commands.length]      = _INTL("Relearn") if MoveRelearnerScreen.pbGetRelearnableMoves(pkmn).length.positive? #by Kota
 
       evoreqs = {}
       GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]

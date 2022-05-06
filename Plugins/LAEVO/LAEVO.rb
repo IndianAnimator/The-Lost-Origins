@@ -267,6 +267,16 @@ class PokemonPartyPanel < SpriteWrapper
     @refreshing = true
     self.x = (index % 2) * Graphics.width / 2
     self.y = 16 * (index % 2) + 96 * (index / 2)
+    @evoreqs = {}
+    GameData::Species.get(@pokemon.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+      if evo[1].to_s.start_with?('Item')
+        @evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && @pokemon.check_evolution_on_use_item(evo[2])
+      elsif evo[1].to_s.start_with?('Trade')
+        @evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || @pokemon.check_evolution_on_trade(evo[2])
+      elsif @pokemon.check_evolution_on_level_up
+        @evoreqs[evo[0]] = nil
+      end
+    end
     @panelbgsprite = ChangelingSprite.new(0,0,viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel

@@ -148,11 +148,7 @@ end
 # Screen class for handling game logic
 #===============================================================================
 class MoveRelearnerScreen
-  def initialize(scene)
-    @scene = scene
-  end
-
-  def pbGetRelearnableMoves(pkmn)
+  def MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)
     return [] if !pkmn || pkmn.egg? || pkmn.shadowPokemon?
     moves = []
     pkmn.getMoveList.each do |m|
@@ -165,23 +161,32 @@ class MoveRelearnerScreen
         tmoves.push(i) if !pkmn.hasMove?(i) && !moves.include?(i)
       end
     end
+    species = pkmn.species
+    species_data = GameData::Species.get(species)
+    if EGGMOVES==true
+      babyspecies = species_data.get_baby_species
+      GameData::Species.get(babyspecies).egg_moves.each { |m| moves.push(m) }
+    end
+    if TMMOVES==true
+      species_data.tutor_moves.each { |m| moves.push(m) }
+    end
     moves = tmoves + moves
     return moves | []   # remove duplicates
   end
 
   def pbStartScreen(pkmn)
-    moves = pbGetRelearnableMoves(pkmn)
+    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)    #by Kota
     @scene.pbStartScene(pkmn, moves)
     loop do
       move = @scene.pbChooseMove
       if move
-        if @scene.pbConfirm(_INTL("Teach {1}?", GameData::Move.get(move).name))
+        if @scene.pbConfirmMessage(_INTL("Teach {1}?", GameData::Move.get(move).name))
           if pbLearnMove(pkmn, move)
             @scene.pbEndScene
             return true
           end
         end
-      elsif @scene.pbConfirm(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
+      elsif @scene.pbConfirmMessage(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
         @scene.pbEndScene
         return false
       end
