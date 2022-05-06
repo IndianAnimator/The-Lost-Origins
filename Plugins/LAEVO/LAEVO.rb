@@ -27,9 +27,6 @@ class PokemonPartyScreen
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
       @evoreqs = {}
-      def self.reqsMet
-        @evoreqs.length.positive?
-      end
       GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
         if evo[1].to_s.start_with?('Item')
           @evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
@@ -296,7 +293,7 @@ class PokemonPartyPanel < SpriteWrapper
     @hpbgsprite.addBitmap("swap","Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0,0,viewport)
     @ballsprite.z = self.z
-    if PokemonPartyScreen.reqsMet
+    if @evoreqs != 0
       @ballsprite.addBitmap("desel","Plugins/LAEVO/Graphics/icon_ball")
       @ballsprite.addBitmap("sel","Plugins/LAEVO/Graphics/icon_ball_sel")
     else
