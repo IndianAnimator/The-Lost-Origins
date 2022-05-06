@@ -293,7 +293,7 @@ class PokemonPartyPanel < SpriteWrapper
     @hpbgsprite.addBitmap("swap","Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0,0,viewport)
     @ballsprite.z = self.z
-    if @evoreqs != 0
+    if @evoreqs
       @ballsprite.addBitmap("desel","Plugins/LAEVO/Graphics/icon_ball")
       @ballsprite.addBitmap("sel","Plugins/LAEVO/Graphics/icon_ball_sel")
     else
