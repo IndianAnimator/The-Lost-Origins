@@ -178,6 +178,19 @@ class PokemonPartyPanel < SpriteWrapper
     @refreshing = true
     self.x = (index % 2) * Graphics.width / 2
     self.y = 16 * (index % 2) + 96 * (index / 2)
+    @evoreqs = {}
+    GameData::Species.get(@pokemon.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+      if evo[1].to_s.start_with?('Item')
+        @evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && @pokemon.check_evolution_on_use_item(evo[2])
+      elsif evo[1].to_s.start_with?('Trade')
+        @evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || @pokemon.check_evolution_on_trade(evo[2])
+      elsif @pokemon.check_evolution_on_level_up
+        @evoreqs[evo[0]] = nil
+      end
+    end
+    def self.canEvo
+      evoreqs.length.positive?
+    end
     @panelbgsprite = ChangelingSprite.new(0,0,viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel
@@ -203,9 +216,14 @@ class PokemonPartyPanel < SpriteWrapper
     @hpbgsprite.addBitmap("fainted","Graphics/Pictures/Party/overlay_hp_back_faint")
     @hpbgsprite.addBitmap("swap","Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0,0,viewport)
-    @ballsprite.z = self.z+1
-    @ballsprite.addBitmap("desel","Graphics/Pictures/Party/icon_ball")
-    @ballsprite.addBitmap("sel","Graphics/Pictures/Party/icon_ball_sel")
+    @ballsprite.z = self.z
+    if @evoreqs.length.positive?
+      @ballsprite.addBitmap("desel","Plugins/LAEVO/Graphics/icon_ball")
+      @ballsprite.addBitmap("sel","Plugins/LAEVO/Graphics/icon_ball_sel")
+    else
+      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/icon_ball")
+      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/icon_ball_sel")
+    end
     @pkmnsprite = PokemonIconSprite.new(pokemon,viewport)
     @pkmnsprite.setOffset(PictureOrigin::Center)
     @pkmnsprite.active = @active
@@ -433,6 +451,7 @@ class PokemonPartyPanel < SpriteWrapper
     @helditemsprite.update if @helditemsprite && !@helditemsprite.disposed?
   end
 end
+
 
 #===============================================================================
 # Pokémon party visuals
