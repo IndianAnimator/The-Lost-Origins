@@ -1,3 +1,9 @@
+#==============================================================================
+# Config
+# LA Move Relearner base by IndianAnimator script by Kotaro
+EGGMOVES = true
+TMMOVES = true
+#==============================================================================
 #===============================================================================
 # Scene class for handling appearance of the screen
 #===============================================================================
@@ -148,7 +154,11 @@ end
 # Screen class for handling game logic
 #===============================================================================
 class MoveRelearnerScreen
-  def MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)
+  def initialize(scene)
+    @scene = scene
+  end
+
+  def self.pbGetRelearnableMoves(pkmn)
     return [] if !pkmn || pkmn.egg? || pkmn.shadowPokemon?
     moves = []
     pkmn.getMoveList.each do |m|
@@ -163,7 +173,7 @@ class MoveRelearnerScreen
     end
     species = pkmn.species
     species_data = GameData::Species.get(species)
-    if EGGMOVES==true
+    if EGGMOVES == true
       babyspecies = species_data.get_baby_species
       GameData::Species.get(babyspecies).egg_moves.each { |m| moves.push(m) }
     end
@@ -175,18 +185,18 @@ class MoveRelearnerScreen
   end
 
   def pbStartScreen(pkmn)
-    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)    #by Kota
+    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)
     @scene.pbStartScene(pkmn, moves)
     loop do
       move = @scene.pbChooseMove
       if move
-        if @scene.pbConfirmMessage(_INTL("Teach {1}?", GameData::Move.get(move).name))
+        if @scene.pbConfirm(_INTL("Teach {1}?", GameData::Move.get(move).name))
           if pbLearnMove(pkmn, move)
             @scene.pbEndScene
             return true
           end
         end
-      elsif @scene.pbConfirmMessage(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
+      elsif @scene.pbConfirm(_INTL("Give up trying to teach a new move to {1}?", pkmn.name))
         @scene.pbEndScene
         return false
       end

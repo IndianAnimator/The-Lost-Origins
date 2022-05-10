@@ -188,9 +188,6 @@ class PokemonPartyPanel < SpriteWrapper
         @evoreqs[evo[0]] = nil
       end
     end
-    def self.canEvo
-      evoreqs.length.positive?
-    end
     @panelbgsprite = ChangelingSprite.new(0,0,viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel
@@ -218,8 +215,8 @@ class PokemonPartyPanel < SpriteWrapper
     @ballsprite = ChangelingSprite.new(0,0,viewport)
     @ballsprite.z = self.z
     if @evoreqs.length.positive?
-      @ballsprite.addBitmap("desel","Plugins/LAEVO/Graphics/icon_ball")
-      @ballsprite.addBitmap("sel","Plugins/LAEVO/Graphics/icon_ball_sel")
+      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/evo_icon_evoball")
+      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/evo_icon_ball_sel")
     else
       @ballsprite.addBitmap("desel","Graphics/Pictures/Party/icon_ball")
       @ballsprite.addBitmap("sel","Graphics/Pictures/Party/icon_ball_sel")
