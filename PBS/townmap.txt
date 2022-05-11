@@ -2,7 +2,6 @@
 #-------------------------------
 [0]
 Name = Essen
-Filename = mapRegion0.png
 Point = 13,12,Lappet Town,Oak's Lab,2,8,8,
 Point = 13,11,Route 1,,,,,
 Point = 13,10,Cedolan City,Cedolan Dept. Store,7,47,11,
@@ -34,3 +33,26 @@ Point = 22,16,Faraday Island,,,,,52
 Name = Tiall
 Filename = mapRegion1.png
 Point = 13,16,Here,,,,,
+#------------------------------
+[2]
+Filename = mapRegion0.png
+Name = Theos Region
+Point = 2,32,,,,,,
+Point = 11,32,,,,,,
+Point = 6,27,,,,,,
+Point = 11,21,,,,,,
+Point = 21,23,,,,,,
+Point = 27,29,,,,,,
+Point = 29,24,,,,,,
+Point = 38,20,,,,,,
+Point = 29,16,,,,,,
+Point = 6,4,,,,,,
+Point = 11,10,,,,,,
+Point = 20,2,,,,,,
+Point = 33,3,,,,,,
+Point = 44,6,,,,,,
+Point = 53,5,,,,,,
+Point = 44,16,,,,,,
+Point = 47,24,,,,,,
+Point = 40,33,,,,,,
+Point = 53,36,,,,,,
