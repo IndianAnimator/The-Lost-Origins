@@ -5,7 +5,6 @@
 # my rpg maker version keeps making this change versions so im just gitignoring it
 Game.ini
 Game.rxproj
-*.rxproj
 
 # This stuff is compiled from other files, so redundant
 Data/PluginScripts.rxdata
