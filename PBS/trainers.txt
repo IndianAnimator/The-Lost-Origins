@@ -13,6 +13,7 @@ Pokemon = GEODUDE,12
     Moves = DEFENSECURL,HEADSMASH,ROCKPOLISH,ROCKTHROW
     AbilityIndex = 0
     IV = 20,20,20,20,20,20
+    Attribute = MARTYR
 Pokemon = ONIX,14
     Name = Rocky
     Gender = male
