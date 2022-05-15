@@ -23,9 +23,6 @@ class PokemonPartyPanel < SpriteWrapper
         @evoreqs[evo[0]] = nil
       end
     end
-    def self.canEvo
-      evoreqs.length.positive?
-    end
     @panelbgsprite = ChangelingSprite.new(0,0,viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel
@@ -315,17 +312,17 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
-      @evoreqs = {}
+      evoreqs = {}
       GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
         if evo[1].to_s.start_with?('Item')
-          @evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+          evoreqs[evo[0]] = evo[2] if $PokemonBag.pbHasItem?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
         elsif evo[1].to_s.start_with?('Trade')
-          @evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
+          evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
         elsif pkmn.check_evolution_on_level_up
-          @evoreqs[evo[0]] = nil
+          evoreqs[evo[0]] = nil
         end
       end
-      commands[cmdEvolve = commands.length]       = _INTL("Evolve") if @evoreqs.length.positive?
+      commands[cmdEvolve = commands.length]       = _INTL("Evolve") if evoreqs.length.positive?
       commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
@@ -406,6 +403,25 @@ class PokemonPartyScreen
           @scene.pbSetHelpText((@party.length>1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
         }
       elsif cmdEvolve>=0 && command==cmdEvolve
+        case evoreqs.length
+        when 0
+          pbDisplay(_INTL("This Pokémon can't evolve."))
+          next
+        when 1
+          newspecies = evoreqs.keys[0]
+        else
+          newspecies = evoreqs.keys[@scene.pbShowCommands(
+            _INTL("Which species would you like to evolve into?"),
+            evoreqs.keys.map { |id| _INTL(GameData::Species.get(id).real_name) }
+          )]
+        end
+        if evoreqs[newspecies] # requires an item
+          next unless @scene.pbConfirmMessage(_INTL(
+            "This will consume a {1}. Do you want to continue?",
+            GameData::Item.get(evoreqs[newspecies]).name
+          ))
+          $PokemonBag.pbDeleteItem(evoreqs[newspecies])
+        end
         pbFadeOutInWithMusic {
           evo = PokemonEvolutionScene.new
           evo.pbStartScreen(pkmn,newspecies)
