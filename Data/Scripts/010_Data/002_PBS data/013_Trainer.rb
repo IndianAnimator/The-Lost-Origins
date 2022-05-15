@@ -32,6 +32,7 @@ module GameData
       "SquareShiny"  => [:square_shiny,  "b"],
       "Shadow"       => [:shadowness,    "b"],
       "Ball"         => [:poke_ball,     "s"],
+      "Attribute"    => [:attribute,     "s"],
     }
 
     extend ClassMethods
@@ -160,6 +161,7 @@ module GameData
           pkmn.shiny = false
         end
         pkmn.poke_ball = pkmn_data[:poke_ball] if pkmn_data[:poke_ball]
+        pkmn.attribute = pkmn_data[:attribute] if pkmn_data[:attribute]
         pkmn.calc_stats
       end
       return trainer
