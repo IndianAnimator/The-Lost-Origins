@@ -1,3 +1,7 @@
+# This stuff is compiled from other files, so redundant
+Data/PluginScripts.rxdata
+Data/*.dat
+
 # Common code editor folders & files
 .vscode/
 *.code-workspace
