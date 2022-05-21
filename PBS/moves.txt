@@ -33,7 +33,7 @@ Accuracy = 100
 TotalPP = 10
 Target = NearOther
 FunctionCode = LowerTargetSpDef1
-Flags = CanProtect,CanMirrorMove,Sound
+Flags = CanProtect,CanMirrorMove,Sound,WingMove
 EffectChance = 10
 Description = The user vibrates its wings to generate a damaging sound wave. It may also lower the target's Sp. Def stat.
 #-------------------------------
@@ -2635,7 +2635,7 @@ Accuracy = 100
 TotalPP = 10
 Target = NearOther
 FunctionCode = RaiseUserSpAtk1
-Flags = CanProtect,CanMirrorMove,Dance
+Flags = CanProtect,CanMirrorMove,Dance,WingMove
 EffectChance = 50
 Description = Cloaked in flames, the user dances and flaps its wings. It may also raise the user's Sp. Atk stat.
 #-------------------------------
@@ -2858,7 +2858,7 @@ Accuracy = 100
 TotalPP = 15
 Target = Other
 FunctionCode = RecoilThirdOfDamageDealt
-Flags = Contact,CanProtect,CanMirrorMove
+Flags = Contact,CanProtect,CanMirrorMove,WingMove
 Description = The user tucks in its wings and charges from a low altitude. The user also takes serious damage.
 #-------------------------------
 [DRAGONASCENT]
@@ -2956,7 +2956,7 @@ Accuracy = 100
 TotalPP = 10
 Target = Other
 FunctionCode = HealUserByThreeQuartersOfDamageDone
-Flags = CanProtect,CanMirrorMove
+Flags = CanProtect,CanMirrorMove,WingMove
 Description = The user absorbs its target's HP. The user's HP is restored by over half of the damage dealt.
 #-------------------------------
 [AIRSLASH]
@@ -3042,7 +3042,7 @@ Accuracy = 100
 TotalPP = 35
 Target = Other
 FunctionCode = None
-Flags = Contact,CanProtect,CanMirrorMove
+Flags = Contact,CanProtect,CanMirrorMove,WingMove
 Description = The target is struck with large, imposing wings spread wide to inflict damage.
 #-------------------------------
 [ACROBATICS]
@@ -3066,7 +3066,7 @@ Accuracy = 90
 TotalPP = 10
 Target = NearOther
 FunctionCode = HitTwoTimes
-Flags = Contact,CanProtect,CanMirrorMove
+Flags = Contact,CanProtect,CanMirrorMove,WingMove
 Description = The user slams the target with its wings. The target is hit twice in a row.
 #-------------------------------
 [GUST]
@@ -3078,7 +3078,7 @@ Accuracy = 100
 TotalPP = 35
 Target = Other
 FunctionCode = DoublePowerIfTargetInSky
-Flags = CanProtect,CanMirrorMove
+Flags = CanProtect,CanMirrorMove,WingMove
 Description = A gust of wind is whipped up by wings and launched at the target to inflict damage.
 #-------------------------------
 [PECK]
@@ -8107,7 +8107,7 @@ Accuracy = 90
 TotalPP = 25
 Target = NearOther
 FunctionCode = RaiseUserDefense1
-Flags = Contact,CanProtect,CanMirrorMove
+Flags = Contact,CanProtect,CanMirrorMove,WingMove
 EffectChance = 10
 Description = The target is hit with wings of steel. It may also raise the user's Defense stat.
 #-------------------------------
@@ -8719,3 +8719,41 @@ TotalPP = 40
 Target = User
 FunctionCode = RaiseUserDefense1
 Description = The user withdraws its body into its hard shell, raising its Defense stat.
+#-------------------------------
+[ANCIENTGRUDGE]
+Name = Ancient Grudge
+Type = DIVINE
+Category = Physical
+BaseDamage = 90
+Accuracy = 100
+TotalPP = 20
+Target = NearOther
+FunctionCode = None
+Flags = Contact,CanProtect,CanMirrorMove
+Description = When the grudge is ancient.
+#-------------------------------
+[SMITE]
+Name = Smite
+Type = DIVINE
+Category = Special
+BaseDamage = 90
+Accuracy = 100
+TotalPP = 15
+Target = NearOther
+FunctionCode = FlinchTarget
+Flags = CanProtect,CanMirrorMove
+EffectChance = 30
+Description = It's like a headbutt but more divine. It may also make the target flinch.
+#-------------------------------
+[DEVOUR]
+Name = Devour
+Type = DEMON
+Category = Physical
+BaseDamage = 85
+Accuracy = 100
+TotalPP = 10
+Target = NearOther
+FunctionCode = HealUserByHalfOfDamageDone
+Flags = Contact,CanProtect,CanMirrorMove,Biting
+Description = The user morbs all over the target, restoring its HP by half the damage done to the target.
+#-------------------------------
