@@ -916,6 +916,14 @@ Price = 4000
 Flags = Fling_40
 Description = A Pokémon held item that extends the duration of the move Hail used by the holder.
 #-------------------------------
+[DARKROCK]
+Name = Dark Rock
+NamePlural = Dark Rocks
+Pocket = 1
+Price = 4000
+Flags = Fling_60
+Description = A Pokémon held item that extends the duration of the weather Moon used by the holder.
+#-------------------------------
 [TERRAINEXTENDER]
 Name = Terrain Extender
 NamePlural = Terrain Extenders
