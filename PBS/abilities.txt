@@ -1073,24 +1073,24 @@ Description = Combines Unnerve and Grim Neigh Abilities.
 #-------------------------------
 [THUNDERSTORM]
 Name = Thunderstorm
-Description: Possesses 2 abilities, Drizzle and Electric Surge
+Description = Possesses 2 abilities, Drizzle and Electric Surge.
 #-------------------------------
 [SUNRISE]
 Name = Sunrise
-Description: Possesses 2 abilities,Drought and Grassy Surge
+Description = Possesses 2 abilities, Drought and Grassy Surge
 #-------------------------------
 [ASCENDEDWINGS]
 Name = Ascended Wings
-Description: Boosts the power of Wing moves.
+Description = Boosts the power of Wing moves.
 #-------------------------------
 [TWINKLETOES]
 Name = Twinkle Toes
-Description: Resists ground type moves, however makes it more weak to flying type moves.
+Description = Resists ground type moves, however makes it more weak to flying type moves.
 #-------------------------------
 [TWILIGHT]
 Name = Twilight
-Description: Summons the night if it is in battle.
+Description = Summons the night if it is in battle.
 #-------------------------------
 [NEUROTOXIN]
 Name = Neurotoxin
-Description: All biting moves have a chance to paralyze or poison.
+Description = All biting moves have a chance to paralyze or poison.
