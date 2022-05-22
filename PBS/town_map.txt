@@ -29,6 +29,17 @@ Point = 12,12,Safari Zone,,,,,
 Point = 13,13,Route 8,Diving area,,,,
 Point = 18,17,Berth Island,,,,,51
 Point = 22,16,Faraday Island,,,,,52
+Point = 3,16,to name,,,,,
+Point = 5,16,Forest City,,,,,
+Point = 1,16,Daevas Tovn,,,,,
+Point = 6,16,Forest City to name,,,,,
+Point = 3,13,to name,,,,,
+Point = 3,14,to name,,,,,
+Point = 6,11,to name,,,,,
+Point = 5,11,to name,,,,,
+Point = 5,10,to name,,,,,
+Point = 7,10,,,,,,
+Point = 6,10,to name,,,,,
 #-------------------------------
 [1]
 Name = Tiall
