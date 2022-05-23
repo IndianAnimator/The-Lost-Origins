@@ -3,7 +3,7 @@
 # By eriedaberrie
 # Based on https://www.nytimes.com/games/wordle/index.html by Josh Wardle
 #-------------------------------------------------------------------------------
-# Run with:      pbWordle(darkmode?)
+# Run with:      pbWordle(dark_mode?)
 ################################################################################
 class Wordle
   # rubocop:disable all
@@ -26,27 +26,27 @@ class Wordle
     pbUpdateSpriteHash(@sprites)
   end
 
-  def initialize(darkmode = true)
-    @darkMode = darkmode
-    @directory = "Graphics/Pictures/Wordle/#{@darkMode ? 'dark/' : 'light/'}"
+  def initialize(dark_mode = true)
+    @dark_mode = dark_mode
+    @directory = "Graphics/Pictures/Wordle/#{@dark_mode ? 'dark/' : 'light/'}"
   end
 
-  def pbNewGame
+  def new_game
     # initialize variables
     @sprites = {}
     @index_x = 0
     @index_y = 0
-    @largeIndex_x = 0
+    @large_index_x = 0
 
     @squares = []
     @letters = []
 
     @guesses = []
-    @guessNum = 0
-    @letterNum = 0
-    @curGuess = []
+    @guess_num = 0
+    @letter_num = 0
+    @cur_guess = []
     # false - no data, 0 - DNE, 1 - yellow, 2 - green
-    @keyData = Array.new(26, false)
+    @key_data = Array.new(26, false)
 
     # not game over
     @ongoing = true
@@ -56,13 +56,13 @@ class Wordle
 
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
-    pbCreateSprites
+    create_sprites
     pbFadeInAndShow(@sprites)
 
-    # pbMessage(pbToWord(@word))
+    # pbMessage(to_word(@word))
   end
 
-  def pbCreateSprites
+  def create_sprites
     @sprites[:bg] = Sprite.new(@viewport)
     @sprites[:bg].bitmap = RPG::Cache.load_bitmap(@directory, "boardbg")
     @sprites[:curtain] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
@@ -104,20 +104,20 @@ class Wordle
     # pbDrawImagePositions(@sprites[:cursor].bitmap, @cursorSmall)
   end
 
-  def getInput
+  def get_input
     if @ongoing
       if Input.trigger?(Input::MOUSELEFT)
-        mousepos = Mouse.getMousePos
-        return if mousepos.nil?
-        if mousepos[1] > 334 && mousepos[1] < 370
-          if mousepos[0] > 64 && mousepos[0] < 248
-            pbEnter
-          elsif mousepos[0] > 264 && mousepos[0] < 448
-            pbBackspace
+        mouse_pos = Mouse.getMousePos
+        return if mouse_pos.nil?
+        if mouse_pos[1] > 334 && mousepos[1] < 370
+          if mouse_pos[0] > 64 && mousepos[0] < 248
+            enter
+          elsif mouse_pos[0] > 264 && mousepos[0] < 448
+            backspace
           end
-        elsif mousepos[1] > 256 && mousepos[1] < 326 && !(mousepos[1] > 288 && mousepos[1] < 294) &&
-              mousepos[0] > 64 && mousepos[0] < 448 && (mousepos[0] % 30 > 4 && mousepos[0] % 30 < 28)
-          pbAddLetter((mousepos[0] - 64) / 30, (mousepos[1] < 294) ? 0 : 1)
+        elsif mouse_pos[1] > 256 && mousepos[1] < 326 && !(mousepos[1] > 288 && mousepos[1] < 294) &&
+              mouse_pos[0] > 64 && mousepos[0] < 448 && (mousepos[0] % 30 > 4 && mousepos[0] % 30 < 28)
+          add_letter((mouse_pos[0] - 64) / 30, (mousepos[1] < 294) ? 0 : 1)
         end
       elsif Input.repeat?(Input::UP)
         pbPlayCursorSE
@@ -125,10 +125,10 @@ class Wordle
         when 0
           @index_y = 2
           if @index_x < 6
-            @largeIndex_x = 0
+            @large_index_x = 0
             @sprites[:cursorLarge].x = 62
           elsif @index_x > 6
-            @largeIndex_x = 1
+            @large_index_x = 1
             @sprites[:cursorLarge].x = 262
           end
           @sprites[:cursorSmall].visible = false
@@ -148,10 +148,10 @@ class Wordle
         when 1
           @index_y = 2
           if @index_x < 6
-            @largeIndex_x = 0
+            @large_index_x = 0
             @sprites[:cursorLarge].x = 62
           elsif @index_x > 6
-            @largeIndex_x = 1
+            @large_index_x = 1
             @sprites[:cursorLarge].x = 262
           end
           @sprites[:cursorSmall].visible = false
@@ -168,11 +168,11 @@ class Wordle
       elsif Input.repeat?(Input::LEFT)
         pbPlayCursorSE
         if @index_y == 2
-          if @largeIndex_x == 0
-            @largeIndex_x = 1
+          if @large_index_x == 0
+            @large_index_x = 1
             @sprites[:cursorLarge].x = 262
           else
-            @largeIndex_x = 0
+            @large_index_x = 0
             @sprites[:cursorLarge].x = 62
           end
         elsif @index_x == 0
@@ -185,11 +185,11 @@ class Wordle
       elsif Input.repeat?(Input::RIGHT)
         pbPlayCursorSE
         if @index_y == 2
-          if @largeIndex_x == 0
-            @largeIndex_x = 1
+          if @large_index_x == 0
+            @large_index_x = 1
             @sprites[:cursorLarge].x = 262
           else
-            @largeIndex_x = 0
+            @large_index_x = 0
             @sprites[:cursorLarge].x = 62
           end
         elsif @index_x == 12
@@ -202,54 +202,59 @@ class Wordle
       elsif Input.trigger?(Input::USE)
         # if cursor is on the bottom "action row"
         if @index_y == 2
-          if @largeIndex_x == 0
-            pbEnter
+          if @large_index_x == 0
+            enter
           else
-            pbBackspace
+            backspace
           end
         else
-          pbAddLetter(@index_x, @index_y)
+          add_letter(@index_x, @index_y)
         end
       elsif Input.trigger?(Input::ACTION)
-        pbEnter
+        enter
       elsif Input.trigger?(Input::BACK)
-        pbBackspace
+        backspace
       elsif Input.repeat?(Input::BACK)
         @sprites[:curtain].opacity = 100
         if pbConfirmMessageSerious(_INTL("Are you sure you want to quit?"))
           @quit = true
-          pbMessage(_INTL("The word was {1}.", pbToWord(@word)))
+          pbMessage(_INTL("The word was {1}.", to_word(@word)))
         else
           @sprites[:curtain].opacity = 0
         end
       end
     elsif Input.trigger?(Input::BACK) || Input.trigger?(Input::USE)
-      pbEndOptions
+      end_options
     end
 
     # debug
-    # pbMessage(pbToWord(@word)) if Input.trigger?(Input::SPECIAL)
+    # pbMessage(to_word(@word)) if Input.trigger?(Input::SPECIAL)
 
     # warning animation gradually gets dimmer but shouldn't interfere with getting input
     @sprites[:warn].opacity -= 10 if @sprites[:warn].opacity > 0
   end
 
-  def pbAddLetter(x, y)
-    if @letterNum == 5
+  def add_letter(x, y)
+    if @letter_num == 5
       @sprites[:warn].opacity = 250
     else
       pbSEPlay("Voltorb Flip tile")
 
       newletter = x + (13 * y)
-      @curGuess[@letterNum] = newletter
-      @letters.push(["#{@directory}letters", 156 + (40 * @letterNum), 10 + (40 * @guessNum), 40 * newletter, 0, 40, 40])
+      @cur_guess[@letter_num] = newletter
+      @letters.push([
+        "#{@directory}letters",
+        156 + (40 * @letter_num),
+        10 + (40 * @guess_num),
+        40 * newletter, 0, 40, 40
+      ])
       pbDrawImagePositions(@sprites[:letters].bitmap, @letters)
-      @letterNum += 1
+      @letter_num += 1
     end
   end
 
-  def pbEnter
-    if @letterNum < 5 || !(ANSWERS.include?(@curGuess))
+  def enter
+    if @letter_num < 5 || !ANSWERS.include?(@cur_guess)
       @sprites[:warn].opacity = 250
     else
       pbSEPlay("Voltorb Flip tile")
@@ -258,17 +263,17 @@ class Wordle
       # false - no matches, 0 - yellow, 1 - green
       worddata = [false, false, false, false, false]
       5.times do |i|
-        if @word[i] == @curGuess[i]
+        if @word[i] == @cur_guess[i]
           worddata[i] = 1
-          @keyData[@curGuess[i]] = 2
+          @key_data[@cur_guess[i]] = 2
         else
-          if @word.include?(@curGuess[i])
-            @keyData[@curGuess[i]] ||= 1
+          if @word.include?(@cur_guess[i])
+            @key_data[@cur_guess[i]] ||= 1
           else
-            @keyData[@curGuess[i]] = 0
+            @key_data[@cur_guess[i]] = 0
           end
           5.times do |j|
-            worddata[j] ||= 0 if @word[i] == @curGuess[j]
+            worddata[j] ||= 0 if @word[i] == @cur_guess[j]
           end
         end
       end
@@ -276,7 +281,7 @@ class Wordle
       5.times do |i|
         pbSEPlay("Voltorb Flip point") if worddata[i] == 1
 
-        square = ["#{@directory}tiles", 156 + (40 * i), 10 + (40 * @guessNum), 240, 0, 40, 40]
+        square = ["#{@directory}tiles", 156 + (40 * i), 10 + (40 * @guess_num), 240, 0, 40, 40]
         pbDrawImagePositions(@sprites[:animation].bitmap, [square])
         pbWait(Graphics.frame_rate / 10)
 
@@ -302,8 +307,8 @@ class Wordle
       13.times do |x|
         2.times do |y|
           letter = x + (13 * y)
-          if @keyData[letter]
-            keys.push(["#{@directory}keys", 64 + (30 * x), 256 + (38 * y), (2 - @keyData[letter]) * 24, 0, 24, 32])
+          if @key_data[letter]
+            keys.push(["#{@directory}keys", 64 + (30 * x), 256 + (38 * y), (2 - @key_data[letter]) * 24, 0, 24, 32])
           end
         end
       end
@@ -311,9 +316,9 @@ class Wordle
       pbDrawImagePositions(@sprites[:keys].bitmap, keys)
 
       @guesses.push(worddata)
-      @curGuess = []
-      @letterNum = 0
-      @guessNum += 1
+      @cur_guess = []
+      @letter_num = 0
+      @guess_num += 1
       @sprites[:warn].y += 40
 
       if worddata.all? { |z| z == 1 }
@@ -323,11 +328,11 @@ class Wordle
         @sprites[:cursorSmall].visible = false
         @sprites[:cursorLarge].visible = false
         @sprites[:curtain].opacity = 0
-      elsif @guessNum == 6
+      elsif @guess_num == 6
         @ongoing = false
         @lost = true
         @sprites[:curtain].opacity = 100
-        pbMessage(_INTL("\\me[Voltorb Flip game over]You failed to guess the word {1}.\\wtnp[50]", pbToWord(@word)))
+        pbMessage(_INTL("\\me[Voltorb Flip game over]You failed to guess the word {1}.\\wtnp[50]", to_word(@word)))
         @sprites[:cursorSmall].visible = false
         @sprites[:cursorLarge].visible = false
         @sprites[:curtain].opacity = 0
@@ -335,34 +340,34 @@ class Wordle
     end
   end
 
-  def pbBackspace
-    if @letterNum == 0
+  def backspace
+    if @letter_num == 0
       @sprites[:warn].opacity = 250
     else
       pbSEPlay("Voltorb Flip tile")
 
-      @curGuess.pop
+      @cur_guess.pop
       @letters.pop
       @sprites[:letters].bitmap.clear
       pbDrawImagePositions(@sprites[:letters].bitmap, @letters)
-      @letterNum -= 1
+      @letter_num -= 1
     end
   end
 
-  def pbToWord(arr)
+  def to_word(arr)
     ret = ""
     arr.each { |letter| ret += (letter + 65).chr }
     return ret
   end
 
-  def pbEndOptions
+  def end_options
     @sprites[:curtain].opacity = 100
     case pbShowCommands(nil, ["Cancel", "Share", "New Game", "Quit"], 1)
     when 0
       @sprites[:curtain].opacity = 0
     when 1
       begin
-        ret = _INTL("||{1}|| {2}/6\n", pbToWord(@word), @lost ? "X" : @guessNum)
+        ret = _INTL("||{1}|| {2}/6\n", to_word(@word), @lost ? "X" : @guess_num)
         @guesses.each do |guess|
           ret += "\n"
           guess.each do |i|
@@ -372,7 +377,7 @@ class Wordle
             when 1
               ret += "🟩"
             else
-              ret += @darkMode ? "⬛" : "⬜"
+              ret += @dark_mode ? "⬛" : "⬜"
             end
           end
         end
@@ -384,23 +389,23 @@ class Wordle
       @sprites[:curtain].opacity = 0
     when 2
       pbDisposeSpriteHash(@sprites)
-      pbNewGame
+      new_game
     when 3
       @quit = true
     end
   end
 
-  def pbEndScene
+  def end_scene
     pbFadeOutAndHide(@sprites)
     pbDisposeSpriteHash(@sprites)
     @viewport.dispose
   end
 
-  def pbScene
+  def scene
     loop do
       Graphics.update
       Input.update
-      getInput
+      get_input
       break if @quit
     end
   end
@@ -411,18 +416,18 @@ class WordleScreen
     @scene = scene
   end
 
-  def pbStartScreen
-    @scene.pbNewGame
-    @scene.pbScene
-    @scene.pbEndScene
+  def start_screen
+    @scene.new_game
+    @scene.scene
+    @scene.end_scene
   end
 end
 
-def pbWordle(darkmode = nil)
-  darkmode = pbConfirmMessage(_INTL("Dark Mode?")) if darkmode.nil?
+def pbWordle(dark_mode = nil)
+  dark_mode = pbConfirmMessage(_INTL("Dark Mode?")) if dark_mode.nil?
   pbFadeOutIn do
-    scene = Wordle.new(darkmode)
+    scene = Wordle.new(dark_mode)
     screen = WordleScreen.new(scene)
-    screen.pbStartScreen
+    screen.start_screen
   end
 end

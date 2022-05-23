@@ -81,8 +81,8 @@ Style/AccessorGrouping:
 
 # The assign_to_condition style looks awful, indenting loads of lines and
 # increasing the separation between variable and value being assigned to it.
-Style/ConditionalAssignment:
-  EnforcedStyle: assign_inside_condition
+# Style/ConditionalAssignment:
+#   EnforcedStyle: assign_inside_condition
 
 # Check with yard instead.
 Style/Documentation:
@@ -167,11 +167,35 @@ Style/TernaryParentheses:
 require:
   - .customcops.rb
 
+# Just don't bother adding .freeze in general
 Style/MutableConstant:
   Enabled: false
 
+# Is also disabled for z assignments in .customcops.rb
 Style/NumericLiterals:
   AllowedNumbers: [99999, 99998, 99997, 99996, 99995, 99994]
 
+# So I don't have to do weird indentation with ({ ... }) blocks
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
 Layout/FirstHashElementIndentation:
   EnforcedStyle: consistent
+
+# I like using ternary operators in assignment ok
+Style/ConditionalAssignment:
+  Enabled: false
+
+# x and y are communicative enough lmao
+Naming/MethodParameterName:
+  AllowedNames:
+    - x
+    - y
+    - z
+
+# I name it get_something when I want to name it get_something
+Naming/AccessorMethodName:
+  Enabled: false
+
+# Can't really help it with the weird preexisting essentials conventions
+Naming/MethodName:
+  AllowedPatterns: ['^pb[A-Z]']
