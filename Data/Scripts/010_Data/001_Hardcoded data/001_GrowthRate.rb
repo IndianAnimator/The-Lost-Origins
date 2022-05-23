@@ -74,6 +74,7 @@ end
 
 #===============================================================================
 
+# rubocop:disable Style/NumericLiterals
 GameData::GrowthRate.register({
   :id          => :Medium,   # Also known as Medium Fast
   :name        => _INTL("Medium"),
@@ -101,7 +102,7 @@ GameData::GrowthRate.register({
   :id          => :Erratic,
   :name        => _INTL("Erratic"),
   :exp_values  => [-1,
-                   0,      15,      52,    122,    237,    406,    637,    942,    1326,   1800,
+                   0,      15,     52,     122,    237,    406,    637,    942,    1326,   1800,
                    2369,   3041,   3822,   4719,   5737,   6881,   8155,   9564,   11111,  12800,
                    14632,  16610,  18737,  21012,  23437,  26012,  28737,  31610,  34632,  37800,
                    41111,  44564,  48155,  51881,  55737,  59719,  63822,  68041,  72369,  76800,
@@ -188,3 +189,4 @@ GameData::GrowthRate.register({
                    941963, 973360, 1005446, 1038230, 1071718, 1105920, 1140841, 1176490, 1212873, 1250000],
   :exp_formula => proc { |level| (level**3) * 5 / 4 }
 })
+# rubocop:enable Style/NumericLiterals

@@ -10,7 +10,7 @@ class Wordle
 
   # All words are lined up in numbers below
   # Pokemon: Absol, Aipom, Arbok, Azelf, Bagon, Budew, Burmy, Deino, Ditto, Doduo, Eevee, Ekans, Entei, Gible, Gloom, Golem, Goomy, Hoopa, Hypno, Inkay, Klang, Klink, Kubfu, Lotad, Lugia, Luxio, Magby,
-  # Minun, Numel, Paras, Pichu, Ralts, Riolu, Rotom, Shinx, Snivy,Tepig ,Throh, Toxel, Unown, Yanma, Zorua, Zubat 43 words
+  # Minun, Numel, Paras, Pichu, Ralts, Riolu, Rotom, Shinx, Snivy, Tepig, Throh, Toxel, Unown, Yanma, Zorua, Zubat 43 words
   # Types: Demon, Fairy, Grass, Steel, Water 48 words
   # Abilities: Trace, Minus, Blaze, Swarm, Stall, Klutz, Frisk, Moody, Moxie, Gooey, Ripen, As One 61 words
   # Moves: Lunge, U-turn, Thief, Snarl, Fling, Taunt, Spark, Charm, Pluck, Defog, Roost, Curse, Spite, Spore, Stomp, Covet, Round, Swift, Pound, Flail, Block, Flash, Glare, Growl, Toxic, Clamp 87 words
@@ -28,7 +28,7 @@ class Wordle
 
   def initialize(darkmode = true)
     @darkMode = darkmode
-    @directory = "Graphics/Pictures/Wordle/" + (@darkMode ? "dark/" : "light/")
+    @directory = "Graphics/Pictures/Wordle/#{@darkMode ? 'dark/' : 'light/'}"
   end
 
   def pbNewGame
@@ -175,14 +175,12 @@ class Wordle
             @largeIndex_x = 0
             @sprites[:cursorLarge].x = 62
           end
+        elsif @index_x == 0
+          @index_x = 12
+          @sprites[:cursorSmall].x = 422
         else
-          if @index_x == 0
-            @index_x = 12
-            @sprites[:cursorSmall].x = 422
-          else
-            @index_x -= 1
-            @sprites[:cursorSmall].x -= 30
-          end
+          @index_x -= 1
+          @sprites[:cursorSmall].x -= 30
         end
       elsif Input.repeat?(Input::RIGHT)
         pbPlayCursorSE
@@ -194,14 +192,12 @@ class Wordle
             @largeIndex_x = 0
             @sprites[:cursorLarge].x = 62
           end
+        elsif @index_x == 12
+          @index_x = 0
+          @sprites[:cursorSmall].x = 62
         else
-          if @index_x == 12
-            @index_x = 0
-            @sprites[:cursorSmall].x = 62
-          else
-            @index_x += 1
-            @sprites[:cursorSmall].x += 30
-          end
+          @index_x += 1
+          @sprites[:cursorSmall].x += 30
         end
       elsif Input.trigger?(Input::USE)
         # if cursor is on the bottom "action row"
@@ -244,9 +240,9 @@ class Wordle
     else
       pbSEPlay("Voltorb Flip tile")
 
-      newletter = x + 13 * y
+      newletter = x + (13 * y)
       @curGuess[@letterNum] = newletter
-      @letters.push([@directory + "letters", 156 + 40 * @letterNum, 10 + 40 * @guessNum, 40 * newletter, 0, 40, 40])
+      @letters.push(["#{@directory}letters", 156 + (40 * @letterNum), 10 + (40 * @guessNum), 40 * newletter, 0, 40, 40])
       pbDrawImagePositions(@sprites[:letters].bitmap, @letters)
       @letterNum += 1
     end
@@ -280,7 +276,7 @@ class Wordle
       5.times do |i|
         pbSEPlay("Voltorb Flip point") if worddata[i] == 1
 
-        square = [@directory + "tiles", 156 + 40 * i, 10 + 40 * @guessNum, 240, 0, 40, 40]
+        square = ["#{@directory}tiles", 156 + (40 * i), 10 + (40 * @guessNum), 240, 0, 40, 40]
         pbDrawImagePositions(@sprites[:animation].bitmap, [square])
         pbWait(Graphics.frame_rate / 10)
 
@@ -305,8 +301,10 @@ class Wordle
       keys = []
       13.times do |x|
         2.times do |y|
-          letter = x + 13 * y
-          keys.push([@directory + "keys", 64 + 30 * x, 256 + 38 * y, (2-@keyData[letter]) * 24, 0, 24, 32]) if @keyData[letter]
+          letter = x + (13 * y)
+          if @keyData[letter]
+            keys.push(["#{@directory}keys", 64 + (30 * x), 256 + (38 * y), (2 - @keyData[letter]) * 24, 0, 24, 32])
+          end
         end
       end
       @sprites[:keys].bitmap.clear
@@ -351,9 +349,9 @@ class Wordle
     end
   end
 
-  def pbToWord(ar)
+  def pbToWord(arr)
     ret = ""
-    ar.each { |letter| ret += (letter + 65).chr }
+    arr.each { |letter| ret += (letter + 65).chr }
     return ret
   end
 
@@ -380,7 +378,7 @@ class Wordle
         end
         Input.clipboard = ret
         pbMessage(_INTL("\\me[Voltorb Flip win]Copied to clipboard!\\wtnp[40]"))
-      rescue
+      rescue MKXPError, EncodingError
         pbMessage(_INTL("\\me[Voltorb Flip game over]Failed to copy to clipboard.\\wtnp[40]"))
       end
       @sprites[:curtain].opacity = 0
@@ -408,8 +406,6 @@ class Wordle
   end
 end
 
-
-
 class WordleScreen
   def initialize(scene)
     @scene = scene
@@ -421,8 +417,6 @@ class WordleScreen
     @scene.pbEndScene
   end
 end
-
-
 
 def pbWordle(darkmode = nil)
   darkmode = pbConfirmMessage(_INTL("Dark Mode?")) if darkmode.nil?

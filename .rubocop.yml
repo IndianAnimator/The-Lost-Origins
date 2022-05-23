@@ -158,3 +158,20 @@ Style/WordArray:
 # it from the true/false results.
 Style/TernaryParentheses:
   EnforcedStyle: require_parentheses
+
+
+#===============================================================================
+# By erie
+#===============================================================================
+
+require:
+  - .customcops.rb
+
+Style/MutableConstant:
+  Enabled: false
+
+Style/NumericLiterals:
+  AllowedNumbers: [99999, 99998, 99997, 99996, 99995, 99994]
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
