@@ -109,15 +109,15 @@ class Wordle
       if Input.trigger?(Input::MOUSELEFT)
         mouse_pos = Mouse.getMousePos
         return if mouse_pos.nil?
-        if mouse_pos[1] > 334 && mousepos[1] < 370
-          if mouse_pos[0] > 64 && mousepos[0] < 248
+        if mouse_pos[1] > 334 && mouse_pos[1] < 370
+          if mouse_pos[0] > 64 && mouse_pos[0] < 248
             enter
-          elsif mouse_pos[0] > 264 && mousepos[0] < 448
+          elsif mouse_pos[0] > 264 && mouse_pos[0] < 448
             backspace
           end
-        elsif mouse_pos[1] > 256 && mousepos[1] < 326 && !(mousepos[1] > 288 && mousepos[1] < 294) &&
-              mouse_pos[0] > 64 && mousepos[0] < 448 && (mousepos[0] % 30 > 4 && mousepos[0] % 30 < 28)
-          add_letter((mouse_pos[0] - 64) / 30, (mousepos[1] < 294) ? 0 : 1)
+        elsif mouse_pos[1] > 256 && mouse_pos[1] < 326 && !(mouse_pos[1] > 288 && mouse_pos[1] < 294) &&
+              mouse_pos[0] > 64 && mouse_pos[0] < 448 && (mouse_pos[0] % 30 > 4 && mouse_pos[0] % 30 < 28)
+          add_letter((mouse_pos[0] - 64) / 30, (mouse_pos[1] < 294) ? 0 : 1)
         end
       elsif Input.repeat?(Input::UP)
         pbPlayCursorSE
@@ -356,7 +356,7 @@ class Wordle
 
   def to_word(arr)
     ret = ""
-    arr.each { |letter| ret += (letter + 65).chr }
+    arr.each { |letter| ret << (letter + 65).chr }
     return ret
   end
 
@@ -369,15 +369,15 @@ class Wordle
       begin
         ret = _INTL("||{1}|| {2}/6\n", to_word(@word), @lost ? "X" : @guess_num)
         @guesses.each do |guess|
-          ret += "\n"
+          ret << "\n"
           guess.each do |i|
             case i
             when 0
-              ret += "🟨"
+              ret << "🟨"
             when 1
-              ret += "🟩"
+              ret << "🟩"
             else
-              ret += @dark_mode ? "⬛" : "⬜"
+              ret << (@dark_mode ? "⬛" : "⬜")
             end
           end
         end
