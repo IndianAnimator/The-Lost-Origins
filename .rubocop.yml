@@ -175,15 +175,19 @@ Style/MutableConstant:
 Style/NumericLiterals:
   AllowedNumbers: [99999, 99998, 99997, 99996, 99995, 99994]
 
+# No require in RGSS lol
+Style/SpecialGlobalVars:
+  EnforcedStyle: use_perl_names
+
+# I like using ternary operators in assignment ok
+Style/ConditionalAssignment:
+  Enabled: false
+
 # So I don't have to do weird indentation with ({ ... }) blocks
 Layout/FirstArrayElementIndentation:
   EnforcedStyle: consistent
 Layout/FirstHashElementIndentation:
   EnforcedStyle: consistent
-
-# I like using ternary operators in assignment ok
-Style/ConditionalAssignment:
-  Enabled: false
 
 # x and y are communicative enough lmao
 Naming/MethodParameterName:
