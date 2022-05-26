@@ -70,18 +70,18 @@ class Wordle
     @sprites[:curtain].bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
     @sprites[:curtain].opacity = 0
     @sprites[:cursor_small] = Sprite.new(@viewport)
-    @sprites[:cursor_small].bitmap = RPG::Cache.load_bitmap(@directory, "cursor_small")
+    @sprites[:cursor_small].bitmap = RPG::Cache.load_bitmap(@directory, "cursorSmall")
     @sprites[:cursor_small].x = 62
     @sprites[:cursor_small].y = 254
     @sprites[:cursor_small].z = 99998
     @sprites[:cursor_large] = Sprite.new(@viewport)
-    @sprites[:cursor_large].bitmap = RPG::Cache.load_bitmap(@directory, "cursor_large")
+    @sprites[:cursor_large].bitmap = RPG::Cache.load_bitmap(@directory, "cursorLarge")
     @sprites[:cursor_large].x = 62
     @sprites[:cursor_large].y = 332
     @sprites[:cursor_large].z = 99998
     @sprites[:cursor_large].visible = false
     @sprites[:keyboard_letters] = Sprite.new(@viewport)
-    @sprites[:keyboard_letters].bitmap = RPG::Cache.load_bitmap(@directory, "keyboard_letters")
+    @sprites[:keyboard_letters].bitmap = RPG::Cache.load_bitmap(@directory, "keyboardLetters")
     @sprites[:keyboard_letters].x = 64
     @sprites[:keyboard_letters].y = 256
     @sprites[:keyboard_letters].z = 10
