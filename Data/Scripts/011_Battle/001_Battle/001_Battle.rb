@@ -725,10 +725,12 @@ class Battle
     when :HeavyRain   then pbDisplay(_INTL("A heavy rain began to fall!"))
     when :StrongWinds then pbDisplay(_INTL("Mysterious strong winds are protecting Flying-type Pokémon!"))
     when :ShadowSky   then pbDisplay(_INTL("A shadow sky appeared!"))
+    when :Moon        then pbDisplay(_INTL("The moon appeared? idk")) # TODO: actual text
     end
     # Check for end of primordial weather, and weather-triggered form changes
     allBattlers.each { |b| b.pbCheckFormOnWeatherChange }
     pbEndPrimordialWeather
+    return true
   end
 
   def pbEndPrimordialWeather
@@ -807,6 +809,14 @@ class Battle
     # Check for abilities/items that trigger upon the terrain changing
     allBattlers.each { |b| b.pbAbilityOnTerrainChange }
     allBattlers.each { |b| b.pbItemTerrainStatBoostCheck }
+    return true
+  end
+
+  def pbStartTerrainAbility(new_terrain, battler, show_splash = true)
+    return if @field.terrain == new_terrain
+    pbShowAbilitySplash(battler) if show_splash
+    pbStartTerrain(battler, new_terrain)
+    # NOTE: The ability splash is hidden again in def pbStartTerrain.
   end
 
   #=============================================================================

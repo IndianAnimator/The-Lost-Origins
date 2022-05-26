@@ -1561,6 +1561,8 @@ class Battle::Move::TypeAndPowerDependOnWeather < Battle::Move
       ret = :ROCK if GameData::Type.exists?(:ROCK)
     when :Hail
       ret = :ICE if GameData::Type.exists?(:ICE)
+    when :Moon
+      ret = :DARK if GameData::Type.exists?(:DARK)
     end
     return ret
   end

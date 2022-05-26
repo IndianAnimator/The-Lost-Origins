@@ -13,7 +13,7 @@ module GameData
     attr_reader :id
     attr_reader :id_number
     attr_reader :real_name
-    attr_reader :category   # :None, :Rain, :Hail, :Sandstorm, :Sun, :Fog
+    attr_reader :category   # :None, :Rain, :Hail, :Sandstorm, :Sun, :Fog, :Moon
     attr_reader :graphics   # [[particle file names], [tile file names]]
     attr_reader :particle_delta_x
     attr_reader :particle_delta_y
@@ -160,4 +160,13 @@ GameData::Weather.register({
   :tile_delta_x     => -32,
   :tile_delta_y     => 0,
   :graphics         => [nil, ["fog_tile"]]
+})
+
+GameData::Weather.register({
+  :id               => :Moon,
+  :id_number        => 9,
+  :category         => :Fog,
+  :tone_proc        => proc { |strength|
+    next Tone.new(-32, -32, -32, 0)
+  }
 })

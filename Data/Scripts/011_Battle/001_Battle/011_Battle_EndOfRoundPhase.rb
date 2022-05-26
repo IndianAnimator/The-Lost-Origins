@@ -15,6 +15,7 @@ class Battle
       when :Sandstorm then pbDisplay(_INTL("The sandstorm subsided."))
       when :Hail      then pbDisplay(_INTL("The hail stopped."))
       when :ShadowSky then pbDisplay(_INTL("The shadow sky faded."))
+      when :Moon      then pbDisplay(_INTL("The moonlight faded."))
       end
       @field.weather = :None
       # Check for form changes caused by the weather changing

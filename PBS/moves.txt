@@ -33,7 +33,7 @@ Accuracy = 100
 TotalPP = 10
 Target = NearOther
 FunctionCode = LowerTargetSpDef1
-Flags = CanProtect,CanMirrorMove,Sound,WingMove
+Flags = CanProtect,CanMirrorMove,Sound,Wing
 EffectChance = 10
 Description = The user vibrates its wings to generate a damaging sound wave. It may also lower the target's Sp. Def stat.
 #-------------------------------
@@ -2635,7 +2635,7 @@ Accuracy = 100
 TotalPP = 10
 Target = NearOther
 FunctionCode = RaiseUserSpAtk1
-Flags = CanProtect,CanMirrorMove,Dance,WingMove
+Flags = CanProtect,CanMirrorMove,Dance,Wing
 EffectChance = 50
 Description = Cloaked in flames, the user dances and flaps its wings. It may also raise the user's Sp. Atk stat.
 #-------------------------------
@@ -2858,7 +2858,7 @@ Accuracy = 100
 TotalPP = 15
 Target = Other
 FunctionCode = RecoilThirdOfDamageDealt
-Flags = Contact,CanProtect,CanMirrorMove,WingMove
+Flags = Contact,CanProtect,CanMirrorMove,Wing
 Description = The user tucks in its wings and charges from a low altitude. The user also takes serious damage.
 #-------------------------------
 [DRAGONASCENT]
@@ -2956,7 +2956,7 @@ Accuracy = 100
 TotalPP = 10
 Target = Other
 FunctionCode = HealUserByThreeQuartersOfDamageDone
-Flags = CanProtect,CanMirrorMove,WingMove
+Flags = CanProtect,CanMirrorMove,Wing
 Description = The user absorbs its target's HP. The user's HP is restored by over half of the damage dealt.
 #-------------------------------
 [AIRSLASH]
@@ -3042,7 +3042,7 @@ Accuracy = 100
 TotalPP = 35
 Target = Other
 FunctionCode = None
-Flags = Contact,CanProtect,CanMirrorMove,WingMove
+Flags = Contact,CanProtect,CanMirrorMove,Wing
 Description = The target is struck with large, imposing wings spread wide to inflict damage.
 #-------------------------------
 [ACROBATICS]
@@ -3066,7 +3066,7 @@ Accuracy = 90
 TotalPP = 10
 Target = NearOther
 FunctionCode = HitTwoTimes
-Flags = Contact,CanProtect,CanMirrorMove,WingMove
+Flags = Contact,CanProtect,CanMirrorMove,Wing
 Description = The user slams the target with its wings. The target is hit twice in a row.
 #-------------------------------
 [GUST]
@@ -3078,7 +3078,7 @@ Accuracy = 100
 TotalPP = 35
 Target = Other
 FunctionCode = DoublePowerIfTargetInSky
-Flags = CanProtect,CanMirrorMove,WingMove
+Flags = CanProtect,CanMirrorMove,Wing
 Description = A gust of wind is whipped up by wings and launched at the target to inflict damage.
 #-------------------------------
 [PECK]
@@ -8107,7 +8107,7 @@ Accuracy = 90
 TotalPP = 25
 Target = NearOther
 FunctionCode = RaiseUserDefense1
-Flags = Contact,CanProtect,CanMirrorMove,WingMove
+Flags = Contact,CanProtect,CanMirrorMove,Wing
 EffectChance = 10
 Description = The target is hit with wings of steel. It may also raise the user's Defense stat.
 #-------------------------------

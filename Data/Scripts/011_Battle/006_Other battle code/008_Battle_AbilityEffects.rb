@@ -292,6 +292,75 @@ module Battle::AbilityEffects
   end
 end
 
+
+#===============================================================================
+# New Abilities added by PTLO dev team
+#===============================================================================
+
+Battle::AbilityEffects::OnSwitchIn.add(:THUNDERSTORM,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartTerrainAbility(:Electric, battler, !battle.pbStartWeatherAbility(:Rain, battler))
+  }
+)
+
+Battle::AbilityEffects::OnSwitchIn.add(:SUNRISE,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartTerrainAbility(:Grassy, battler, !battle.pbStartWeatherAbility(:Sun, battler))
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromTarget.add(:TWINKLETOES,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    case type
+    when :FLYING then mults[:base_damage_multiplier] *= 2
+    when :GROUND then mults[:base_damage_multiplier] /= 2
+    end
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:ASCENDEDWINGS,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
+  }
+)
+
+Battle::AbilityEffects::OnSwitchIn.add(:TWILIGHT,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartWeatherAbility(:Moon, battler)
+  }
+)
+
+Battle::AbilityEffects::OnDealingHit.add(:NEUROTOXIN,
+  proc { |ability, user, target, move, battle|
+    next if !move.bitingMove?
+    next if battle.pbRandom(100) >= 15
+    new_status = [:POISON, :PARALYSIS][battle.pbRandom(2)]
+    next if target.pbHasStatus?(new_status)
+    battle.pbShowAbilitySplash(user)
+    if target.hasActiveAbility?(:SHIELDDUST) && !battle.moldBreaker
+      battle.pbShowAbilitySplash(target)
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1} is unaffected!", target.pbThis))
+      end
+      battle.pbHideAbilitySplash(target)
+    # need battle.pbRandom so no sampling
+    elsif target.pbCanInflictStatus?(new_status, user, Battle::Scene::USE_ABILITY_SPLASH, move)
+      msg = nil
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        if new_status == :POISON
+          msg = _INTL("{1}'s {2} poisoned {3}!", user.pbThis,
+                      user.abilityName, target.pbThis(true))
+        else
+          msg = _INTL("{1}'s {2} paralyzed {3}! It may be unable to move!",
+                      user.pbThis, user.abilityName, target.pbThis(true))
+        end
+      end
+      target.pbInflictStatus(new_status, 0, msg, user)
+    end
+    battle.pbHideAbilitySplash(user)
+  }
+)
+
 #===============================================================================
 # SpeedCalc handlers
 #===============================================================================
@@ -2720,10 +2789,7 @@ Battle::AbilityEffects::OnSwitchIn.add(:DROUGHT,
 
 Battle::AbilityEffects::OnSwitchIn.add(:ELECTRICSURGE,
   proc { |ability, battler, battle, switch_in|
-    next if battle.field.terrain == :Electric
-    battle.pbShowAbilitySplash(battler)
-    battle.pbStartTerrain(battler, :Electric)
-    # NOTE: The ability splash is hidden again in def pbStartTerrain.
+    battle.pbStartTerrainAbility(:Electric, battler)
   }
 )
 
@@ -2810,10 +2876,7 @@ Battle::AbilityEffects::OnSwitchIn.add(:FRISK,
 
 Battle::AbilityEffects::OnSwitchIn.add(:GRASSYSURGE,
   proc { |ability, battler, battle, switch_in|
-    next if battle.field.terrain == :Grassy
-    battle.pbShowAbilitySplash(battler)
-    battle.pbStartTerrain(battler, :Grassy)
-    # NOTE: The ability splash is hidden again in def pbStartTerrain.
+    battle.pbStartTerrainAbility(:Grassy, battler)
   }
 )
 
@@ -2882,10 +2945,7 @@ Battle::AbilityEffects::OnSwitchIn.add(:MIMICRY,
 
 Battle::AbilityEffects::OnSwitchIn.add(:MISTYSURGE,
   proc { |ability, battler, battle, switch_in|
-    next if battle.field.terrain == :Misty
-    battle.pbShowAbilitySplash(battler)
-    battle.pbStartTerrain(battler, :Misty)
-    # NOTE: The ability splash is hidden again in def pbStartTerrain.
+    battle.pbStartTerrainAbility(:Misty, battler)
   }
 )
 
@@ -2963,10 +3023,7 @@ Battle::AbilityEffects::OnSwitchIn.add(:PRIMORDIALSEA,
 
 Battle::AbilityEffects::OnSwitchIn.add(:PSYCHICSURGE,
   proc { |ability, battler, battle, switch_in|
-    next if battle.field.terrain == :Psychic
-    battle.pbShowAbilitySplash(battler)
-    battle.pbStartTerrain(battler, :Psychic)
-    # NOTE: The ability splash is hidden again in def pbStartTerrain.
+    battle.pbStartTerrainAbility(:Psychic, battler)
   }
 )
 

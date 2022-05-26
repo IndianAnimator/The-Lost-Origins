@@ -286,6 +286,7 @@ class Battle
     when :HeavyRain   then pbDisplay(_INTL("It is raining heavily."))
     when :StrongWinds then pbDisplay(_INTL("The wind is strong."))
     when :ShadowSky   then pbDisplay(_INTL("The sky is shadowy."))
+    when :Moon        then pbDisplay(_INTL("The moon shines overhead."))
     end
     # Terrain announcement
     terrain_data = GameData::BattleTerrain.try_get(@field.terrain)

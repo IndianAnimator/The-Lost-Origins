@@ -200,6 +200,11 @@ Naming/MethodParameterName:
 Naming/AccessorMethodName:
   Enabled: false
 
-# Can't really help it with the weird preexisting essentials conventions
+# Can't really help it with the weird preexisting Essentials conventions
 Naming/MethodName:
   AllowedPatterns: ['^pb[A-Z]']
+
+# Less pointless indenting and text, besides most of the time
+# Essentials already does this
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
