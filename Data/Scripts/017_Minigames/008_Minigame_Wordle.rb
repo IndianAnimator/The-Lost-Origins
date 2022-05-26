@@ -69,22 +69,22 @@ class Wordle
     @sprites[:curtain].z = 99999
     @sprites[:curtain].bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
     @sprites[:curtain].opacity = 0
-    @sprites[:cursorSmall] = Sprite.new(@viewport)
-    @sprites[:cursorSmall].bitmap = RPG::Cache.load_bitmap(@directory, "cursorSmall")
-    @sprites[:cursorSmall].x = 62
-    @sprites[:cursorSmall].y = 254
-    @sprites[:cursorSmall].z = 99998
-    @sprites[:cursorLarge] = Sprite.new(@viewport)
-    @sprites[:cursorLarge].bitmap = RPG::Cache.load_bitmap(@directory, "cursorLarge")
-    @sprites[:cursorLarge].x = 62
-    @sprites[:cursorLarge].y = 332
-    @sprites[:cursorLarge].z = 99998
-    @sprites[:cursorLarge].visible = false
-    @sprites[:keyboardLetters] = Sprite.new(@viewport)
-    @sprites[:keyboardLetters].bitmap = RPG::Cache.load_bitmap(@directory, "keyboardLetters")
-    @sprites[:keyboardLetters].x = 64
-    @sprites[:keyboardLetters].y = 256
-    @sprites[:keyboardLetters].z = 10
+    @sprites[:cursor_small] = Sprite.new(@viewport)
+    @sprites[:cursor_small].bitmap = RPG::Cache.load_bitmap(@directory, "cursor_small")
+    @sprites[:cursor_small].x = 62
+    @sprites[:cursor_small].y = 254
+    @sprites[:cursor_small].z = 99998
+    @sprites[:cursor_large] = Sprite.new(@viewport)
+    @sprites[:cursor_large].bitmap = RPG::Cache.load_bitmap(@directory, "cursor_large")
+    @sprites[:cursor_large].x = 62
+    @sprites[:cursor_large].y = 332
+    @sprites[:cursor_large].z = 99998
+    @sprites[:cursor_large].visible = false
+    @sprites[:keyboard_letters] = Sprite.new(@viewport)
+    @sprites[:keyboard_letters].bitmap = RPG::Cache.load_bitmap(@directory, "keyboard_letters")
+    @sprites[:keyboard_letters].x = 64
+    @sprites[:keyboard_letters].y = 256
+    @sprites[:keyboard_letters].z = 10
     @sprites[:squares] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
     @sprites[:letters] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
     @sprites[:letters].z = 10
@@ -99,9 +99,9 @@ class Wordle
     @sprites[:animation].z = 99999
 
     # default cursors
-    # @cursorSmall = [[@directory + "cursorSmall", 62, ,0, 0, 28, 36]]
-    # @cursorLarge = [[@directory + "cursorLarge", 62, 332, 0, 0, 188, 40]]
-    # pbDrawImagePositions(@sprites[:cursor].bitmap, @cursorSmall)
+    # @cursor_small = [[@directory + "cursor_small", 62, ,0, 0, 28, 36]]
+    # @cursor_large = [[@directory + "cursor_large", 62, 332, 0, 0, 188, 40]]
+    # pbDrawImagePositions(@sprites[:cursor].bitmap, @cursor_small)
   end
 
   def get_input
@@ -126,21 +126,21 @@ class Wordle
           @index_y = 2
           if @index_x < 6
             @large_index_x = 0
-            @sprites[:cursorLarge].x = 62
+            @sprites[:cursor_large].x = 62
           elsif @index_x > 6
             @large_index_x = 1
-            @sprites[:cursorLarge].x = 262
+            @sprites[:cursor_large].x = 262
           end
-          @sprites[:cursorSmall].visible = false
-          @sprites[:cursorLarge].visible = true
+          @sprites[:cursor_small].visible = false
+          @sprites[:cursor_large].visible = true
         when 2
           @index_y = 1
-          @sprites[:cursorSmall].y = 292
-          @sprites[:cursorLarge].visible = false
-          @sprites[:cursorSmall].visible = true
+          @sprites[:cursor_small].y = 292
+          @sprites[:cursor_large].visible = false
+          @sprites[:cursor_small].visible = true
         else
           @index_y = 0
-          @sprites[:cursorSmall].y = 254
+          @sprites[:cursor_small].y = 254
         end
       elsif Input.repeat?(Input::DOWN)
         pbPlayCursorSE
@@ -149,55 +149,55 @@ class Wordle
           @index_y = 2
           if @index_x < 6
             @large_index_x = 0
-            @sprites[:cursorLarge].x = 62
+            @sprites[:cursor_large].x = 62
           elsif @index_x > 6
             @large_index_x = 1
-            @sprites[:cursorLarge].x = 262
+            @sprites[:cursor_large].x = 262
           end
-          @sprites[:cursorSmall].visible = false
-          @sprites[:cursorLarge].visible = true
+          @sprites[:cursor_small].visible = false
+          @sprites[:cursor_large].visible = true
         when 2
           @index_y = 0
-          @sprites[:cursorSmall].y = 254
-          @sprites[:cursorLarge].visible = false
-          @sprites[:cursorSmall].visible = true
+          @sprites[:cursor_small].y = 254
+          @sprites[:cursor_large].visible = false
+          @sprites[:cursor_small].visible = true
         else
           @index_y = 1
-          @sprites[:cursorSmall].y = 292
+          @sprites[:cursor_small].y = 292
         end
       elsif Input.repeat?(Input::LEFT)
         pbPlayCursorSE
         if @index_y == 2
           if @large_index_x == 0
             @large_index_x = 1
-            @sprites[:cursorLarge].x = 262
+            @sprites[:cursor_large].x = 262
           else
             @large_index_x = 0
-            @sprites[:cursorLarge].x = 62
+            @sprites[:cursor_large].x = 62
           end
         elsif @index_x == 0
           @index_x = 12
-          @sprites[:cursorSmall].x = 422
+          @sprites[:cursor_small].x = 422
         else
           @index_x -= 1
-          @sprites[:cursorSmall].x -= 30
+          @sprites[:cursor_small].x -= 30
         end
       elsif Input.repeat?(Input::RIGHT)
         pbPlayCursorSE
         if @index_y == 2
           if @large_index_x == 0
             @large_index_x = 1
-            @sprites[:cursorLarge].x = 262
+            @sprites[:cursor_large].x = 262
           else
             @large_index_x = 0
-            @sprites[:cursorLarge].x = 62
+            @sprites[:cursor_large].x = 62
           end
         elsif @index_x == 12
           @index_x = 0
-          @sprites[:cursorSmall].x = 62
+          @sprites[:cursor_small].x = 62
         else
           @index_x += 1
-          @sprites[:cursorSmall].x += 30
+          @sprites[:cursor_small].x += 30
         end
       elsif Input.trigger?(Input::USE)
         # if cursor is on the bottom "action row"
@@ -325,16 +325,16 @@ class Wordle
         @ongoing = false
         @sprites[:curtain].opacity = 100
         pbMessage(_INTL("\\me[Voltorb Flip win]You win!\\wtnp[40]"))
-        @sprites[:cursorSmall].visible = false
-        @sprites[:cursorLarge].visible = false
+        @sprites[:cursor_small].visible = false
+        @sprites[:cursor_large].visible = false
         @sprites[:curtain].opacity = 0
       elsif @guess_num == 6
         @ongoing = false
         @lost = true
         @sprites[:curtain].opacity = 100
         pbMessage(_INTL("\\me[Voltorb Flip game over]You failed to guess the word {1}.\\wtnp[50]", to_word(@word)))
-        @sprites[:cursorSmall].visible = false
-        @sprites[:cursorLarge].visible = false
+        @sprites[:cursor_small].visible = false
+        @sprites[:cursor_large].visible = false
         @sprites[:curtain].opacity = 0
       end
     end
