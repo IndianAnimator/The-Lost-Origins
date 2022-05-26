@@ -1,0 +1,38 @@
+﻿Name       = v20 Hotfixes
+Version    = 1.0.1
+Essentials = 20
+Conflicts  = v19 Hotfixes
+Conflicts  = v19.1 Updates
+Conflicts  = v19 Hotfixes
+Website    = https://github.com/Maruno17/pokemon-essentials
+Credits    = Maruno
+#=====================================================================
+# Change log
+#=====================================================================
+#
+# 1.0.0:
+# - Fixed incorrect message when choosing a Pokémon to withdraw from
+#   Day Care.
+# - Fixed event evolutions not working.
+# - Fixed incorrect status condition icon used for fainted Pokémon and
+#   Pokémon with Pokérus.
+# - Fixed some outdated code used in example map events.
+# - Fixed incorrect Pokémon icons shown in Ready Menu if there are
+#   eggs in the party.
+#
+# 1.0.1:
+# - Fixed not registering a gifted Pokémon as seen/owned before
+#   looking at its Pokédex entry.
+# - Fixed the player animating super-fast for a while after surfing.
+# - Fixed Howl always failing.
+# - Fixed error when using Rotom Catalog.
+# - Fixed error when the Compiler tries to convert some
+#   pbTrainerBattle code to TrainerBattle.start.
+#
+#=====================================================================
+#
+# There are lines in trainer_types.txt that say "VictoryME = ...".
+# These should say "VictoryBGM = ..." instead. This plugin cannot
+# change those automatically.
+#
+#=====================================================================
