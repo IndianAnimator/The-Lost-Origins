@@ -45,57 +45,59 @@ class Scene_Credits
 
   # This next piece of code is the credits.
   # Start Editing
-  CREDIT = <<_END_
+  CREDIT = <<~_END_
 
-Your credits go here.
+    Your credits go here.
 
-Your credits go here.
+    Your credits go here.
 
-Your credits go here.
+    Your credits go here.
 
-Your credits go here.
+    Your credits go here.
 
-Your credits go here.
+    Your credits go here.
 
-{INSERTS_PLUGIN_CREDITS_DO_NOT_REMOVE}
+    Text Skip by Amthyst and Kurotsune
 
-"Pokémon Essentials" was created by:
-Flameguru
-Poccil (Peter O.)
-Maruno
+    {INSERTS_PLUGIN_CREDITS_DO_NOT_REMOVE}
 
-With contributions from:
-AvatarMonkeyKirby<s>Marin
-Boushy<s>MiDas Mike
-Brother1440<s>Near Fantastica
-FL.<s>PinkMan
-Genzai Kawakami<s>Popper
-Golisopod User<s>Rataime
-help-14<s>Savordez
-IceGod64<s>SoundSpawn
-Jacob O. Wobbrock<s>the__end
-KitsuneKouta<s>Venom12
-Lisa Anthony<s>Wachunga
-Luka S.J.<s>
-and everyone else who helped out
+    "Pokémon Essentials" was created by:
+    Flameguru
+    Poccil (Peter O.)
+    Maruno
 
-"mkxp-z" by:
-Roza
-Based on "mkxp" by Ancurio et al.
+    With contributions from:
+    AvatarMonkeyKirby<s>Marin
+    Boushy<s>MiDas Mike
+    Brother1440<s>Near Fantastica
+    FL.<s>PinkMan
+    Genzai Kawakami<s>Popper
+    Golisopod User<s>Rataime
+    help-14<s>Savordez
+    IceGod64<s>SoundSpawn
+    Jacob O. Wobbrock<s>the__end
+    KitsuneKouta<s>Venom12
+    Lisa Anthony<s>Wachunga
+    Luka S.J.<s>
+    and everyone else who helped out
 
-"RPG Maker XP" by:
-Enterbrain
+    "mkxp-z" by:
+    Roza
+    Based on "mkxp" by Ancurio et al.
 
-Pokémon is owned by:
-The Pokémon Company
-Nintendo
-Affiliated with Game Freak
+    "RPG Maker XP" by:
+    Enterbrain
+
+    Pokémon is owned by:
+    The Pokémon Company
+    Nintendo
+    Affiliated with Game Freak
 
 
 
-This is a non-profit fan-made game.
-No copyright infringements intended.
-Please support the official games!
+    This is a non-profit fan-made game.
+    No copyright infringements intended.
+    Please support the official games!
 
 _END_
 # Stop Editing
