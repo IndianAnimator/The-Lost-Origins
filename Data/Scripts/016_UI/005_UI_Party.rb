@@ -179,6 +179,10 @@ class PokemonPartyPanel < SpriteWrapper
     self.y = (16 * (index % 2)) + (96 * (index / 2))
     @panelbgsprite = ChangelingSprite.new(0, 0, viewport)
     @panelbgsprite.z = self.z
+    def type_overlay
+      @primary_type = @pokemon.pbTypes(true)
+      return @primary_type[0]
+    end
     if @active   # Rounded panel
       @panelbgsprite.addBitmap("able", "Graphics/Pictures/Party/panel_round")
       @panelbgsprite.addBitmap("ablesel", "Graphics/Pictures/Party/panel_round_sel")
