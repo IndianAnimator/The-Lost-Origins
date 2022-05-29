@@ -1,5 +1,3 @@
-# rubocop:disable Style
-
 # ignore messages on assigning z
 class RuboCop::Cop::Style::NumericLiterals
   def on_int(node)
@@ -7,5 +5,3 @@ class RuboCop::Cop::Style::NumericLiterals
     check node
   end
 end
-
-# rubocop:enable all

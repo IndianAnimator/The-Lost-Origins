@@ -831,29 +831,41 @@ class PokemonSummary_Scene
 
   def drawPageFive
     overlay = @sprites["overlay"].bitmap
-    @sprites["uparrow"].visible   = false
-    @sprites["downarrow"].visible = false
+    base   = Color.new(248, 248, 248)
+    shadow = Color.new(104, 104, 104)
+    # Determine which stats are boosted and lowered by the Pokémon's nature
+    statshadows = {}
+    GameData::Stat.each_main { |s| statshadows[s.id] = shadow }
+    if !@pokemon.shadowPokemon? || @pokemon.heartStage > 3
+      @pokemon.nature_for_stats.stat_changes.each do |change|
+        statshadows[change[0]] = Color.new(136, 96, 72) if change[1] > 0
+        statshadows[change[0]] = Color.new(64, 120, 152) if change[1] < 0
+      end
+    end
     # Write various bits of text
     textpos = [
-      [_INTL("No. of Ribbons:"), 234, 338, 0, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [@pokemon.numRibbons.to_s, 450, 338, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)]
+      [_INTL("HP"), 292, 82, 2, base, statshadows[:HP]],
+      [sprintf("%d / %d", @pokemon.ev[:HP], @pokemon.iv[:HP]), 456, 82, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Attack"), 248, 126, 0, base, statshadows[:ATTACK]],
+      [sprintf("%d / %d", @pokemon.ev[:ATTACK], @pokemon.iv[:ATTACK]), 456, 126, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Defense"), 248, 158, 0, base, statshadows[:DEFENSE]],
+      [sprintf("%d / %d", @pokemon.ev[:DEFENSE], @pokemon.iv[:DEFENSE]), 456, 158, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Sp. Atk"), 248, 190, 0, base, statshadows[:SPECIAL_ATTACK]],
+      [sprintf("%d / %d", @pokemon.ev[:SPECIAL_ATTACK], @pokemon.iv[:SPECIAL_ATTACK]), 456, 190, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Sp. Def"), 248, 222, 0, base, statshadows[:SPECIAL_DEFENSE]],
+      [sprintf("%d / %d", @pokemon.ev[:SPECIAL_DEFENSE], @pokemon.iv[:SPECIAL_DEFENSE]), 456, 222, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Speed"), 248, 254, 0, base, statshadows[:SPEED]],
+      [sprintf("%d / %d", @pokemon.ev[:SPEED], @pokemon.iv[:SPEED]), 456, 254, 1, Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      [_INTL("Ability"), 224, 290, 0, base, shadow]
     ]
-    # Draw all text
-    pbDrawTextPositions(overlay, textpos)
-    # Show all ribbons
-    imagepos = []
-    coord = 0
-    (@ribbonOffset * 4...(@ribbonOffset * 4) + 12).each do |i|
-      break if !@pokemon.ribbons[i]
-      ribbon_data = GameData::Ribbon.get(@pokemon.ribbons[i])
-      ribn = ribbon_data.icon_position
-      imagepos.push(["Graphics/Pictures/ribbons",
-                     230 + (68 * (coord % 4)), 78 + (68 * (coord / 4).floor),
-                     64 * (ribn % 8), 64 * (ribn / 8).floor, 64, 64])
-      coord += 1
+    # Draw ability name and description
+    ability = @pokemon.ability
+    if ability
+      textpos.push([ability.name, 362, 290, 0, Color.new(64, 64, 64), Color.new(176, 176, 176)])
+      drawTextEx(overlay, 224, 322, 282, 2, ability.description, Color.new(64, 64, 64), Color.new(176, 176, 176))
     end
-    # Draw all images
-    pbDrawImagePositions(overlay, imagepos)
+  # Draw all text
+    pbDrawTextPositions(overlay, textpos)
   end
 
   def drawSelectedRibbon(ribbonid)
@@ -1273,10 +1285,10 @@ class PokemonSummary_Scene
           pbPlayDecisionSE
           pbMoveSelection
           dorefresh = true
-        elsif @page == 5
-          pbPlayDecisionSE
-          pbRibbonSelection
-          dorefresh = true
+        # elsif @page == 5
+        #   pbPlayDecisionSE
+        #   pbRibbonSelection
+        #   dorefresh = true
         elsif !@inbattle
           pbPlayDecisionSE
           dorefresh = pbOptions
