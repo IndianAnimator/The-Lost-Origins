@@ -183,6 +183,15 @@ Style/SpecialGlobalVars:
 Style/ConditionalAssignment:
   Enabled: false
 
+# Less pointless indenting and text, besides most of the time
+# Essentials already does this
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
+
+# Essentials use a ton of these + global variables cops are already disabled
+Style/ClassVars:
+  Enabled: false
+
 # So I don't have to do weird indentation with ({ ... }) blocks
 Layout/FirstArrayElementIndentation:
   EnforcedStyle: consistent
@@ -203,8 +212,3 @@ Naming/AccessorMethodName:
 # Can't really help it with the weird preexisting Essentials conventions
 Naming/MethodName:
   AllowedPatterns: ['^pb[A-Z]']
-
-# Less pointless indenting and text, besides most of the time
-# Essentials already does this
-Style/ClassAndModuleChildren:
-  EnforcedStyle: compact

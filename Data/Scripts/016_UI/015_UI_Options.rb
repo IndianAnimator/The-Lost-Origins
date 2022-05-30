@@ -15,6 +15,7 @@ class PokemonSystem
   attr_accessor :bgmvolume
   attr_accessor :sevolume
   attr_accessor :textinput
+  attr_accessor :speedup
 
   def initialize
     @textspeed     = 1     # Text speed (0=slow, 1=normal, 2=fast)
@@ -30,6 +31,7 @@ class PokemonSystem
     @bgmvolume     = 100   # Volume of background music and ME
     @sevolume      = 100   # Volume of sound effects
     @textinput     = 0     # Text input mode (0=cursor, 1=keyboard)
+    @speedup       = 1     # Speedup multiplier
   end
 end
 
@@ -541,4 +543,14 @@ MenuHandlers.add(:options_menu, :screen_size, {
     $PokemonSystem.screensize = value
     pbSetResizeFactor($PokemonSystem.screensize)
   }
+})
+
+MenuHandlers.add(:options_menu, :speed_up, {
+  "name"        => _INTL("Speed Up"),
+  "order"       => 130,
+  "type"        => EnumOption,
+  "parameters"  => [_INTL("None"), "x2", "x3"],
+  "description" => _INTL("Set game speed."),
+  "get_proc"    => proc { next $PokemonSystem.speedup&.- 1 }, # HACK: the &. part is for preexisting saves
+  "set_proc"    => proc { |value, _scene| $PokemonSystem.speedup = value + 1 }
 })
