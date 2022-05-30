@@ -338,7 +338,7 @@ class PokemonSummary_Scene
                 _INTL("TRAINER MEMO"),
                 _INTL("SKILLS"),
                 _INTL("MOVES"),
-                _INTL("RIBBONS")][page - 1]
+                _INTL("EVs/IVs")][page - 1]
     textpos = [
       [pagename, 26, 22, 0, base, shadow],
       [@pokemon.name, 46, 68, 0, base, shadow],
