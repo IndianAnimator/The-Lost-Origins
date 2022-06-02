@@ -213,9 +213,9 @@ class PokemonPartyPanel < SpriteWrapper
     @helditemsprite.z = self.z + 3
     @overlaysprite = BitmapSprite.new(Graphics.width, Graphics.height, viewport)
     @overlaysprite.z = self.z + 4
-    @hpbar    = AnimatedBitmap.new("Graphics/Pictures/Party/overlay_hp")
-    @statuses = AnimatedBitmap.new(_INTL("Graphics/Pictures/statuses"))
-    @typeoverlay = AnimatedBitmap.new(_INTL("Graphics/Pictures/Party/typeoverlay"))
+    @hpbar       = AnimatedBitmap.new("Graphics/Pictures/Party/overlay_hp")
+    @statuses    = AnimatedBitmap.new(_INTL("Graphics/Pictures/statuses"))
+    @typeoverlay = AnimatedBitmap.new(_INTL("Graphics/Pictures/Party/type_overlay"))
     @selected      = false
     @preselected   = false
     @switching     = false
@@ -395,11 +395,11 @@ class PokemonPartyPanel < SpriteWrapper
             statusrect = Rect.new(0, 16 * status, 44, 16)
             @overlaysprite.bitmap.blt(78, 68, @statuses.bitmap, statusrect)
           end
-          #draw type overlay ig
-          @pokemon.types.each_with_index do |type|
+          # Draw type overlay
+          if (type = @pokemon.types[0])
             type_num = GameData::Type.get(type).icon_position
-            typerect = Rect.new(98, 256 * type_num, 0, 0)
-            @overlaysprite.bitmap.blt(0, 0, @typeoverlay.bitmap, typerect)
+            type_rect = Rect.new(0, 98 * type_num, 256, 98)
+            @overlaysprite.bitmap.blt(0, 0, @typeoverlay.bitmap, type_rect)
           end
         end
         # Draw gender symbol
