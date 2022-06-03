@@ -797,3 +797,15 @@ MultipleForms.register(:KOFFING, {
 })
 
 MultipleForms.copy(:KOFFING, :MIMEJR)
+
+#===============================================================================
+# TLO forms
+#===============================================================================
+
+MultipleForms.register(:SOLROCK, {
+  "getForm" => proc { |pkmn|
+    next if !$Trainer
+    next 1 if $Trainer.has_species?(:LUNATONE)
+    next 0
+  }
+})
