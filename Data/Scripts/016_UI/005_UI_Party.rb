@@ -202,13 +202,13 @@ class PokemonPartyPanel < SpriteWrapper
     @hpbgsprite.addBitmap("fainted", "Graphics/Pictures/Party/overlay_hp_back_faint")
     @hpbgsprite.addBitmap("swap", "Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0, 0, viewport)
-    @ballsprite.z = self.z + 1
+    @ballsprite.z = self.z + 5
     @ballsprite.addBitmap("desel", "Graphics/Pictures/Party/icon_ball")
     @ballsprite.addBitmap("sel", "Graphics/Pictures/Party/icon_ball_sel")
     @pkmnsprite = PokemonIconSprite.new(pokemon, viewport)
     @pkmnsprite.setOffset(PictureOrigin::CENTER)
     @pkmnsprite.active = @active
-    @pkmnsprite.z      = self.z + 2
+    @pkmnsprite.z      = self.z + 6
     @helditemsprite = HeldItemIconSprite.new(0, 0, @pokemon, viewport)
     @helditemsprite.z = self.z + 3
     @overlaysprite = BitmapSprite.new(Graphics.width, Graphics.height, viewport)
