@@ -2314,3 +2314,10 @@ Color = Black
 Shape = Quadruped
 Category = High King
 Pokedex = Legend says that by using its power to see all events from past to future, this Pokémon saved the creatures of a forest from a meteorite strike.
+#-------------------------------
+# TLO forms
+#-------------------------------
+[SOLROCK,1]
+FormName = TODO
+BaseStats = 120,145,125,100,95,125
+Abilities = WONDERGUARD
