@@ -65,8 +65,8 @@ class PokemonMapFactory
     return getMap(id, false)
   end
 
-  def getNewMap(playerX, playerY)
-    id = $game_map.map_id
+  def getNewMap(playerX, playerY, map_id = nil)
+    id = map_id || $game_map.map_id
     MapFactoryHelper.eachConnectionForMap(id) do |conn|
       mapidB = nil
       newx = 0
@@ -83,6 +83,7 @@ class PokemonMapFactory
         newy = conn[2] - conn[5] + playerY
       end
       if newx >= 0 && newx < mapB[0] && newy >= 0 && newy < mapB[1]
+        return [getMapNoAdd(mapidB), newx, newy] if map_id
         return [getMap(mapidB), newx, newy]
       end
     end
@@ -155,7 +156,7 @@ class PokemonMapFactory
   # Similar to Game_Player#passable?, but supports map connections
   def isPassableFromEdge?(x, y)
     return true if $game_map.valid?(x, y)
-    newmap = getNewMap(x, y)
+    newmap = getNewMap(x, y, $game_map.map_id)
     return false if !newmap
     return isPassable?(newmap[0].map_id, newmap[1], newmap[2])
   end
@@ -167,12 +168,8 @@ class PokemonMapFactory
     return false if !map.valid?(x, y)
     return true if thisEvent.through
     # Check passability of tile
-    if thisEvent.is_a?(Game_Player)
-      return false unless ($DEBUG && Input.press?(Input::CTRL)) ||
-                          map.passable?(x, y, 0, thisEvent)
-    else
-      return false unless map.passable?(x, y, 0, thisEvent)
-    end
+    return true if $DEBUG && Input.press?(Input::CTRL) && thisEvent.is_a?(Game_Player)
+    return false if !map.passable?(x, y, 0, thisEvent)
     # Check passability of event(s) in that spot
     map.events.each_value do |event|
       next if event == thisEvent || !event.at_coordinate?(x, y)
@@ -187,20 +184,15 @@ class PokemonMapFactory
     return true
   end
 
-  # Only used by dependent events
+  # Only used by follower events
   def isPassableStrict?(mapID, x, y, thisEvent = nil)
     thisEvent = $game_player if !thisEvent
     map = getMapNoAdd(mapID)
     return false if !map
     return false if !map.valid?(x, y)
     return true if thisEvent.through
-    if thisEvent == $game_player
-      if !($DEBUG && Input.press?(Input::CTRL)) && !map.passableStrict?(x, y, 0, thisEvent)
-        return false
-      end
-    elsif !map.passableStrict?(x, y, 0, thisEvent)
-      return false
-    end
+    return true if $DEBUG && Input.press?(Input::CTRL) && thisEvent.is_a?(Game_Player)
+    return false if !map.passableStrict?(x, y, 0, thisEvent)
     map.events.each_value do |event|
       next if event == thisEvent || !event.at_coordinate?(x, y)
       return false if !event.through && event.character_name != ""
@@ -228,10 +220,7 @@ class PokemonMapFactory
 
   def areConnected?(mapID1, mapID2)
     return true if mapID1 == mapID2
-    MapFactoryHelper.eachConnectionForMap(mapID1) do |conn|
-      return true if conn[0] == mapID2 || conn[3] == mapID2
-    end
-    return false
+    return MapFactoryHelper.mapsConnected?(mapID1, mapID2)
   end
 
   # Returns the coordinate change to go from this position to other position
@@ -373,10 +362,13 @@ class PokemonMapFactory
     return if $game_player.moving?
     if !MapFactoryHelper.hasConnections?($game_map.map_id)
       return if @maps.length == 1
-      @maps.delete_if { |map| $game_map.map_id != map.map_id }
+      @maps.delete_if { |map| map.map_id != $game_map.map_id }
       @mapIndex = getMapIndex($game_map.map_id)
       return
     end
+    old_num_maps = @maps.length
+    @maps.delete_if { |map| !MapFactoryHelper.mapsConnected?($game_map.map_id, map.map_id) }
+    @mapIndex = getMapIndex($game_map.map_id) if @maps.length != old_num_maps
     setMapsInRange
     old_num_maps = @maps.length
     @maps.delete_if { |map| !MapFactoryHelper.mapInRange?(map) }
@@ -438,6 +430,13 @@ module MapFactoryHelper
   def self.hasConnections?(id)
     conns = MapFactoryHelper.getMapConnections
     return conns[id] ? true : false
+  end
+
+  def self.mapsConnected?(id1, id2)
+    MapFactoryHelper.eachConnectionForMap(id1) { |conn|
+      return true if conn[0] == id2 || conn[3] == id2
+    }
+    return false
   end
 
   def self.eachConnectionForMap(id)

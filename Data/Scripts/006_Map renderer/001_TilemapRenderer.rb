@@ -15,6 +15,8 @@ class TilemapRenderer
   DISPLAY_TILE_HEIGHT     = Game_Map::TILE_HEIGHT rescue 32
   SOURCE_TILE_WIDTH       = 32
   SOURCE_TILE_HEIGHT      = 32
+  ZOOM_X                  = DISPLAY_TILE_WIDTH / SOURCE_TILE_WIDTH
+  ZOOM_Y                  = DISPLAY_TILE_HEIGHT / SOURCE_TILE_HEIGHT
   TILESET_TILES_PER_ROW   = 8
   AUTOTILES_COUNT         = 8   # Counting the blank tile as an autotile
   TILES_PER_AUTOTILE      = 48
@@ -30,7 +32,7 @@ class TilemapRenderer
   #     tile layouts. For example, "Brick path" and "Sea".
   #   - The second is for single tile autotiles. For example, "Flowers1" and
   #     "Waterfall"
-  # Ihe top tiles of the tileset will instead use these autotiles. Large
+  # The top tiles of the tileset will instead use these autotiles. Large
   # autotiles come first, in the same 8x6 layout as you see when you double-
   # click on a real autotile in RMXP. After that are the single tile autotiles.
   # Extra autotiles are only useful if the tiles are animated, because otherwise
@@ -245,7 +247,9 @@ class TilemapRenderer
 
     def set_bitmap(filename, tile_id, autotile, animated, priority, bitmap)
       self.bitmap       = bitmap
-      self.src_rect     = Rect.new(0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT)
+      self.src_rect     = Rect.new(0, 0, SOURCE_TILE_WIDTH, SOURCE_TILE_HEIGHT)
+      self.zoom_x       = ZOOM_X
+      self.zoom_y       = ZOOM_Y
       @filename         = filename
       @tile_id          = tile_id
       @is_autotile      = autotile
@@ -292,6 +296,7 @@ class TilemapRenderer
     @ox                     = 0
     @oy                     = 0
     @visible                = true
+    @need_refresh           = true
     @disposed               = false
   end
 
@@ -347,7 +352,9 @@ class TilemapRenderer
 
   #=============================================================================
 
-  def refresh; end
+  def refresh
+    @need_refresh = true
+  end
 
   def refresh_tile_bitmap(tile, map, tile_id)
     tile.tile_id = tile_id
@@ -417,7 +424,7 @@ class TilemapRenderer
       tile.z = 0
     else
       priority = tile.priority
-      tile.z = (priority == 0) ? 0 : (y * DISPLAY_TILE_HEIGHT) + (priority * 32) + 32
+      tile.z = (priority == 0) ? 0 : (y * SOURCE_TILE_HEIGHT) + (priority * SOURCE_TILE_HEIGHT) + SOURCE_TILE_HEIGHT
     end
   end
 
@@ -450,8 +457,8 @@ class TilemapRenderer
     # Check for tile movement
     current_map_display_x = ($game_map.display_x.to_f / Game_Map::X_SUBPIXELS).round
     current_map_display_y = ($game_map.display_y.to_f / Game_Map::Y_SUBPIXELS).round
-    new_tile_offset_x = current_map_display_x / DISPLAY_TILE_WIDTH
-    new_tile_offset_y = current_map_display_y / DISPLAY_TILE_HEIGHT
+    new_tile_offset_x = (current_map_display_x / SOURCE_TILE_WIDTH) * ZOOM_X
+    new_tile_offset_y = (current_map_display_y / SOURCE_TILE_HEIGHT) * ZOOM_Y
     if new_tile_offset_x != @tile_offset_x
       if new_tile_offset_x > @tile_offset_x
         # Take tile stacks off the right and insert them at the beginning (left)
@@ -500,8 +507,8 @@ class TilemapRenderer
       @tile_offset_y = new_tile_offset_y
     end
     # Check for pixel movement
-    new_pixel_offset_x = current_map_display_x % SOURCE_TILE_WIDTH
-    new_pixel_offset_y = current_map_display_y % SOURCE_TILE_HEIGHT
+    new_pixel_offset_x = (current_map_display_x % SOURCE_TILE_WIDTH) * ZOOM_X
+    new_pixel_offset_y = (current_map_display_y % SOURCE_TILE_HEIGHT) * ZOOM_Y
     if new_pixel_offset_x != @pixel_offset_x
       @screen_moved = true
       @pixel_offset_x = new_pixel_offset_x
@@ -538,7 +545,7 @@ class TilemapRenderer
     # Recalculate autotile frames
     @tilesets.update
     @autotiles.update
-    do_full_refresh = false
+    do_full_refresh = @need_refresh
     if @viewport.ox != @old_viewport_ox || @viewport.oy != @old_viewport_oy
       @old_viewport_ox = @viewport.ox
       @old_viewport_oy = @viewport.oy
@@ -561,7 +568,9 @@ class TilemapRenderer
     $map_factory.maps.each do |map|
       # Calculate x/y ranges of tile sprites that represent them
       map_display_x = (map.display_x.to_f / Game_Map::X_SUBPIXELS).round
+      map_display_x = ((map_display_x + (Graphics.width / 2)) * ZOOM_X) - (Graphics.width / 2) if ZOOM_X != 1
       map_display_y = (map.display_y.to_f / Game_Map::Y_SUBPIXELS).round
+      map_display_y = ((map_display_y + (Graphics.height / 2)) * ZOOM_Y) - (Graphics.height / 2) if ZOOM_Y != 1
       map_display_x_tile = map_display_x / DISPLAY_TILE_WIDTH
       map_display_y_tile = map_display_y / DISPLAY_TILE_HEIGHT
       start_x = [-map_display_x_tile, 0].max
@@ -604,6 +613,7 @@ class TilemapRenderer
         end
       end
     end
+    @need_refresh = false
     @autotiles.changed = false
   end
 end

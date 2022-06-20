@@ -105,7 +105,7 @@ class Battle
     #       Stomping Tantrum.
     userLastMoveFailed = moveUser.lastMoveFailed
     @futureSight = true
-    moveUser.pbUseMoveSimple(move, idxPos)
+    moveUser.pbUseMoveSimple(move, position_index)
     @futureSight = false
     moveUser.lastMoveFailed = userLastMoveFailed
     @battlers[position_index].pbFaint if @battlers[position_index].fainted?
@@ -133,11 +133,11 @@ class Battle
   #=============================================================================
   # End Of Round Sea of Fire damage (Fire Pledge + Grass Pledge combination)
   #=============================================================================
-  def pbEORSeaOfFireDamage
+  def pbEORSeaOfFireDamage(priority)
     2.times do |side|
       next if sides[side].effects[PBEffects::SeaOfFire] == 0
-      @battle.pbCommonAnimation("SeaOfFire") if side == 0
-      @battle.pbCommonAnimation("SeaOfFireOpp") if side == 1
+      pbCommonAnimation("SeaOfFire") if side == 0
+      pbCommonAnimation("SeaOfFireOpp") if side == 1
       priority.each do |battler|
         next if battler.opposes?(side)
         next if !battler.takesIndirectDamage? || battler.pbHasType?(:FIRE)
@@ -427,7 +427,7 @@ class Battle
                              _INTL("The swamp around {1} disappeared!", @battlers[side].pbTeam(true)))
     # Aurora Veil
     pbEORCountDownSideEffect(side, PBEffects::AuroraVeil,
-                             _INTL("{1}'s Aurora Veil wore off!", @battlers[side].pbTeam(true)))
+                             _INTL("{1}'s Aurora Veil wore off!", @battlers[side].pbTeam))
   end
 
   #=============================================================================
@@ -607,7 +607,7 @@ class Battle
     # Wish
     pbEORWishHealing
     # Sea of Fire damage (Fire Pledge + Grass Pledge combination)
-    pbEORSeaOfFireDamage
+    pbEORSeaOfFireDamage(priority)
     # Status-curing effects/abilities and HP-healing items
     priority.each do |battler|
       pbEORTerrainHealing(battler)

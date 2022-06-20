@@ -172,8 +172,8 @@ class PokemonBag_Scene
       end
     end
     @bag.last_viewed_pocket = lastpocket
-    @sliderbitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Bag/icon_slider"))
-    @pocketbitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Bag/icon_pocket"))
+    @sliderbitmap = AnimatedBitmap.new("Graphics/Pictures/Bag/icon_slider")
+    @pocketbitmap = AnimatedBitmap.new("Graphics/Pictures/Bag/icon_pocket")
     @sprites = {}
     @sprites["background"] = IconSprite.new(0, 0, @viewport)
     @sprites["overlay"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
@@ -586,6 +586,7 @@ class PokemonBagScreen
   def pbChooseItemScreen(proc = nil)
     oldlastpocket = @bag.last_viewed_pocket
     oldchoices = @bag.last_pocket_selections.clone
+    @bag.reset_last_selections if proc
     @scene.pbStartScene(@bag, true, proc)
     item = @scene.pbChooseItem
     @scene.pbEndScene

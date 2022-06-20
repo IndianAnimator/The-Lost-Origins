@@ -1328,7 +1328,7 @@ Battle::AbilityEffects::DamageCalcFromUser.add(:FLOWERGIFT,
 
 Battle::AbilityEffects::DamageCalcFromUser.add(:GORILLATACTICS,
   proc { |ability, user, target, move, mults, baseDmg, type|
-    mults[:attack_multiplier] *= 1.5
+    mults[:attack_multiplier] *= 1.5 if move.physicalMove?
   }
 )
 
@@ -2747,7 +2747,7 @@ Battle::AbilityEffects::OnSwitchIn.add(:DARKAURA,
 
 Battle::AbilityEffects::OnSwitchIn.add(:DAUNTLESSSHIELD,
   proc { |ability, battler, battle, switch_in|
-    battler.pbRaiseStatStageByAbility(:ATTACK, 1, battler)
+    battler.pbRaiseStatStageByAbility(:DEFENSE, 1, battler)
   }
 )
 

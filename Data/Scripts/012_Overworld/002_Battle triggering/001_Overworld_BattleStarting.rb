@@ -146,11 +146,18 @@ module BattleCreationHelperMethods
     pbMessage(_INTL("SKIPPING BATTLE...")) if trainer_battle && $DEBUG
     pbMessage(_INTL("AFTER WINNING...")) if trainer_battle && $player.able_pokemon_count > 0
     $game_temp.clear_battle_rules
+    if $game_temp.memorized_bgm && $game_system.is_a?(Game_System)
+      $game_system.bgm_pause
+      $game_system.bgm_position = $game_temp.memorized_bgm_position
+      $game_system.bgm_resume($game_temp.memorized_bgm)
+    end
+    $game_temp.memorized_bgm            = nil
+    $game_temp.memorized_bgm_position   = 0
     $PokemonGlobal.nextBattleBGM        = nil
     $PokemonGlobal.nextBattleVictoryBGM = nil
     $PokemonGlobal.nextBattleCaptureME  = nil
     $PokemonGlobal.nextBattleBack       = nil
-    pbMEStop
+    $PokemonEncounters.reset_step_count
     outcome = 1   # Win
     outcome = 0 if trainer_battle && $player.able_pokemon_count == 0   # Undecided
     pbSet(outcome_variable, outcome)
@@ -701,8 +708,8 @@ def pbPickup(pkmn)
   return unless rand(100) < 10   # 10% chance for Pickup to trigger
   num_rarity_levels = 10
   # Ensure common and rare item lists contain defined items
-  common_items = pbDynamicItemList(PICKUP_COMMON_ITEMS)
-  rare_items = pbDynamicItemList(PICKUP_RARE_ITEMS)
+  common_items = pbDynamicItemList(*PICKUP_COMMON_ITEMS)
+  rare_items = pbDynamicItemList(*PICKUP_RARE_ITEMS)
   return if common_items.length < num_rarity_levels - 1 + PICKUP_COMMON_ITEM_CHANCES.length
   return if rare_items.length < num_rarity_levels - 1 + PICKUP_RARE_ITEM_CHANCES.length
   # Determine the starting point for adding items from the above arrays into the
