@@ -364,12 +364,12 @@ class PokemonPartyPanel < Sprite
   def refresh_overlay_information
     return if !@refreshBitmap
     @overlaysprite.bitmap&.clear
+    draw_type
     draw_name
     draw_level
     draw_gender
     draw_hp
     draw_status
-    draw_type
     draw_shiny_icon
     draw_annotation
   end
