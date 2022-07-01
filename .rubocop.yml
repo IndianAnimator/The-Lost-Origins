@@ -212,3 +212,6 @@ Naming/AccessorMethodName:
 # Can't really help it with the weird preexisting Essentials conventions
 Naming/MethodName:
   AllowedPatterns: ['^pb[A-Z]']
+
+Style/EndOfLine:
+  Enabled: false

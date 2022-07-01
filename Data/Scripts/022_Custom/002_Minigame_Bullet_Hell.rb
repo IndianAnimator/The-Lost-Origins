@@ -1,9 +1,9 @@
 class BulletHell
+  DIRECTORY = "Graphics/Pictures/Bullet_Hell/"
 
   def update
     pbUpdateSpriteHash(@sprites)
   end
-    @directory = "Graphics/Pictures/Bullet_Hell/"
 
   def new_game
     # initialize variables
@@ -25,7 +25,7 @@ class BulletHell
 
   def create_sprites
     @sprites[:bg] = Sprite.new(@viewport)
-    @sprites[:bg].bitmap = RPG::Cache.load_bitmap(@directory, "bg")
+    @sprites[:bg].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bg")
     @sprites[:curtain] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
     @sprites[:curtain].z = 99999
     @sprites[:curtain].bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
@@ -36,22 +36,22 @@ class BulletHell
     @sprites[:bullets] = Sprite.new(@viewport)
 
     # default cursors
-    # @cursor_small = [[@directory + "cursor_small", 62, ,0, 0, 28, 36]]
-    # @cursor_large = [[@directory + "cursor_large", 62, 332, 0, 0, 188, 40]]
+    # @cursor_small = [[DIRECTORY + "cursor_small", 62, ,0, 0, 28, 36]]
+    # @cursor_large = [[DIRECTORY + "cursor_large", 62, 332, 0, 0, 188, 40]]
     # pbDrawImagePositions(@sprites[:cursor].bitmap, @cursor_small)
   end
 
   def pkmn_choice
     case pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1)
     when 0
-      @sprites[:player].bitmap = RPG::Cache.load_bitmap(@directory, "BULBASAUR")
-      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(@directory, "bulletseed")
+      @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "BULBASAUR")
+      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bulletseed")
     when 1
-      @sprites[:player].bitmap = RPG::Cache.load_bitmap(@directory, "CHARMANDER")
-      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(@directory, "flamethrower")
+      @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "CHARMANDER")
+      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "flamethrower")
     when 2
-      @sprites[:player].bitmap = RPG::Cache.load_bitmap(@directory, "SQUIRTLE")
-      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(@directory, "bubbles")
+      @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "SQUIRTLE")
+      @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bubbles")
     when 3
       @quit = true
     end
@@ -186,7 +186,7 @@ class BulletHell
       newletter = x + (13 * y)
       @cur_guess[@letter_num] = newletter
       @letters.push([
-        "#{@directory}letters",
+        "#{DIRECTORY}letters",
         156 + (40 * @letter_num),
         10 + (40 * @guess_num),
         40 * newletter, 0, 40, 40
@@ -224,7 +224,7 @@ class BulletHell
       5.times do |i|
         pbSEPlay("Voltorb Flip point") if worddata[i] == 1
 
-        square = ["#{@directory}tiles", 156 + (40 * i), 10 + (40 * @guess_num), 240, 0, 40, 40]
+        square = ["#{DIRECTORY}tiles", 156 + (40 * i), 10 + (40 * @guess_num), 240, 0, 40, 40]
         pbDrawImagePositions(@sprites[:animation].bitmap, [square])
         pbWait(Graphics.frame_rate / 10)
 
@@ -251,7 +251,7 @@ class BulletHell
         2.times do |y|
           letter = x + (13 * y)
           if @key_data[letter]
-            keys.push(["#{@directory}keys", 64 + (30 * x), 256 + (38 * y), (2 - @key_data[letter]) * 24, 0, 24, 32])
+            keys.push(["#{DIRECTORY}keys", 64 + (30 * x), 256 + (38 * y), (2 - @key_data[letter]) * 24, 0, 24, 32])
           end
         end
       end
