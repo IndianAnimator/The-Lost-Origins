@@ -35,9 +35,8 @@ class BulletHell
     @sprites[:bullets].x = 99999
   end
 
-  def pkmn_choice
-    @bulletchoice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1)
-    case @bulletchoice
+  def player_choice
+    case @pkmn_choice
     when 0
       @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "BULBASAUR")
       @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bulletseed")
@@ -58,6 +57,7 @@ class BulletHell
   def bullet
     last_shot = 0
     if Graphics.frame_rate - last_shot >  @resttime
+
       last_shot = Graphics.frame_rate
       Bullet.new(@x, @y, target_x, target_y).fire(100)
     end
@@ -116,9 +116,12 @@ class BulletHellScreen
   end
 end
 
-def pbBulletHell()
+#main code for running minigame (unown invaders)
+
+def pbBulletHell(pkmn_choice=nil)
+  @pkmn_choice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1) if pkmn_choice.nil?
   pbFadeOutIn do
-    scene = BulletHell.new
+    scene = BulletHell.new(@pkmn_choice)
     screen = BulletHellScreen.new(scene)
     screen.start_screen
   end
