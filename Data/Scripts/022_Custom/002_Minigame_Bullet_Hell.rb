@@ -5,6 +5,10 @@ class BulletHell
     pbUpdateSpriteHash(@sprites)
   end
 
+  def initialize(pkmn_choice = 0)
+    @pkmn_choice = pkmn_choice
+  end
+
   def new_game
     # initialize variables
     @sprites = {}
@@ -18,6 +22,7 @@ class BulletHell
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
     create_sprites
+    player_choice
     pbFadeInAndShow(@sprites)
   end
 
@@ -29,8 +34,8 @@ class BulletHell
     @sprites[:curtain].bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
     @sprites[:curtain].opacity = 0
     @sprites[:player] = Sprite.new(@viewport)
-    @sprites[:player].x = 256
-    @sprites[:player].y = 368
+    @sprites[:player].x = Graphics.height/2
+    @sprites[:player].y = Graphics.width + 16
     @sprites[:bullets] = Sprite.new(@viewport)
     @sprites[:bullets].x = 99999
   end
@@ -40,11 +45,11 @@ class BulletHell
     when 0
       @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "BULBASAUR")
       @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bulletseed")
-        @resttime= 60
+      @resttime= 40
     when 1
       @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "CHARMANDER")
       @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "flamethrower")
-        @resttime = 0
+      @resttime = 0
     when 2
       @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "SQUIRTLE")
       @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bubbles")
@@ -57,7 +62,6 @@ class BulletHell
   def bullet
     last_shot = 0
     if Graphics.frame_rate - last_shot >  @resttime
-
       last_shot = Graphics.frame_rate
       Bullet.new(@x, @y, target_x, target_y).fire(100)
     end
@@ -119,9 +123,9 @@ end
 #main code for running minigame (unown invaders)
 
 def pbBulletHell(pkmn_choice=nil)
-  @pkmn_choice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1) if pkmn_choice.nil?
+  pkmn_choice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1) if pkmn_choice.nil?
   pbFadeOutIn do
-    scene = BulletHell.new(@pkmn_choice)
+    scene = BulletHell.new(pkmn_choice)
     screen = BulletHellScreen.new(scene)
     screen.start_screen
   end
