@@ -1,3 +1,10 @@
+#===============================================================================
+# "Unown invaders" mini-game
+# By IndianAnimator
+#-------------------------------------------------------------------------------
+# Run with:      pbBulletHell()
+#===============================================================================
+
 class BulletHell
   DIRECTORY = "Graphics/Pictures/Bullet_Hell/"
 
@@ -34,8 +41,9 @@ class BulletHell
     @sprites[:curtain].bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
     @sprites[:curtain].opacity = 0
     @sprites[:player] = Sprite.new(@viewport)
-    @sprites[:player].x = Graphics.height/2
-    @sprites[:player].y = Graphics.width + 16
+    @sprites[:player].x = Graphics.width / 2
+    @sprites[:player].y = Graphics.height - 16
+    @sprites[:player].z = 99997
     @sprites[:bullets] = Sprite.new(@viewport)
     @sprites[:bullets].x = 99999
   end
@@ -54,8 +62,6 @@ class BulletHell
       @sprites[:player].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "SQUIRTLE")
       @sprites[:bullets].bitmap = RPG::Cache.load_bitmap(DIRECTORY, "bubbles")
       @resttime= 20
-    when 3
-      @quit = true
     end
   end
 
@@ -123,7 +129,7 @@ end
 #main code for running minigame (unown invaders)
 
 def pbBulletHell(pkmn_choice=nil)
-  pkmn_choice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle", "Quit"], 1) if pkmn_choice.nil?
+  pkmn_choice = pbShowCommands(nil, ["Bulbasaur", "Charmander", "Squirtle"], 1) if pkmn_choice.nil?
   pbFadeOutIn do
     scene = BulletHell.new(pkmn_choice)
     screen = BulletHellScreen.new(scene)

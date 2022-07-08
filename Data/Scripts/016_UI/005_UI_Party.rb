@@ -183,6 +183,16 @@ class PokemonPartyPanel < Sprite
     @refreshing = true
     self.x = (index % 2) * Graphics.width / 2
     self.y = (16 * (index % 2)) + (96 * (index / 2))
+    @evoreqs = {}
+    GameData::Species.get(@pokemon.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+      if evo[1].to_s.start_with?('Item')
+        @evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && @pokemon.check_evolution_on_use_item(evo[2])
+      elsif evo[1].to_s.start_with?('Trade')
+        @evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || @pokemon.check_evolution_on_trade(evo[2])
+      elsif @pokemon.check_evolution_on_level_up
+        @evoreqs[evo[0]] = nil
+      end
+    end
     @panelbgsprite = ChangelingSprite.new(0, 0, viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel
@@ -209,8 +219,13 @@ class PokemonPartyPanel < Sprite
     @hpbgsprite.addBitmap("swap", "Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0, 0, viewport)
     @ballsprite.z = self.z + 5
-    @ballsprite.addBitmap("desel", "Graphics/Pictures/Party/icon_ball")
-    @ballsprite.addBitmap("sel", "Graphics/Pictures/Party/icon_ball_sel")
+    if @evoreqs.length.positive?
+      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/evo_icon_ball")
+      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/evo_icon_ball_sel")
+    else
+      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/icon_ball")
+      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/icon_ball_sel")
+    end
     @pkmnsprite = PokemonIconSprite.new(pokemon, viewport)
     @pkmnsprite.setOffset(PictureOrigin::CENTER)
     @pkmnsprite.active = @active
@@ -1336,10 +1351,66 @@ MenuHandlers.add(:party_menu, :debug, {
     screen.pbPokemonDebug(party[party_idx], party_idx)
   }
 })
+MenuHandlers.add(:party_menu, :evolve, {
+  "name"      => _INTL("Evolve"),
+  "order"     => 30,
+  "condition" => proc { |screen, party, party_idx|
+    pkmn = party[party_idx]
+    evoreqs = {}
+    GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+      if evo[1].to_s.start_with?('Item')
+        evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+      elsif evo[1].to_s.start_with?('Trade')
+        evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
+      elsif pkmn.check_evolution_on_level_up
+        evoreqs[evo[0]] = nil
+      end
+    end
+    evoreqs.length.positive?},
+  "effect"    => proc { |screen, party, party_idx|
+    pkmn = party[party_idx]
+    evoreqs = {}
+    GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
+      if evo[1].to_s.start_with?('Item')
+        evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
+      elsif evo[1].to_s.start_with?('Trade')
+        evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
+      elsif pkmn.check_evolution_on_level_up
+        evoreqs[evo[0]] = nil
+      end
+    end
+    case evoreqs.length
+      when 0
+        pbDisplay(_INTL("This Pokémon can't evolve."))
+        next
+      when 1
+        newspecies = evoreqs.keys[0]
+      else
+        newspecies = evoreqs.keys[@scene.pbShowCommands(
+          _INTL("Which species would you like to evolve into?"),
+          evoreqs.keys.map { |id| _INTL(GameData::Species.get(id).real_name) }
+        )]
+      end
+      if evoreqs[newspecies] # requires an item
+        next unless @scene.pbConfirmMessage(_INTL(
+          "This will consume a {1}. Do you want to continue?",
+          GameData::Item.get(evoreqs[newspecies]).name
+        ))
+        $PokemonBag.pbDeleteItem(evoreqs[newspecies])
+      end
+      pbFadeOutInWithMusic {
+        evo = PokemonEvolutionScene.new
+        evo.pbStartScreen(pkmn,newspecies)
+        evo.pbEvolution
+        evo.pbEndScreen
+        screen.pbRefresh
+      }
+  }
+})
 
 MenuHandlers.add(:party_menu, :switch, {
   "name"      => _INTL("Switch"),
-  "order"     => 30,
+  "order"     => 50,
   "condition" => proc { |screen, party, party_idx| next party.length > 1 },
   "effect"    => proc { |screen, party, party_idx|
     screen.scene.pbSetHelpText(_INTL("Move to where?"))
@@ -1351,7 +1422,7 @@ MenuHandlers.add(:party_menu, :switch, {
 
 MenuHandlers.add(:party_menu, :mail, {
   "name"      => _INTL("Mail"),
-  "order"     => 40,
+  "order"     => 60,
   "condition" => proc { |screen, party, party_idx| next !party[party_idx].egg? && party[party_idx].mail },
   "effect"    => proc { |screen, party, party_idx|
     pkmn = party[party_idx]
@@ -1373,7 +1444,7 @@ MenuHandlers.add(:party_menu, :mail, {
 
 MenuHandlers.add(:party_menu, :item, {
   "name"      => _INTL("Item"),
-  "order"     => 50,
+  "order"     => 70,
   "condition" => proc { |screen, party, party_idx| next !party[party_idx].egg? && !party[party_idx].mail },
   "effect"    => proc { |screen, party, party_idx|
     # Get all commands
