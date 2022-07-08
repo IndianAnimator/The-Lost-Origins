@@ -147,7 +147,7 @@ class MoveRelearnerScreen
     @scene = scene
   end
 
-  def pbGetRelearnableMoves(pkmn)
+  def self.pbGetRelearnableMoves(pkmn)
     return [] if !pkmn || pkmn.egg? || pkmn.shadowPokemon?
     moves = []
     pkmn.getMoveList.each do |m|
@@ -159,13 +159,17 @@ class MoveRelearnerScreen
       pkmn.first_moves.each do |i|
         tmoves.push(i) if !moves.include?(i) && !pkmn.hasMove?(i)
       end
+      species = pkmn.species
+      species_data = GameData::Species.get(species)
+      babyspecies = species_data.get_baby_species
+      GameData::Species.get(babyspecies).egg_moves.each { |m| moves.push(m) }
       moves = tmoves + moves   # List first moves before level-up moves
     end
     return moves | []   # remove duplicates
   end
 
   def pbStartScreen(pkmn)
-    moves = pbGetRelearnableMoves(pkmn)
+    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn)
     @scene.pbStartScene(pkmn, moves)
     loop do
       move = @scene.pbChooseMove

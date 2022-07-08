@@ -1351,9 +1351,23 @@ MenuHandlers.add(:party_menu, :debug, {
     screen.pbPokemonDebug(party[party_idx], party_idx)
   }
 })
+
+MenuHandlers.add(:party_menu, :relearn, {
+  "name"      => _INTL("Relearn"),
+  "order"     => 30,
+  "effect"    => proc { |screen, party, party_idx|
+    pkmn = party[party_idx]
+    if MoveRelearnerScreen.pbGetRelearnableMoves(pkmn).empty?
+      pbDisplay(_INTL("This Pokémon doesn't have any moves to remember yet."))
+    else
+      pbRelearnMoveScreen(pkmn)
+    end
+  }
+})
+
 MenuHandlers.add(:party_menu, :evolve, {
   "name"      => _INTL("Evolve"),
-  "order"     => 30,
+  "order"     => 40,
   "condition" => proc { |screen, party, party_idx|
     pkmn = party[party_idx]
     evoreqs = {}
