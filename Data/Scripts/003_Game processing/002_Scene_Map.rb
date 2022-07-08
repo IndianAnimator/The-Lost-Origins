@@ -7,6 +7,14 @@ class Scene_Map
   attr_reader :spritesetGlobal
   attr_reader :map_renderer
 
+  def dispose
+    disposeSpritesets
+    @map_renderer.dispose
+    @map_renderer = nil
+    @spritesetGlobal.dispose
+    @spritesetGlobal = nil
+  end
+
   def spriteset(map_id = -1)
     return @spritesets[map_id] if map_id > 0 && @spritesets[map_id]
     @spritesets.each_value do |i|
@@ -225,10 +233,30 @@ class Scene_Map
       break if $scene != self
     end
     Graphics.freeze
-    disposeSpritesets
+    dispose
     if $game_temp.title_screen_calling
       Graphics.transition
       Graphics.freeze
     end
   end
+end
+
+def pbLoadRpgxpScene(scene)
+  return if !$scene.is_a?(Scene_Map)
+  oldscene = $scene
+  $scene = scene
+  Graphics.freeze
+  oldscene.dispose
+  visibleObjects = pbHideVisibleObjects
+  Graphics.transition
+  Graphics.freeze
+  while $scene && !$scene.is_a?(Scene_Map)
+    $scene.main
+  end
+  Graphics.transition
+  Graphics.freeze
+  $scene = oldscene
+  $scene.createSpritesets
+  pbShowObjects(visibleObjects)
+  Graphics.transition
 end

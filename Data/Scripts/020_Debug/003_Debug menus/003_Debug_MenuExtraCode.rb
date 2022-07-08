@@ -62,16 +62,17 @@ class SpriteWindow_DebugVariables < Window_DrawableCommand
   def shadowtext(x, y, w, h, t, align = 0, colors = 0)
     width = self.contents.text_size(t).width
     case align
-    when 1 # Right aligned
+    when 1   # Right aligned
       x += (w - width)
-    when 2 # Centre aligned
+    when 2   # Centre aligned
       x += (w / 2) - (width / 2)
     end
+    y += 8   # TEXT OFFSET
     base = Color.new(12 * 8, 12 * 8, 12 * 8)
     case colors
-    when 1 # Red
+    when 1   # Red
       base = Color.new(168, 48, 56)
-    when 2 # Green
+    when 2   # Green
       base = Color.new(0, 144, 0)
     end
     pbDrawShadowText(self.contents, x, y, [width, w].max, h, t, base, Color.new(26 * 8, 26 * 8, 25 * 8))
@@ -84,7 +85,23 @@ class SpriteWindow_DebugVariables < Window_DrawableCommand
     if @mode == 0
       name = $data_system.switches[index + 1]
       codeswitch = (name[/^s\:/])
-      val = (codeswitch) ? (eval($~.post_match) rescue nil) : $game_switches[index + 1]
+      if codeswitch
+        code = $~.post_match
+        code_parts = code.split(/[(\[=<>. ]/)
+        code_parts[0].strip!
+        code_parts[0].gsub!(/^\s*!/, "")
+        val = nil
+        if code_parts[0][0].upcase == code_parts[0][0] &&
+           (Kernel.const_defined?(code_parts[0]) rescue false)
+          val = (eval(code) rescue nil)   # Code starts with a class/method name
+        elsif code_parts[0][0].downcase == code_parts[0][0] &&
+           !(Interpreter.method_defined?(code_parts[0].to_sym) rescue false) &&
+           !(Game_Event.method_defined?(code_parts[0].to_sym) rescue false)
+          val = (eval(code) rescue nil)   # Code starts with a method name (that isn't in Interpreter/Game_Event)
+        end
+      else
+        val = $game_switches[index + 1]
+      end
       if val.nil?
         status = "[-]"
         colors = 0
