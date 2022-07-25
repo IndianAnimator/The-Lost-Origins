@@ -176,23 +176,15 @@ class PokemonPartyPanel < Sprite
   STATUS_ICON_WIDTH  = 44
   STATUS_ICON_HEIGHT = 16
 
-  def initialize(pokemon, index, viewport = nil)
+  def initialize(pokemon, index, viewport = nil, evoreqs = nil)
     super(viewport)
     @pokemon = pokemon
+    @evoreqs = evoreqs
+    refresh_evoreqs
     @active = (index == 0)   # true = rounded panel, false = rectangular panel
     @refreshing = true
     self.x = (index % 2) * Graphics.width / 2
     self.y = (16 * (index % 2)) + (96 * (index / 2))
-    @evoreqs = {}
-    GameData::Species.get(@pokemon.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-      if evo[1].to_s.start_with?('Item')
-        @evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && @pokemon.check_evolution_on_use_item(evo[2])
-      elsif evo[1].to_s.start_with?('Trade')
-        @evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || @pokemon.check_evolution_on_trade(evo[2])
-      elsif @pokemon.check_evolution_on_level_up
-        @evoreqs[evo[0]] = nil
-      end
-    end
     @panelbgsprite = ChangelingSprite.new(0, 0, viewport)
     @panelbgsprite.z = self.z
     if @active   # Rounded panel
@@ -219,13 +211,10 @@ class PokemonPartyPanel < Sprite
     @hpbgsprite.addBitmap("swap", "Graphics/Pictures/Party/overlay_hp_back_swap")
     @ballsprite = ChangelingSprite.new(0, 0, viewport)
     @ballsprite.z = self.z + 5
-    if @evoreqs.length.positive?
-      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/evo_icon_ball")
-      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/evo_icon_ball_sel")
-    else
-      @ballsprite.addBitmap("desel","Graphics/Pictures/Party/icon_ball")
-      @ballsprite.addBitmap("sel","Graphics/Pictures/Party/icon_ball_sel")
-    end
+    @ballsprite.addBitmap("desel", "Graphics/Pictures/Party/icon_ball")
+    @ballsprite.addBitmap("sel", "Graphics/Pictures/Party/icon_ball_sel")
+    @ballsprite.addBitmap("desel_canevo", "Graphics/Pictures/Party/evo_icon_ball")
+    @ballsprite.addBitmap("sel_canevo", "Graphics/Pictures/Party/evo_icon_ball_sel")
     @pkmnsprite = PokemonIconSprite.new(pokemon, viewport)
     @pkmnsprite.setOffset(PictureOrigin::CENTER)
     @pkmnsprite.active = @active
@@ -285,6 +274,7 @@ class PokemonPartyPanel < Sprite
 
   def pokemon=(value)
     @pokemon = value
+    refresh_evoreqs
     @pkmnsprite.pokemon = value if @pkmnsprite && !@pkmnsprite.disposed?
     @helditemsprite.pokemon = value if @helditemsprite && !@helditemsprite.disposed?
     @refreshBitmap = true
@@ -310,6 +300,28 @@ class PokemonPartyPanel < Sprite
   end
 
   def hp; return @pokemon.hp; end
+
+  def refresh_evoreqs
+    return if @pokemon.egg? || @evoreqs.nil?
+    # [new_species, item[optional]
+    @evoreqs.clear
+    # [new_species, method, parameter, boolean]
+    GameData::Species.get(@pokemon.species).get_evolutions(true).each do |evo|
+      case evo[1].to_s
+      when "TradeSpecies"
+        # menu handler shouldnt care what species it requires since its checked here
+        # its not like you lose the mon or anything
+        @evoreqs.push([evo[0], nil]) if $player.has_species?(evo[2])
+      when /\AItem/
+        @evoreqs.push([evo[0], evo[2]]) if $bag.has?(evo[2]) && @pokemon.check_evolution_on_use_item(evo[2])
+      when /\ATrade/
+        # technically should pass a Pokemon object but if that ever becomes relevant something must have gone wrong
+        @evoreqs.push([evo[0], evo[2]]) if @pokemon.check_evolution_on_trade(nil)
+      else
+        @evoreqs.push([evo[0], nil]) if @pokemon.check_evolution_on_level_up
+      end
+    end
+  end
 
   def refresh_panel_graphic
     return if !@panelbgsprite || @panelbgsprite.disposed?
@@ -355,7 +367,9 @@ class PokemonPartyPanel < Sprite
 
   def refresh_ball_graphic
     return if !@ballsprite || @ballsprite.disposed?
-    @ballsprite.changeBitmap((self.selected) ? "sel" : "desel")
+    bitmapname = (self.selected) ? "sel" : "desel"
+    bitmapname << "_canevo" unless @evoreqs.nil? || @evoreqs.empty?
+    @ballsprite.changeBitmap(bitmapname)
     @ballsprite.x     = self.x + 10
     @ballsprite.y     = self.y
     @ballsprite.color = self.color
@@ -502,9 +516,12 @@ end
 # Pokémon party visuals
 #===============================================================================
 class PokemonParty_Scene
+  attr_reader :all_evoreqs
+
   def pbStartScene(party, starthelptext, annotations = nil, multiselect = false, can_access_storage = false)
     @sprites = {}
     @party = party
+    @all_evoreqs = []
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
     @multiselect = multiselect
@@ -534,7 +551,7 @@ class PokemonParty_Scene
     # Add party Pokémon sprites
     Settings::MAX_PARTY_SIZE.times do |i|
       if @party[i]
-        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport)
+        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
       else
         @sprites["pokemon#{i}"] = PokemonPartyBlankPanel.new(@party[i], i, @viewport)
       end
@@ -882,7 +899,7 @@ class PokemonParty_Scene
     lastselected = 0 if lastselected < 0
     Settings::MAX_PARTY_SIZE.times do |i|
       if @party[i]
-        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport)
+        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
       else
         @sprites["pokemon#{i}"] = PokemonPartyBlankPanel.new(@party[i], i, @viewport)
       end
@@ -1368,57 +1385,33 @@ MenuHandlers.add(:party_menu, :relearn, {
 MenuHandlers.add(:party_menu, :evolve, {
   "name"      => _INTL("Evolve"),
   "order"     => 40,
-  "condition" => proc { |screen, party, party_idx|
-    pkmn = party[party_idx]
-    evoreqs = {}
-    GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-      if evo[1].to_s.start_with?('Item')
-        evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
-      elsif evo[1].to_s.start_with?('Trade')
-        evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
-      elsif pkmn.check_evolution_on_level_up
-        evoreqs[evo[0]] = nil
-      end
-    end
-    evoreqs.length.positive?},
+  "condition" => proc { |screen, party, party_idx| next !screen.scene.all_evoreqs[party_idx].empty? },
   "effect"    => proc { |screen, party, party_idx|
-    pkmn = party[party_idx]
-    evoreqs = {}
-    GameData::Species.get(pkmn.species).get_evolutions(true).each do |evo|   # [new_species, method, parameter, boolean]
-      if evo[1].to_s.start_with?('Item')
-        evoreqs[evo[0]] = evo[2] if $bag.has?(evo[2]) && pkmn.check_evolution_on_use_item(evo[2])
-      elsif evo[1].to_s.start_with?('Trade')
-        evoreqs[evo[0]] = evo[2] if $Trainer.has_species?(evo[2]) || pkmn.check_evolution_on_trade(evo[2])
-      elsif pkmn.check_evolution_on_level_up
-        evoreqs[evo[0]] = nil
-      end
-    end
+    evoreqs = screen.scene.all_evoreqs[party_idx]
     case evoreqs.length
-      when 0
-        pbDisplay(_INTL("This Pokémon can't evolve."))
-        next
-      when 1
-        newspecies = evoreqs.keys[0]
-      else
-        newspecies = evoreqs.keys[@scene.pbShowCommands(
-          _INTL("Which species would you like to evolve into?"),
-          evoreqs.keys.map { |id| _INTL(GameData::Species.get(id).real_name) }
-        )]
-      end
-      if evoreqs[newspecies] # requires an item
-        next unless @scene.pbConfirmMessage(_INTL(
-          "This will consume a {1}. Do you want to continue?",
-          GameData::Item.get(evoreqs[newspecies]).name
-        ))
-        $PokemonBag.pbDeleteItem(evoreqs[newspecies])
-      end
-      pbFadeOutInWithMusic {
-        evo = PokemonEvolutionScene.new
-        evo.pbStartScreen(pkmn,newspecies)
-        evo.pbEvolution
-        evo.pbEndScreen
-        screen.pbRefresh
-      }
+    when 0
+      pbDisplay(_INTL("This Pokémon can't evolve."))
+      next
+    when 1
+      evoreq = evoreqs[0]
+    else
+      evoreq = evoreqs[screen.scene.pbShowCommands(
+        _INTL("Which species would you like to evolve into?"),
+        evoreqs.map { |req| GameData::Species.get(req[0]).real_name }
+      )]
+    end
+    if evoreq[1] # requires an item
+      itemname = GameData::Item.get(evoreq[1]).name
+      next unless @scene.pbConfirmMessage(_INTL("This will consume a {1}. Do you want to continue?", itemname))
+      $bag.remove(evoreq[1])
+    end
+    pbFadeOutInWithMusic {
+      evo = PokemonEvolutionScene.new
+      evo.pbStartScreen(party[party_idx], evoreq[0])
+      evo.pbEvolution
+      evo.pbEndScreen
+      screen.pbRefresh
+    }
   }
 })
 
