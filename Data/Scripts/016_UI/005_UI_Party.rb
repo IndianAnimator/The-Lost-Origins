@@ -1397,7 +1397,7 @@ MenuHandlers.add(:party_menu, :evolve, {
     else
       evoreq = evoreqs[screen.scene.pbShowCommands(
         _INTL("Which species would you like to evolve into?"),
-        evoreqs.map { |req| GameData::Species.get(req[0]).real_name }
+          evoreqs.map { |req| GameData::Species.get(req[0]).real_name}
       )]
     end
     if evoreq[1] # requires an item
