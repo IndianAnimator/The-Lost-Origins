@@ -8731,9 +8731,9 @@ Power = 90
 Accuracy = 100
 TotalPP = 20
 Target = NearOther
-FunctionCode = None
+FunctionCode = DoublePowerIfUserLostHPThisTurn
 Flags = Contact,CanProtect,CanMirrorMove
-Description = When the grudge is ancient.
+Description = The user attacks with a grudge that is older than time.
 #-------------------------------
 [SMITE]
 Name = Smite
@@ -8746,7 +8746,7 @@ Target = NearOther
 FunctionCode = FlinchTarget
 Flags = CanProtect,CanMirrorMove
 EffectChance = 30
-Description = It's like a headbutt but more divine. It may also make the target flinch.
+Description = The user uses it's divine strength to attack. It may also make the target flinch.
 #-------------------------------
 [DEVOUR]
 Name = Devour
@@ -8758,5 +8758,5 @@ TotalPP = 10
 Target = NearOther
 FunctionCode = HealUserByHalfOfDamageDone
 Flags = Contact,CanProtect,CanMirrorMove,Biting
-Description = The user morbs all over the target, restoring its HP by half the damage done to the target.
+Description = The user rends the target's flesh. The user's HP is restored by half the damage taken by the target. 
 #-------------------------------

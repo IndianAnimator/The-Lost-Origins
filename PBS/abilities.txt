@@ -1073,11 +1073,11 @@ Description = Combines Unnerve and Grim Neigh Abilities.
 #-------------------------------
 [THUNDERSTORM]
 Name = Thunderstorm
-Description = Possesses 2 abilities, Drizzle and Electric Surge.
+Description = Combines Drizzle and Electric Surge Abilities.
 #-------------------------------
 [SUNRISE]
 Name = Sunrise
-Description = Possesses 2 abilities, Drought and Grassy Surge
+Description = Combines Drought and Grassy Surge Abilities.
 #-------------------------------
 [ASCENDEDWINGS]
 Name = Ascended Wings
