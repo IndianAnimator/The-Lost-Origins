@@ -1071,6 +1071,8 @@ Description = Combines Unnerve and Chilling Neigh Abilities.
 Name = As One
 Description = Combines Unnerve and Grim Neigh Abilities.
 #-------------------------------
+#PTLO ABILITIES
+#-------------------------------
 [THUNDERSTORM]
 Name = Thunderstorm
 Description = Combines Drizzle and Electric Surge Abilities.
