@@ -145,6 +145,7 @@ module Battle::DebugVariables
     PBEffects::Tailwind           => { name: "Tailwind duration",                      default: 0 },
     PBEffects::ToxicSpikes        => { name: "Toxic Spikes layers (0-2)",              default: 0, max: 2 },
     PBEffects::WideGuard          => { name: "Wide Guard applies this round",          default: false }
+
   }
 
   FIELD_EFFECTS = {

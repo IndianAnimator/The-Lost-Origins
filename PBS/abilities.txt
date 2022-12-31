@@ -1070,9 +1070,9 @@ Description = Combines Unnerve and Chilling Neigh Abilities.
 [ASONEGRIMNEIGH]
 Name = As One
 Description = Combines Unnerve and Grim Neigh Abilities.
-#-------------------------------
+#===============================
 #PTLO ABILITIES
-#-------------------------------
+#===============================
 [THUNDERSTORM]
 Name = Thunderstorm
 Description = Combines Drizzle and Electric Surge Abilities.
@@ -1080,6 +1080,18 @@ Description = Combines Drizzle and Electric Surge Abilities.
 [SUNRISE]
 Name = Sunrise
 Description = Combines Drought and Grassy Surge Abilities.
+#-------------------------------
+[LOVELYCHARM]
+Name = Lovely Charm
+Description = Contact with the Pokémon may cause infatuation.
+#-------------------------------
+[DIVINESMITH]
+Name = Divine Smith
+Description = Boosts Fire moves, Absorbs Water to boost Steel moves.
+#-------------------------------
+[SCREECHINGSOULS]
+Name = Screeching Souls
+Description = Powers up Ghost, Dark and Demon type moves.
 #-------------------------------
 [ASCENDEDWINGS]
 Name = Ascended Wings
@@ -1096,3 +1108,7 @@ Description = Summons the night if it is in battle.
 [NEUROTOXIN]
 Name = Neurotoxin
 Description = All biting moves have a chance to paralyze or poison.
+#-------------------------------
+[SAVAGERY]
+Name = Savagery
+Description = Boosts Dark-type moves by 1.5 times after knocking out any Pokémon.

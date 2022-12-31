@@ -114,6 +114,8 @@ class Battle::AI
         return true if target.hasActiveAbility?(:SAPSIPPER)
       when :ELECTRIC
         return true if target.hasActiveAbility?([:LIGHTNINGROD, :MOTORDRIVE, :VOLTABSORB])
+      when :STEEL
+        return true if target.hasActiveAbility?(:DIVINESMITH)
       end
       return true if move.damagingMove? && Effectiveness.not_very_effective?(typeMod) &&
                      target.hasActiveAbility?(:WONDERGUARD)

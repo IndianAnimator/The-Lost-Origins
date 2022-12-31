@@ -299,6 +299,10 @@ class Battle::Move
         multipliers[:base_damage_multiplier] *= 4 / 3.0
       end
     end
+    #SCREECHINGSOULS
+    if (@battle.pbCheckGlobalAbility(:SCREECHINGSOULS) && type == :DARK || type == :GHOST || type == :DEMON)
+      multipliers[:base_damage_multiplier] *= 4 / 3.0
+    end
     # Ability effects that alter damage
     if user.abilityActive?
       Battle::AbilityEffects.triggerDamageCalcFromUser(

@@ -276,6 +276,10 @@ class Battle::Battler
     @effects[PBEffects::WaterSport]          = false
     @effects[PBEffects::WeightChange]        = 0
     @effects[PBEffects::Yawn]                = 0
+    #---------------------------------------------------------------------------
+    #PTLO custom effects
+    #---------------------------------------------------------------------------
+    @effects[PBEffects::Savagery]            = 0
   end
 
   #=============================================================================

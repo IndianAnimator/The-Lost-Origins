@@ -291,75 +291,10 @@ module Battle::AbilityEffects
     return trigger(CertainEscapeFromBattle, ability, battler)
   end
 end
-
-
 #===============================================================================
-# New Abilities added by PTLO dev team
+# PTLO CUSTOM ABILITY HANDELERS
 #===============================================================================
 
-Battle::AbilityEffects::OnSwitchIn.add(:THUNDERSTORM,
-  proc { |ability, battler, battle, switch_in|
-    battle.pbStartTerrainAbility(:Electric, battler, !battle.pbStartWeatherAbility(:Rain, battler))
-  }
-)
-
-Battle::AbilityEffects::OnSwitchIn.add(:SUNRISE,
-  proc { |ability, battler, battle, switch_in|
-    battle.pbStartTerrainAbility(:Grassy, battler, !battle.pbStartWeatherAbility(:Sun, battler))
-  }
-)
-
-Battle::AbilityEffects::DamageCalcFromTarget.add(:TWINKLETOES,
-  proc { |ability, user, target, move, mults, baseDmg, type|
-    case type
-    when :FLYING then mults[:base_damage_multiplier] *= 2
-    when :GROUND then mults[:base_damage_multiplier] /= 2
-    end
-  }
-)
-
-Battle::AbilityEffects::DamageCalcFromUser.add(:ASCENDEDWINGS,
-  proc { |ability, user, target, move, mults, baseDmg, type|
-    mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
-  }
-)
-
-Battle::AbilityEffects::OnSwitchIn.add(:TWILIGHT,
-  proc { |ability, battler, battle, switch_in|
-    battle.pbStartWeatherAbility(:Moon, battler)
-  }
-)
-
-Battle::AbilityEffects::OnDealingHit.add(:NEUROTOXIN,
-  proc { |ability, user, target, move, battle|
-    next if !move.bitingMove?
-    next if battle.pbRandom(100) >= 15
-    new_status = [:POISON, :PARALYSIS][battle.pbRandom(2)]
-    next if target.pbHasStatus?(new_status)
-    battle.pbShowAbilitySplash(user)
-    if target.hasActiveAbility?(:SHIELDDUST) && !battle.moldBreaker
-      battle.pbShowAbilitySplash(target)
-      if !Battle::Scene::USE_ABILITY_SPLASH
-        battle.pbDisplay(_INTL("{1} is unaffected!", target.pbThis))
-      end
-      battle.pbHideAbilitySplash(target)
-    # need battle.pbRandom so no sampling
-    elsif target.pbCanInflictStatus?(new_status, user, Battle::Scene::USE_ABILITY_SPLASH, move)
-      msg = nil
-      if !Battle::Scene::USE_ABILITY_SPLASH
-        if new_status == :POISON
-          msg = _INTL("{1}'s {2} poisoned {3}!", user.pbThis,
-                      user.abilityName, target.pbThis(true))
-        else
-          msg = _INTL("{1}'s {2} paralyzed {3}! It may be unable to move!",
-                      user.pbThis, user.abilityName, target.pbThis(true))
-        end
-      end
-      target.pbInflictStatus(new_status, 0, msg, user)
-    end
-    battle.pbHideAbilitySplash(user)
-  }
-)
 
 #===============================================================================
 # SpeedCalc handlers
@@ -3261,5 +3196,148 @@ Battle::AbilityEffects::OnIntimidated.add(:RATTLED,
 Battle::AbilityEffects::CertainEscapeFromBattle.add(:RUNAWAY,
   proc { |ability, battler|
     next true
+  }
+)
+
+#===============================================================================
+# New Abilities added by PTLO dev team
+#===============================================================================
+
+Battle::AbilityEffects::OnSwitchIn.add(:THUNDERSTORM,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartTerrainAbility(:Electric, battler, !battle.pbStartWeatherAbility(:Rain, battler))
+  }
+)
+
+Battle::AbilityEffects::OnSwitchIn.add(:SUNRISE,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartTerrainAbility(:Grassy, battler, !battle.pbStartWeatherAbility(:Sun, battler))
+  }
+)
+
+
+Battle::AbilityEffects::OnBeingHit.add(:LOVELYCHARM,
+  proc { |ability, user, target, move, battle|
+    next if target.fainted?
+    next if !move.pbContactMove?(user)
+    next if battle.pbRandom(100) >= 30
+    battle.pbShowAbilitySplash(target)
+    if user.affectedByContactEffect?(Battle::Scene::USE_ABILITY_SPLASH)
+      msg = nil
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        msg = _INTL("{1}'s {2} made {3} fall in love!", target.pbThis,
+           target.abilityName, user.pbThis(true))
+      end
+      user.pbAttract(target, msg)
+    end
+    battle.pbHideAbilitySplash(target)
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:DIVINESMITH,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    if user.effects[PBEffects::FlashFire] && type == :STEEL
+      mults[:attack_multiplier] *= 1.5
+    end
+  }
+)
+
+Battle::AbilityEffects::MoveImmunity.add(:DIVINESMITH,
+  proc { |ability, user, target, move, type, battle, show_message|
+    next false if user.index == target.index
+    next false if type != :WATER
+    if show_message
+      battle.pbShowAbilitySplash(target)
+      if !target.effects[PBEffects::FlashFire]
+        target.effects[PBEffects::FlashFire] = true
+        if Battle::Scene::USE_ABILITY_SPLASH
+          battle.pbDisplay(_INTL("The power of {1}'s Steel-type moves rose!", target.pbThis(true)))
+        else
+          battle.pbDisplay(_INTL("The power of {1}'s Steel-type moves rose because of its {2}!",
+             target.pbThis(true), target.abilityName))
+        end
+      elsif Battle::Scene::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("It doesn't affect {1}...", target.pbThis(true)))
+      else
+        battle.pbDisplay(_INTL("{1}'s {2} made {3} ineffective!",
+                               target.pbThis, target.abilityName, move.name))
+      end
+      battle.pbHideAbilitySplash(target)
+    end
+    next true
+  }
+)
+
+Battle::AbilityEffects::OnSwitchIn.add(:SCREECHINGSOULS,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbShowAbilitySplash(battler)
+    battle.pbDisplay(_INTL("The souls are in agony!"))
+    battle.pbHideAbilitySplash(battler)
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromTarget.add(:TWINKLETOES,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    case type
+    when :FLYING then mults[:base_damage_multiplier] *= 2
+    when :GROUND then mults[:base_damage_multiplier] /= 2
+    end
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:ASCENDEDWINGS,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
+  }
+)
+
+Battle::AbilityEffects::OnSwitchIn.add(:TWILIGHT,
+  proc { |ability, battler, battle, switch_in|
+    battle.pbStartWeatherAbility(:Moon, battler)
+  }
+)
+
+Battle::AbilityEffects::OnDealingHit.add(:NEUROTOXIN,
+  proc { |ability, user, target, move, battle|
+    next if !move.bitingMove?
+    next if battle.pbRandom(100) >= 15
+    new_status = [:POISON, :PARALYSIS][battle.pbRandom(2)]
+    next if target.pbHasStatus?(new_status)
+    battle.pbShowAbilitySplash(user)
+    if target.hasActiveAbility?(:SHIELDDUST) && !battle.moldBreaker
+      battle.pbShowAbilitySplash(target)
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1} is unaffected!", target.pbThis))
+      end
+      battle.pbHideAbilitySplash(target)
+    # need battle.pbRandom so no sampling
+    elsif target.pbCanInflictStatus?(new_status, user, Battle::Scene::USE_ABILITY_SPLASH, move)
+      msg = nil
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        if new_status == :POISON
+          msg = _INTL("{1}'s {2} poisoned {3}!", user.pbThis,
+                      user.abilityName, target.pbThis(true))
+        else
+          msg = _INTL("{1}'s {2} paralyzed {3}! It may be unable to move!",
+                      user.pbThis, user.abilityName, target.pbThis(true))
+        end
+      end
+      target.pbInflictStatus(new_status, 0, msg, user)
+    end
+    battle.pbHideAbilitySplash(user)
+  }
+)
+
+Battle::AbilityEffects::OnEndOfUsingMove.add(:SAVAGERY,
+  proc { |ability, user, targets, move, battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    targets.each { |b| user.effects[PBEffects::Savagery] += 1 if b.damageState.fainted }
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:SAVAGERY,
+  proc { |ability, user, target, move, mults, baseDmg, type|
+    dmgboost = (1.5 * user.effects[PBEffects::Savagery]) if user.effects[PBEffects::Savagery] != nil || 0
+    mults[:attack_multiplier] *= dmgboost if type == :DARK
   }
 )

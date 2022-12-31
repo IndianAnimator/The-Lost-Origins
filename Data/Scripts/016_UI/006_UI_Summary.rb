@@ -1,6 +1,66 @@
 #===============================================================================
 #
 #===============================================================================
+class EVAllocationSprite < SpriteWrapper
+	attr_reader :preselected
+	attr_reader :index
+
+	def initialize(viewport=nil,fifthmove=false)
+		super(viewport)
+		@EVsel=AnimatedBitmap.new("Graphics/Pictures/EVsel")
+		@frame=0
+		@index=0
+		@fifthmove=fifthmove
+		@preselected=false
+		@updating=false
+		@spriteVisible=true
+		refresh
+	end
+
+	def dispose
+		@EVsel.dispose
+		super
+	end
+
+	def index=(value)
+		@index=value
+		refresh
+	end
+
+	def preselected=(value)
+		@preselected=value
+		refresh
+	end
+
+	def visible=(value)
+		super
+		@spriteVisible=value if !@updating
+	end
+
+	def refresh
+		w=@EVsel.width
+		h=@EVsel.height
+		self.x=239
+		self.y=116+(self.index*32)
+		#~ self.y-=76 if @fifthmove
+		#~ self.y+=20 if @fifthmove && self.index==4
+		self.bitmap=@EVsel.bitmap
+		if self.preselected
+			self.src_rect.set(0,h,w,h)
+		else
+			self.src_rect.set(0,0,w,h)
+		end
+	end
+
+	def update
+		@updating=true
+		super
+		@EVsel.update
+		@updating=false
+		refresh
+	end
+end
+
 class MoveSelectionSprite < Sprite
   attr_reader :preselected
   attr_reader :index
@@ -169,6 +229,9 @@ class PokemonSummary_Scene
     @sprites["messagebox"].viewport       = @viewport
     @sprites["messagebox"].visible        = false
     @sprites["messagebox"].letterbyletter = true
+    #EVAllocationSprite
+    @sprites["EVsel"]=EVAllocationSprite.new(@viewport)
+		@sprites["EVsel"].visible=false 
     pbBottomLeftLines(@sprites["messagebox"], 2)
     @nationalDexList = [:NONE]
     GameData::Species.each_species { |s| @nationalDexList.push(s.species) }
