@@ -3332,12 +3332,16 @@ Battle::AbilityEffects::OnEndOfUsingMove.add(:SAVAGERY,
   proc { |ability, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     targets.each { |b| user.effects[PBEffects::Savagery] += 1 if b.damageState.fainted }
+    battle.pbDisplay(_INTL("{1}'s {2} increased!", user.pbThis,
+                user.abilityName))
   }
 )
 
 Battle::AbilityEffects::DamageCalcFromUser.add(:SAVAGERY,
   proc { |ability, user, target, move, mults, baseDmg, type|
-    dmgboost = (1.5 * user.effects[PBEffects::Savagery]) if user.effects[PBEffects::Savagery] != nil || 0
-    mults[:attack_multiplier] *= dmgboost if type == :DARK
+    if user.effects[PBEffects::Savagery] > 0  && type ==:DARK
+      dmgboost = 1.5 * user.effects[PBEffects::Savagery]
+      mults[:attack_multiplier] *= dmgboost
+    end
   }
 )
