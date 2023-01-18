@@ -685,7 +685,7 @@ class PokemonSummary_Scene
     end
 
 		name = @pokemon.attribute.name
-		memo += _INTL("<c3=F83820,E09890> Attribute of {1}<c3=404040,B0B0B0>\n", name)
+		memo += _INTL("<c3=F83820,E09890>Attribute of {1}<c3=404040,B0B0B0>\n", name)
 
     # Write all text
     drawFormattedTextEx(overlay, 232, 86, 268, memo)
