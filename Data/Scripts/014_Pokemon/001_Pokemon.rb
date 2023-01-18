@@ -40,6 +40,8 @@ class Pokemon
   attr_accessor :happiness
   # @return [Symbol] the item ID of the Poké Ball this Pokémon is in
   attr_accessor :poke_ball
+  #PTLO Attribute
+  attr_accessor :attribute
   # @return [Array<Integer>] this Pokémon's markings, one value per mark
   attr_accessor :markings
   # @return [Hash<Integer>] a hash of IV values for HP, Atk, Def, Speed, Sp. Atk and Sp. Def
@@ -542,6 +544,72 @@ class Pokemon
   def hasNature?(check_nature = nil)
     return !@nature_id.nil? if check_nature.nil?
     return self.nature == check_nature
+  end
+  #=============================================================================
+  # PTLO Attribute
+  #=============================================================================
+
+  # @return [GameData::Nature, nil] a Nature object corresponding to this Pokémon's nature
+  def attribute
+    if !@attribute
+      idx = @personalID % GameData::Attribute.count
+      @attribute = GameData::Attribute.get(GameData::Attribute.keys[idx]).id
+    end
+    return GameData::Attribute.try_get(@attribute)
+  end
+
+  def attribute_id
+    return @attribute
+  end
+
+  #=============================================================================
+  # FOR FUTURE IMPLEMENTATION
+  #=============================================================================
+
+  # Sets this Pokémon's nature to a particular nature.
+  # @param value [Symbol, String, GameData::Nature, nil] nature to change to
+
+  #def attribute=(value)
+  #  return if value && !GameData::Attribute.exists?(value)
+  #  @attribute = (value) ? GameData::Attribute.get(value).id : value
+  #  calc_stats if !@nature_for_stats
+  #end
+
+  # Returns the calculated nature, taking into account things that change its
+  # stat-altering effect (i.e. Gen 8 mints). Only used for calculating stats.
+  # @return [GameData::Nature, nil] this Pokémon's calculated nature
+
+  #def nature_for_stats
+  #  return GameData::Attribute.try_get(@nature_for_stats) if @nature_for_stats
+  #  return self.attribute
+  #end
+
+  #def nature_for_stats_id
+  #  return @nature_for_stats
+  #end
+
+  # If defined, this Pokémon's nature is considered to be this when calculating stats.
+  # @param value [Symbol, String, GameData::Nature, nil] ID of the nature to use for calculating stats
+
+  #def nature_for_stats=(value)
+  #  return if value && !GameData::Nature.exists?(value)
+  #  @nature_for_stats = (value) ? GameData::Nature.get(value).id : value
+  #  calc_stats
+  #end
+
+  #=============================================================================
+  # END
+  #=============================================================================
+
+  # Returns whether this Pokémon has a particular nature. If no value is given,
+  # returns whether this Pokémon has a nature set.
+  # @param check_nature [Symbol, String, GameData::Nature, nil] nature ID to check
+  # @return [Boolean] whether this Pokémon has a particular nature or a nature
+  #   at all
+
+  def hasAttribute?(check_attribute = nil)
+    return !@attribute_id.nil? if check_attribute.nil?
+    return self.attribute == check_attribute
   end
 
   #=============================================================================
@@ -1181,6 +1249,8 @@ class Pokemon
     @name             = nil
     @happiness        = species_data.happiness
     @poke_ball        = :POKEBALL
+    #PTLO attribute
+    @attribute = nil
     @markings         = []
     @iv               = {}
     @ivMaxed          = {}

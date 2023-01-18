@@ -30,7 +30,8 @@ module GameData
       "Shiny"        => [:shininess,       "b"],
       "SuperShiny"   => [:super_shininess, "b"],
       "Shadow"       => [:shadowness,      "b"],
-      "Ball"         => [:poke_ball,       "e", :Item]
+      "Ball"         => [:poke_ball,       "e", :Item],
+      "Attribute"    => [:attribute,     "s"]
     }
 
     extend ClassMethodsSymbols
@@ -160,6 +161,7 @@ module GameData
           pkmn.shiny = false
         end
         pkmn.poke_ball = pkmn_data[:poke_ball] if pkmn_data[:poke_ball]
+        pkmn.attribute = pkmn_data[:attribute] if pkmn_data[:attribute]
         pkmn.calc_stats
       end
       return trainer

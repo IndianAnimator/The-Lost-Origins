@@ -231,7 +231,7 @@ class PokemonSummary_Scene
     @sprites["messagebox"].letterbyletter = true
     #EVAllocationSprite
     @sprites["EVsel"]=EVAllocationSprite.new(@viewport)
-		@sprites["EVsel"].visible=false 
+		@sprites["EVsel"].visible=false
     pbBottomLeftLines(@sprites["messagebox"], 2)
     @nationalDexList = [:NONE]
     GameData::Species.each_species { |s| @nationalDexList.push(s.species) }
@@ -683,6 +683,10 @@ class PokemonSummary_Scene
       }
       memo += sprintf("<c3=404040,B0B0B0>%s\n", characteristics[best_stat][best_iv % 5])
     end
+
+		name = @pokemon.attribute.name
+		memo += _INTL("<c3=F83820,E09890> Attribute of {1}<c3=404040,B0B0B0>\n", name)
+
     # Write all text
     drawFormattedTextEx(overlay, 232, 86, 268, memo)
   end

@@ -42,7 +42,7 @@ class BulletHell
     @sprites[:curtain].opacity = 0
     @sprites[:player] = Sprite.new(@viewport)
     @sprites[:player].x = Graphics.width / 2
-    @sprites[:player].y = Graphics.height - 16
+    @sprites[:player].y = Graphics.height / 2
     @sprites[:player].z = 99997
     @sprites[:bullets] = Sprite.new(@viewport)
     @sprites[:bullets].x = 99999
@@ -80,10 +80,13 @@ class BulletHell
   def get_input
     if @ongoing
       if Input.trigger?(Input::UP)
+        @sprites[:player].y -= 16
+      elsif Input.trigger?(Input::DOWN)
+        @sprites[:player].y += 16
       elsif Input.trigger?(Input::LEFT)
-        @sprites[:player].x += 16
-      elsif Input.trigger?(Input::RIGHT)
         @sprites[:player].x -= 16
+      elsif Input.trigger?(Input::RIGHT)
+        @sprites[:player].x += 16
       elsif Input.trigger?(Input::USE)
       elsif Input.trigger?(Input::BACK)
         @sprites[:curtain].opacity = 100
