@@ -700,6 +700,48 @@ MenuHandlers.add(:pokemon_debug_menu, :set_nature, {
   }
 })
 
+MenuHandlers.add(:pokemon_debug_menu, :set_attribute, {
+  "name"   => _INTL("Set attribute"),
+  "parent" => :main,
+  "effect" => proc { |pkmn, pkmnid, heldpoke, settingUpBattle, screen|
+    commands = []
+    ids = []
+    GameData::Attribute.each do |attribute|
+      if attribute.stat_changes.length == 0
+        commands.push(_INTL("{1} (---)", attribute.real_name))
+      else
+        plus_text = ""
+        minus_text = ""
+        attribute.stat_changes.each do |change|
+          if change[1] > 0
+            plus_text += "/" if !plus_text.empty?
+            plus_text += GameData::Stat.get(change[0]).name_brief
+          elsif change[1] < 0
+            minus_text += "/" if !minus_text.empty?
+            minus_text += GameData::Stat.get(change[0]).name_brief
+          end
+        end
+        commands.push(_INTL("{1} (+{2}, -{3})", attribute.real_name, plus_text, minus_text))
+      end
+      ids.push(attribute.id)
+    end
+    commands.push(_INTL("[Reset]"))
+    cmd = ids.index(pkmn.attribute_id || ids[0])
+    loop do
+      msg = _INTL("Attribute is {1}.", pkmn.attribute.name)
+      cmd = screen.pbShowCommands(msg, commands, cmd)
+      break if cmd < 0
+      if cmd >= 0 && cmd < commands.length - 1   # Set attribute
+        pkmn.attribute = ids[cmd]
+      elsif cmd == commands.length - 1   # Reset
+        pkmn.attribute = nil
+      end
+      screen.pbRefreshSingle(pkmnid)
+    end
+    next false
+  }
+})
+
 MenuHandlers.add(:pokemon_debug_menu, :set_gender, {
   "name"   => _INTL("Set gender"),
   "parent" => :main,

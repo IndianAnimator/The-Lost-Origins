@@ -636,56 +636,12 @@ class PokemonSummary_Scene
     else
       memo += "\n"   # Empty line
     end
-    # Write characteristic
-    if showNature
-      best_stat = nil
-      best_iv = 0
-      stats_order = [:HP, :ATTACK, :DEFENSE, :SPEED, :SPECIAL_ATTACK, :SPECIAL_DEFENSE]
-      start_point = @pokemon.personalID % stats_order.length   # Tiebreaker
-      stats_order.length.times do |i|
-        stat = stats_order[(i + start_point) % stats_order.length]
-        if !best_stat || @pokemon.iv[stat] > @pokemon.iv[best_stat]
-          best_stat = stat
-          best_iv = @pokemon.iv[best_stat]
-        end
-      end
-      characteristics = {
-        :HP              => [_INTL("Loves to eat."),
-                             _INTL("Takes plenty of siestas."),
-                             _INTL("Nods off a lot."),
-                             _INTL("Scatters things often."),
-                             _INTL("Likes to relax.")],
-        :ATTACK          => [_INTL("Proud of its power."),
-                             _INTL("Likes to thrash about."),
-                             _INTL("A little quick tempered."),
-                             _INTL("Likes to fight."),
-                             _INTL("Quick tempered.")],
-        :DEFENSE         => [_INTL("Sturdy body."),
-                             _INTL("Capable of taking hits."),
-                             _INTL("Highly persistent."),
-                             _INTL("Good endurance."),
-                             _INTL("Good perseverance.")],
-        :SPECIAL_ATTACK  => [_INTL("Highly curious."),
-                             _INTL("Mischievous."),
-                             _INTL("Thoroughly cunning."),
-                             _INTL("Often lost in thought."),
-                             _INTL("Very finicky.")],
-        :SPECIAL_DEFENSE => [_INTL("Strong willed."),
-                             _INTL("Somewhat vain."),
-                             _INTL("Strongly defiant."),
-                             _INTL("Hates to lose."),
-                             _INTL("Somewhat stubborn.")],
-        :SPEED           => [_INTL("Likes to run."),
-                             _INTL("Alert to sounds."),
-                             _INTL("Impetuous and silly."),
-                             _INTL("Somewhat of a clown."),
-                             _INTL("Quick to flee.")]
-      }
-      memo += sprintf("<c3=404040,B0B0B0>%s\n", characteristics[best_stat][best_iv % 5])
-    end
 
 		name = @pokemon.attribute.name
-		memo += _INTL("<c3=F83820,E09890>Attribute of {1}<c3=404040,B0B0B0>\n", name)
+		memo += _INTL("Attribute of <c3=F83820,E09890>{1}<c3=404040,B0B0B0>\n", name)
+
+		desc = @pokemon.attribute.description
+		memo += _INTL("{1}", desc)
 
     # Write all text
     drawFormattedTextEx(overlay, 232, 86, 268, memo)
