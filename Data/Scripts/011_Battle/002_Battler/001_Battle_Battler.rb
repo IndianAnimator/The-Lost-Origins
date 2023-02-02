@@ -9,6 +9,8 @@ class Battle::Battler
   attr_accessor :types
   attr_accessor :ability_id
   attr_accessor :item_id
+  #ptlo attribute battler
+  attr_accessor :attribute
   attr_accessor :moves
   attr_accessor :attack
   attr_accessor :spatk
@@ -68,6 +70,17 @@ class Battle::Battler
   def ability=(value)
     new_ability = GameData::Ability.try_get(value)
     @ability_id = (new_ability) ? new_ability.id : nil
+  end
+
+  # get pokemons attribute
+  def attribute
+    return GameData::Attribute.try_get(@attribute)
+  end
+
+  # replace pokemons attribute (Damned)
+  def attribute=(value)
+    new_attribute = GameData::Attribute.try_get(value)
+    @attribute = (new_attribute) ? new_attribute.id : nil
   end
 
   def item
@@ -200,6 +213,12 @@ class Battle::Battler
   def abilityName
     abil = self.ability
     return (abil) ? abil.name : ""
+  end
+
+  # get attribute name
+  def attributeName
+    attribute = self.attribute
+    return (attribute) ? attribute.name : ""
   end
 
   def itemName
@@ -418,6 +437,7 @@ class Battle::Battler
     return false if @battle.field.effects[PBEffects::MagicRoom] > 0
     return false if @battle.corrosiveGas[@index % 2][@pokemonIndex]
     return false if hasActiveAbility?(:KLUTZ, ignoreFainted)
+    return false if @pokemon.attribute == :PROUD
     return true
   end
 
@@ -635,7 +655,7 @@ class Battle::Battler
     return false
   end
 
-  def semiInvulnerable?
+  def semiInvulnerable? # add spy stuff later
     return inTwoTurnAttack?("TwoTurnAttackInvulnerableInSky",
                             "TwoTurnAttackInvulnerableUnderground",
                             "TwoTurnAttackInvulnerableUnderwater",

@@ -119,7 +119,8 @@ module PBEffects
   WaterSport          = 114
   WeightChange        = 115
   Yawn                = 116
-  Savagery            = 117
+  #PTLO ATTRIBUTE (Phoenix and Reincarnated)
+  Phoenix             = 117
 
   #=============================================================================
   # These effects apply to a battler position

@@ -101,7 +101,6 @@ GameData::Attribute.register({
   :description  => _INTL("1.1x evasion, applies magic coat for 2 turns")
 })
 
-
 GameData::Attribute.register({
   :id           => :CORRUPTED,
   :name         => _INTL("The Corrupted"),

@@ -306,3 +306,7 @@ end
 
 class MoveHandlerHash < HandlerHash2
 end
+
+#PTLO attribute handler
+class AttributeHandlerHash < HandlerHash2
+end

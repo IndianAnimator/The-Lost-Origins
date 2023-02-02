@@ -725,7 +725,7 @@ class Battle
     when :HeavyRain   then pbDisplay(_INTL("A heavy rain began to fall!"))
     when :StrongWinds then pbDisplay(_INTL("Mysterious strong winds are protecting Flying-type Pokémon!"))
     when :ShadowSky   then pbDisplay(_INTL("A shadow sky appeared!"))
-    when :Moon        then pbDisplay(_INTL("The moon appeared? idk")) # TODO: actual text
+    when :Moon        then pbDisplay(_INTL("The moon shines overhead!"))
     end
     # Check for end of primordial weather, and weather-triggered form changes
     allBattlers.each { |b| b.pbCheckFormOnWeatherChange }
