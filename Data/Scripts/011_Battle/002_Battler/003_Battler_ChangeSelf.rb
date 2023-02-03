@@ -65,6 +65,28 @@ class Battle::Battler
       PBDebug.log("!!!***Can't faint with HP greater than 0")
       return
     end
+    return if self.attribute == :PHOENIX || self.attribute == :REINCARNATED #stops pokemon from fainting if it has one of these attributes
+    if self.effects[PBEffects::Phoenix] == false
+      self.effects[PBEffects::Phoenix] = true
+      if self.attribute == :PHOENIX
+        self.pbRecoverHP(self.totalhp / 4)
+        self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
+        self.effects[PBEffects::Substitute] = 0
+        msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
+      elsif self.attribute == :PHOENIX
+        self.pbRecoverHP(self.totalhp / 8)
+        self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
+        self.effects[PBEffects::Substitute] = 0
+        msg = _INTL("{1} was reincarnated!", pbThis)
+      else
+        msg = _INTL("problem here")
+      end
+      @battle.pbDisplay(msg)
+      @battle.scene.pbRefresh
+      return false
+    else
+      @battle.scene.pbFaintBattler(self)
+    end
     return if @fainted   # Has already fainted properly
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
     PBDebug.log("[Pokémon fainted] #{pbThis} (#{@index})") if !showMessage

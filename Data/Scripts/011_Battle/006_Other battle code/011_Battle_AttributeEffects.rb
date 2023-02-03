@@ -292,19 +292,3 @@ module Battle::AttributeEffects
   end
 end
 #===============================================================================
-
-
-Battle::AttributeEffects::OnBattlerFainting.add(:PHOENIX,
-  proc { |attribute, battler, fainted, battle|
-    if  !fainted.effects[PBEffects::Phoenix]
-      fainted.pbRecoverHP(battler.totalhp / 4)
-      battler.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
-      fainted.effects[PBEffects::Phoenix] = true
-      if battler.effects[PBEffects::Substitute] > 0
-        battler.effects[PBEffects::Substitute] = 0
-      end
-      battle.pbDisplay(_INTL("{1}'s {2} made it come back from the ashes!", battler.pbThis, battler.attribute.name))
-    end
-    battle.pbHideAbilitySplash(battler)
-  }
-)
