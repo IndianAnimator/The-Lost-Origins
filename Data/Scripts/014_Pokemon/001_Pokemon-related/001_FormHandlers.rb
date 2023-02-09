@@ -789,7 +789,7 @@ MultipleForms.register(:KOFFING, {
 MultipleForms.copy(:KOFFING, :MIMEJR)
 
 #===============================================================================
-# TLO forms
+# PTLO forms
 #===============================================================================
 
 MultipleForms.register(:SOLROCK, {
