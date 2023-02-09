@@ -72,17 +72,6 @@ class Battle::Battler
     @ability_id = (new_ability) ? new_ability.id : nil
   end
 
-  # get pokemons attribute
-  def attribute
-    return GameData::Attribute.try_get(@attribute)
-  end
-
-  # replace pokemons attribute (Damned)
-  def attribute=(value)
-    new_attribute = GameData::Attribute.try_get(value)
-    @attribute = (new_attribute) ? new_attribute.id : nil
-  end
-
   def item
     return GameData::Item.try_get(@item_id)
   end
@@ -143,6 +132,7 @@ class Battle::Battler
   def gender;          return @pokemon ? @pokemon.gender : 0;          end
   def nature;          return @pokemon ? @pokemon.nature : nil;        end
   def pokerusStage;    return @pokemon ? @pokemon.pokerusStage : 0;    end
+  def attribute;       return @pokemon ? @pokemon.attribute : nil;     end
 
   #=============================================================================
   # Mega Evolution, Primal Reversion, Shadow Pokémon
