@@ -121,6 +121,7 @@ module PBEffects
   Yawn                = 116
   #PTLO ATTRIBUTE (Phoenix and Reincarnated)
   Phoenix             = 117
+  Savagery            = 118
 
   #=============================================================================
   # These effects apply to a battler position

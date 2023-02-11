@@ -76,25 +76,29 @@ class Battle::Battler
         self.pbRecoverHP(self.totalhp / 8)
         self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
         self.effects[PBEffects::Substitute] = 0
-        #set pkmn to whatever pokemon you want to change
          forms = [[], []]
          GameData::Species.each do |sp|
-         next if sp.species != self.species
+           next if sp.species != self.species
+           form_name = sp.form_name
+           form_name = _INTL("Unnamed form") if !form_name || form_name.empty?
            forms[0].push(sp.form)
+           forms[1].push(form_name)
          end
          if forms[0].length > 1
            #there is more than one form, so we can change it
            availableForms = forms[0]
+           availableNames = forms[1]
            #delete the current form from the list of forms we can change to
            availableForms.delete(self.form)
+           availableNames.delete(self.form)
            sel = rand(availableForms.length)
            #set the form
            self.pbChangeForm(sel,nil)
-           msg = _INTL("{1} reincarnated into another form", pbThis)
+           msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
          else
+           msg = _INTL("{1} was reincarnated!", pbThis)
            self.pbRaiseStatStage(:ATTACK, 1, self)
            self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
-           msg = _INTL("{1} was reincarnated!", pbThis)
          end
       else
         msg = _INTL("problem here")
