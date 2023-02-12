@@ -65,48 +65,44 @@ class Battle::Battler
       PBDebug.log("!!!***Can't faint with HP greater than 0")
       return
     end
-    if [:PHOENIX, :REINCARNATED].include?(self.attribute) #stops pokemon from fainting if it has one of these attributes
-      if self.effects[PBEffects::Phoenix]
-        self.pbChangeForm(self.effects[PBEffects::Phoenix], nil) if self.attribute == :REINCARNATED
+    if [:PHOENIX, :REINCARNATED].include?(self.attribute) && !self.effects[PBEffects::Phoenix] #stops pokemon from fainting if it has one of these attributes
+      self.effects[PBEffects::Phoenix] = self.form
+      self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
+      self.effects[PBEffects::Substitute] = 0
+      if self.attribute == :PHOENIX
+        self.pbRecoverHP(self.totalhp / 4)
+        msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
       else
-        self.effects[PBEffects::Phoenix] = self.form
-        self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
-        self.effects[PBEffects::Substitute] = 0
-        if self.attribute == :PHOENIX
-          self.pbRecoverHP(self.totalhp / 4)
-          msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
-        else
-          self.pbRecoverHP(self.totalhp / 8)
-          availableForms = []
-          availableNames = []
-          #there is more than one form, so we can change it
-          GameData::Species.each do |sp|
-            next if sp.species != self.species
-            availableForms.push(sp.form)
-            availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
-          end
-          #delete the current form from the list of forms we can change to
-          availableForms.delete(self.form)
-          availableNames.delete(self.form)
-          if self.hasMega?
-            availableForms.delete(self.getMegaForm)
-            availableForms.delete(self.getMegaForm)
-          end
-          if availableForms.length > 1
-            sel = rand(availableForms.length)
-            #set the form
-            self.pbChangeForm(sel,nil)
-            msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
-          else
-            msg = _INTL("{1} was reincarnated!", pbThis)
-            self.pbRaiseStatStage(:ATTACK, 1, self)
-            self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
-          end
+        self.pbRecoverHP(self.totalhp / 8)
+        availableForms = []
+        availableNames = []
+        #there is more than one form, so we can change it
+        GameData::Species.each do |sp|
+          next if sp.species != self.species
+          availableForms.push(sp.form)
+          availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
         end
-        @battle.pbDisplay(msg) if showMessage
-        @battle.scene.pbRefresh
-        return false
+        #delete the current form from the list of forms we can change to
+        availableForms.delete(self.form)
+        availableNames.delete(self.form)
+        if self.hasMega?
+          availableForms.delete(self.getMegaForm)
+          availableForms.delete(self.getMegaForm)
+        end
+        if availableForms.length > 1
+          sel = rand(availableForms.length)
+          #set the form
+          self.pbChangeForm(sel,nil)
+          msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
+        else
+          msg = _INTL("{1} was reincarnated!", pbThis)
+          self.pbRaiseStatStage(:ATTACK, 1, self)
+          self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
+        end
       end
+      @battle.pbDisplay(msg) if showMessage
+      @battle.scene.pbRefresh
+      return false
     end
     return if @fainted   # Has already fainted properly
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
@@ -124,6 +120,7 @@ class Battle::Battler
     end
     # Reset form
     @battle.peer.pbOnLeavingBattle(@battle, @pokemon, @battle.usedInBattle[idxOwnSide][@index / 2])
+    @pokemon.form = self.effects[PBEffects::Phoenix] if self.attribute == :REINCARNATED
     @pokemon.makeUnmega if mega?
     @pokemon.makeUnprimal if primal?
     # Do other things
