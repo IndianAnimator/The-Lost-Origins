@@ -103,7 +103,7 @@ class Battle::Battler
             self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
           end
         end
-        @battle.pbDisplay(msg)
+        @battle.pbDisplay(msg) if showMessage
         @battle.scene.pbRefresh
         return false
       end
