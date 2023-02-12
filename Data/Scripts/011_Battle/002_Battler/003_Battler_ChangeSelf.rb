@@ -77,11 +77,14 @@ class Battle::Battler
           msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
         else
           self.pbRecoverHP(self.totalhp / 8)
+          availableForms = []
+          availableNames = []
           #there is more than one form, so we can change it
-          availableForms, availableNames = GameData::Species.filter_map do |sp|
+          GameData::Species.each do |sp|
             next if sp.species != self.species
-            [sp.form, sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name]
-          end.transpose
+            availableForms.push(sp.form)
+            availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
+          end
           #delete the current form from the list of forms we can change to
           availableForms.delete(self.form)
           availableNames.delete(self.form)
