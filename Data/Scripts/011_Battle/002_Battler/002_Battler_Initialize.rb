@@ -279,7 +279,7 @@ class Battle::Battler
     #---------------------------------------------------------------------------
     #PTLO custom effects
     #---------------------------------------------------------------------------
-    @effects[PBEffects::Phoenix]             = false #Phoenix and Reincarnated stuff
+    @effects[PBEffects::Phoenix]             = nil #Phoenix and Reincarnated stuff
     @effects[PBEffects::Savagery]            = 0
     @effects[PBEffects::HeroCount]           = 0
   end
