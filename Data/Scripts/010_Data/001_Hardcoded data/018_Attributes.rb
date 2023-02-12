@@ -137,3 +137,15 @@ GameData::Attribute.register({
   :name         => _INTL("The Proud"),
   :description  => _INTL("Boosts the highest stat but 1.2, Klutz effect")
 })
+
+GameData::Attribute.register({
+  :id           => :SPY,
+  :name         => _INTL("The Spy"),
+  :description  => _INTL("Boosts hiding moves, Infiltrator effect")
+})
+
+GameData::Attribute.register({
+  :id           => :BERSERKER,
+  :name         => _INTL("The Berserker"),
+  :description  => _INTL("Boosts Attack by 1.5, has a chance to disobey or use another move")
+})

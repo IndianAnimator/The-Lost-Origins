@@ -489,6 +489,12 @@ class Battle
     return nil
   end
 
+  # Global attribute check
+  def pbCheckGlobalAttribute(atr)
+    allBattlers.each { |b| return b if b.attribute == atr }
+    return nil
+  end
+
   def pbCheckOpposingAbility(abil, idxBattler = 0, nearOnly = false)
     allOtherSideBattlers(idxBattler).each do |b|
       next if nearOnly && !b.near?(idxBattler)

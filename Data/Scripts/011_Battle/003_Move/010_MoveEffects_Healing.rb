@@ -509,7 +509,14 @@ class Battle::Move::UserFaintsExplosive < Battle::Move
     return false
   end
 
+  def pbBaseDamage(baseDmg, user, target)
+    return baseDmg *= 1.3 if user.attribute == :MATYR
+    return baseDmg
+  end
+
   def pbSelfKO(user)
+    no_faint = @battle.pbRandom(9)
+    return false if user.attribute == :MATYR && no_faint == 0
     return if user.fainted?
     user.pbReduceHP(user.hp, false)
     user.pbItemHPHealCheck

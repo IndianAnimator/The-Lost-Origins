@@ -292,12 +292,15 @@ class Battle::Move
   def pbCalcDamageMultipliers(user, target, numTargets, type, baseDmg, multipliers)
     # Global abilities
     if (@battle.pbCheckGlobalAbility(:DARKAURA) && type == :DARK) ||
-       (@battle.pbCheckGlobalAbility(:FAIRYAURA) && type == :FAIRY)
+      (@battle.pbCheckGlobalAbility(:FAIRYAURA) && type == :FAIRY)
       if @battle.pbCheckGlobalAbility(:AURABREAK)
         multipliers[:base_damage_multiplier] *= 2 / 3.0
       else
         multipliers[:base_damage_multiplier] *= 4 / 3.0
       end
+    end
+    if @battle.pbCheckGlobalAttribute(:DEVASTATION)
+      multipliers[:base_damage_multiplier] *= 1.2
     end
     #SCREECHINGSOULS
     if (@battle.pbCheckGlobalAbility(:SCREECHINGSOULS) && type == :DARK || type == :GHOST || type == :DEMON)
@@ -499,7 +502,7 @@ class Battle::Move
     return 0 if target.hasActiveAbility?(:SHIELDDUST) && !@battle.moldBreaker
     ret = (effectChance > 0) ? effectChance : @addlEffect
     if (Settings::MECHANICS_GENERATION >= 6 || @function != "EffectDependsOnEnvironment") &&
-       (user.hasActiveAbility?(:SERENEGRACE) || user.pbOwnSide.effects[PBEffects::Rainbow] > 0)
+       (user.hasActiveAbility?(:SERENEGRACE) || user.pbOwnSide.effects[PBEffects::Rainbow] > 0 || user.attribute == :MONK) #add monk serene grace effect
       ret *= 2
     end
     ret = 100 if $DEBUG && Input.press?(Input::CTRL)

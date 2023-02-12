@@ -5,6 +5,7 @@ class Battle::Move::RaiseUserAttack1 < Battle::Move::StatUpMove
   def initialize(battle, move)
     super
     @statUp = [:ATTACK, 1]
+    @statUp = [:SPECIAL_ATTACK, 1] if user.attribute == :MONK # add monk meditate buff
   end
 end
 

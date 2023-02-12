@@ -292,3 +292,17 @@ module Battle::AttributeEffects
   end
 end
 #===============================================================================
+
+Battle::AbilityEffects::OnEndOfUsingMove.add(:HERO,
+  proc { |attribute, user, targets, move, battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    targets.each { |b| user.effects[PBEffects::Savagery] += 0.1 if b.damageState.fainted }
+    battle.pbDisplay(_INTL("{1}'s {2} increased!", user.pbThis, user.attribute.name))
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:HERO,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *=  user.effects[PBEffects::Savagery]
+  }
+)

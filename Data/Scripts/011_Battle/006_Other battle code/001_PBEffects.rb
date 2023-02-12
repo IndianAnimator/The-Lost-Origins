@@ -122,6 +122,7 @@ module PBEffects
   #PTLO ATTRIBUTE (Phoenix and Reincarnated)
   Phoenix             = 117
   Savagery            = 118
+  HeroCount           = 118
 
   #=============================================================================
   # These effects apply to a battler position

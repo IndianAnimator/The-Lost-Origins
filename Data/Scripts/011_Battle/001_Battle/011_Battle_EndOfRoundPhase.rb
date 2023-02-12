@@ -229,6 +229,7 @@ class Battle
         battler.droppedBelowHalfHP = false
         dmg = battler.totalhp / 8
         dmg = battler.totalhp * battler.effects[PBEffects::Toxic] / 16 if battler.statusCount > 0
+        dmg = (dmg * 2.0).round if battler.attribute == :DAMNED # adds dammned effect of doubled status effects
         battler.pbContinueStatus { battler.pbReduceHP(dmg, false) }
         battler.pbItemHPHealCheck
         battler.pbAbilitiesOnDamageTaken
@@ -242,6 +243,7 @@ class Battle
       battler.droppedBelowHalfHP = false
       dmg = (Settings::MECHANICS_GENERATION >= 7) ? battler.totalhp / 16 : battler.totalhp / 8
       dmg = (dmg / 2.0).round if battler.hasActiveAbility?(:HEATPROOF)
+      dmg = (dmg * 2.0).round if battler.attribute == :DAMNED # adds dammned effect of doubled status effects
       battler.pbContinueStatus { battler.pbReduceHP(dmg, false) }
       battler.pbItemHPHealCheck
       battler.pbAbilitiesOnDamageTaken

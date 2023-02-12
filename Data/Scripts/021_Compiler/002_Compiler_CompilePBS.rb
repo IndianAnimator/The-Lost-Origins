@@ -381,6 +381,7 @@ module Compiler
         flags.push("Pulse") if line[12][/m/]
         flags.push("Bomb") if line[12][/n/]
         flags.push("Dance") if line[12][/o/]
+        flags.push("Blade") if line[12][/p/]
         # Construct move hash
         move_hash = {
           :id            => move_id,
