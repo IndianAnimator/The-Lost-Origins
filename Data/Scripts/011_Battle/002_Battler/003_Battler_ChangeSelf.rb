@@ -107,9 +107,6 @@ class Battle::Battler
         @battle.scene.pbRefresh
         return false
       end
-    else
-      @battle.scene.pbFaintBattler(self)
-      return true
     end
     return if @fainted   # Has already fainted properly
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
