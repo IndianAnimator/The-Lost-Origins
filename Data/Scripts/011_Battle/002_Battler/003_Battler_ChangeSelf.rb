@@ -84,15 +84,13 @@ class Battle::Battler
            forms[0].push(sp.form)
            forms[1].push(form_name)
          end
-         #there is more than one form, so we can change it
-         availableForms = forms[0]
-         availableNames = forms[1]
-         #delete the current form from the list of forms we can change to
-         availableForms.delete(self.form)
-         availableForms.delete(self.getMegaForm) if self.hasMega?
-         availableNames.delete(self.form)
-         availableForms.delete(self.getMegaForm) if self.hasMega?
          if forms[0].length > 1
+           #there is more than one form, so we can change it
+           availableForms = forms[0]
+           availableNames = forms[1]
+           #delete the current form from the list of forms we can change to
+           availableForms.delete(self.form)
+           availableNames.delete(self.form)
            sel = rand(availableForms.length)
            #set the form
            self.pbChangeForm(sel,nil)
