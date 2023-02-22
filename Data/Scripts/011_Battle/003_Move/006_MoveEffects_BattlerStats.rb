@@ -2,13 +2,11 @@
 # Increases the user's Attack by 1 stage.
 #===============================================================================
 class Battle::Move::RaiseUserAttack1 < Battle::Move::StatUpMove
-  def initialize(battle, move)
-    super
-    @statUp = [:ATTACK, 1]
-    @statUp = [:SPECIAL_ATTACK, 1] if user.attribute == :MONK # add monk meditate buff
+  def pbEffectGeneral(user)
+    user.pbRaiseStatStage(:ATTACK, 1, user)
+    user.pbRaiseStatStage(:SPECIAL_ATTACK, 1, user) if user.attribute == :MONK
   end
 end
-
 #===============================================================================
 # Increases the user's Attack by 2 stages. (Swords Dance)
 #===============================================================================

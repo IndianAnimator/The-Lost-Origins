@@ -144,6 +144,8 @@ class Battle::Battler
 
   def mega?; return @pokemon&.mega?; end
 
+  def reincarnated?; return @pokemon&.reincarnated?; end
+
   def hasPrimal?
     return false if @effects[PBEffects::Transform]
     return @pokemon&.hasPrimalForm?
@@ -263,7 +265,7 @@ class Battle::Battler
     end
     # Other effects
     speedMult *= 2 if pbOwnSide.effects[PBEffects::Tailwind] > 0
-    speedMult /= 2 if pbOwnSide.effects[PBEffects::Swamp] > 0 
+    speedMult /= 2 if pbOwnSide.effects[PBEffects::Swamp] > 0
     # Paralysis
     if status == :PARALYSIS && !hasActiveAbility?(:QUICKFEET)
       speedMult /= (Settings::MECHANICS_GENERATION >= 7) ? 2 : 4

@@ -4,6 +4,7 @@ module GameData
     attr_reader :real_name
     attr_reader :stat_changes
     attr_reader :description
+    attr_reader :effect
 
     DATA = {}
 
@@ -18,6 +19,7 @@ module GameData
       @real_name    = hash[:name]         || "Unnamed"
       @stat_changes = hash[:stat_changes] || []
       @description  = hash[:description]  || ""
+      @effect       = hash[:effect] 
     end
 
     # @return [String] the translated name of this Attribute
@@ -123,7 +125,7 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :REINCARNATED,
   :name         => _INTL("The Reincarnated"),
-  :description  => _INTL("Gain 1/8 hp after death, highest attacking stat is boosted OR if the user will tranform into an alternate form if it exists")
+  :description  => _INTL("Gain 1/8 hp after death, both attacking stat is boosted OR if the user will tranform into an alternate form if it exists")
 })
 
 GameData::Attribute.register({

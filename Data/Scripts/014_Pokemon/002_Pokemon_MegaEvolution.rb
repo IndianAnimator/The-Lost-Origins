@@ -79,4 +79,21 @@ class Pokemon
       self.form = 0
     end
   end
+
+  #=============================================================================
+  # Reincarnated attribute
+  # idfk what im doing
+  #=============================================================================
+  def getUnreincarnatedForm
+    return (reincarnated?) ? self.effects[PBEffects::Phoenix] : -1
+  end
+
+  def reincarnated?
+    return self.effects[PBEffects::Phoenix] != nil ? true : false
+  end
+
+  def makeUnreincarnated
+    unreincarnatedForm = self.getUnreincarnatedForm
+    self.form = unreincarnatedForm if unmegaForm >= 0
+  end
 end
