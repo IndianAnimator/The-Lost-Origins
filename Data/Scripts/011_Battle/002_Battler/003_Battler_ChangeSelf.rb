@@ -65,53 +65,54 @@ class Battle::Battler
       PBDebug.log("!!!***Can't faint with HP greater than 0")
       return
     end
+    if @fainted
+      return true
+    end
+
     if (self.attribute == :PHOENIX || self.attribute == :REINCARNATED) && self.effects[PBEffects::Phoenix] == false #stops pokemon from fainting if it has one of these attributes
-        self.effects[PBEffects::Phoenix] = true
-        self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
-        self.effects[PBEffects::Substitute] = 0
-        if self.attribute == :PHOENIX
-          self.pbRecoverHP(self.totalhp / 4)
-          msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
-        elsif self.attribute == :REINCARNATED
-          self.pbRecoverHP(self.totalhp / 8)
-          availableForms = []
-          availableNames = []
-          #there is more than one form, so we can change it
-          GameData::Species.each do |sp|
-            next if sp.species != self.species
-            availableForms.push(sp.form)
-            availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
-          end
-           #there is more than one form, so we can change it
-           #delete the current form from the list of forms we can change to
-           availableForms.delete(self.form)
-           availableNames.delete(self.form)
-           if self.hasMega?
-             availableForms.delete(self.getMegaForm)
-             availableForms.delete(self.getMegaForm)
-           end
-           if availableForms.length > 0
-             #there is more than one form, so we can change it
-             sel = rand(availableForms.length)
-             #set the form
-             self.pbChangeForm(sel,nil)
-             msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
-           else
-             msg = _INTL("{1} was reincarnated!", pbThis)
-             self.pbRaiseStatStage(:ATTACK, 1, self)
-             self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
-           end
-        else
-          msg = _INTL("problem here")
+      self.effects[PBEffects::Phoenix] = true
+      self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
+      self.effects[PBEffects::Substitute] = 0
+      if self.attribute == :PHOENIX
+        self.pbRecoverHP(self.totalhp / 4)
+        msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
+      elsif self.attribute == :REINCARNATED
+        self.pbRecoverHP(self.totalhp / 8)
+        availableForms = []
+        availableNames = []
+        #there is more than one form, so we can change it
+        GameData::Species.each do |sp|
+          next if sp.species != self.species
+          availableForms.push(sp.form)
+          availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
         end
-        @battle.pbDisplay(msg)
-        @battle.scene.pbRefresh
-        return false
+         #there is more than one form, so we can change it
+         #delete the current form from the list of forms we can change to
+         availableForms.delete(self.form)
+         availableNames.delete(self.form)
+         if self.hasMega?
+           availableForms.delete(self.getMegaForm)
+           availableForms.delete(self.getMegaForm)
+         end
+         if availableForms.length > 0
+           #there is more than one form, so we can change it
+           sel = rand(availableForms.length)
+           #set the form
+           self.pbChangeForm(sel,nil)
+           msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
+         else
+           msg = _INTL("{1} was reincarnated!", pbThis)
+           self.pbRaiseStatStage(:ATTACK, 1, self)
+           self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
+         end
       else
-        @battle.scene.pbFaintBattler(self)
-        return true
+        msg = _INTL("problem here")
       end
-    return if @fainted   # Has already fainted properly
+      @battle.pbDisplay(msg)
+      @battle.scene.pbRefresh
+      return false
+      @fainted = true
+    end
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
     PBDebug.log("[Pokémon fainted] #{pbThis} (#{@index})") if !showMessage
     @battle.scene.pbFaintBattler(self)
