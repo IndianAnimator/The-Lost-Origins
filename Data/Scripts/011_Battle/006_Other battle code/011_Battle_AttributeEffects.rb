@@ -293,7 +293,7 @@ module Battle::AttributeEffects
 end
 #===============================================================================
 
-Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
+Battle::AbilityEffects::OnEndOfUsingMove.add(:HERO,
   proc { |attribute, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     targets.each { |b| user.effects[PBEffects::HeroCount] += 0.1 if b.damageState.fainted }
@@ -301,7 +301,7 @@ Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
   }
 )
 
-Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
+Battle::AbilityEffects::DamageCalcFromUser.add(:HERO,
   proc { |attribute, user, target, move, mults, baseDmg, type|
     mults[:base_damage_multiplier] *=  user.effects[PBEffects::HeroCount]
   }

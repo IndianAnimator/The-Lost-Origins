@@ -211,6 +211,7 @@ module Compiler
     MessageTypes.setMessagesAsHash(MessageTypes::Types, type_names)
     process_pbs_file_message_end
   end
+
   #=============================================================================
   # Compile ability data
   #=============================================================================
@@ -302,9 +303,11 @@ module Compiler
         if move_hash
           # Sanitise data
           if (move_hash[:category] || 2) == 2 && (move_hash[:base_damage] || 0) != 0
-            raise _INTL("Move {1} is defined as a Status move with a non-zero base damage.\r\n{2}", line[2], FileLineData.linereport)
+            raise _INTL("Move {1} is defined as a Status move with a non-zero base damage.\r\n{2}",
+                        move_hash[:name], FileLineData.linereport)
           elsif (move_hash[:category] || 2) != 2 && (move_hash[:base_damage] || 0) == 0
-            print _INTL("Warning: Move {1} was defined as Physical or Special but had a base damage of 0. Changing it to a Status move.\r\n{2}", line[2], FileLineData.linereport)
+            print _INTL("Warning: Move {1} was defined as Physical or Special but had a base damage of 0. Changing it to a Status move.\r\n{2}",
+                        move_hash[:name], FileLineData.linereport)
             move_hash[:category] = 2
           end
           GameData::Move.register(move_hash)
@@ -340,9 +343,11 @@ module Compiler
         if move_hash
           # Sanitise data
           if (move_hash[:category] || 2) == 2 && (move_hash[:base_damage] || 0) != 0
-            raise _INTL("Move {1} is defined as a Status move with a non-zero base damage.\r\n{2}", line[2], FileLineData.linereport)
+            raise _INTL("Move {1} is defined as a Status move with a non-zero base damage.\r\n{2}",
+                        move_hash[:name], FileLineData.linereport)
           elsif (move_hash[:category] || 2) != 2 && (move_hash[:base_damage] || 0) == 0
-            print _INTL("Warning: Move {1} was defined as Physical or Special but had a base damage of 0. Changing it to a Status move.\r\n{2}", line[2], FileLineData.linereport)
+            print _INTL("Warning: Move {1} was defined as Physical or Special but had a base damage of 0. Changing it to a Status move.\r\n{2}",
+                        move_hash[:name], FileLineData.linereport)
             move_hash[:category] = 2
           end
           GameData::Move.register(move_hash)
@@ -1812,58 +1817,6 @@ module Compiler
     process_pbs_file_message_end
   end
 
-  #=============================================================================
-  # Compile attribute data
-  #=============================================================================
-  def compile_attributes(path = "PBS/attributes.txt")
-    compile_pbs_file_message_start(path)
-    GameData::Attribute::DATA.clear
-    schema = GameData::Attribute::SCHEMA
-    attribute_names        = []
-    attribute_descriptions = []
-    attribute_hash         = nil
-    pbCompilerEachPreppedLine(path) { |line, line_no|
-      if line[/^\s*\[\s*(.+)\s*\]\s*$/]   # New section [attribute_id]
-        # Add previous attribute's data to records
-        GameData::Attribute.register(attribute_hash) if attribute_hash
-        # Parse attribute ID
-        attribute_id = $~[1].to_sym
-        if GameData::Attribute.exists?(attribute_id)
-          raise _INTL("Attribute ID '{1}' is used twice.\r\n{2}", attribute_id, FileLineData.linereport)
-        end
-        # Construct attribute hash
-        attribute_hash = {
-          :id => attribute_id
-        }
-      elsif line[/^\s*(\w+)\s*=\s*(.*)\s*$/]   # XXX=YYY lines
-        if !attribute_hash
-          raise _INTL("Expected a section at the beginning of the file.\r\n{1}", FileLineData.linereport)
-        end
-        # Parse property and value
-        property_name = $~[1]
-        line_schema = schema[property_name]
-        next if !line_schema
-        property_value = pbGetCsvRecord($~[2], line_no, line_schema)
-        # Record XXX=YYY setting
-        attribute_hash[line_schema[0]] = property_value
-        case property_name
-        when "Name"
-          attribute_names.push(attribute_hash[:name])
-        when "StatChanges"
-          attribute_descriptions.push(attribute_hash[:stat_changes])
-        when "Description"
-          attribute_descriptions.push(attribute_hash[:description])
-        end
-      end
-    }
-    # Add last attribute's data to records
-    GameData::Attribute.register(attribute_hash) if attribute_hash
-    # Save all data
-    GameData::Attribute.save
-    MessageTypes.setMessagesAsHash(MessageTypes::Attributes, attribute_names)
-    MessageTypes.setMessagesAsHash(MessageTypes::AttributeDescs, attribute_descriptions)
-    process_pbs_file_message_end
-  end
   #=============================================================================
   # Compile battle animations
   #=============================================================================

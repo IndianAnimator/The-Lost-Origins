@@ -86,6 +86,7 @@ class Battle::Battler
           availableForms.push(sp.form)
           availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
         end
+         #there is more than one form, so we can change it
          #delete the current form from the list of forms we can change to
          availableForms.delete(self.form)
          availableNames.delete(self.form)
@@ -112,7 +113,6 @@ class Battle::Battler
       return false
       @fainted = true
     end
-    return if @fainted   # Has already fainted properly
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
     PBDebug.log("[Pokémon fainted] #{pbThis} (#{@index})") if !showMessage
     @battle.scene.pbFaintBattler(self)
