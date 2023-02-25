@@ -568,28 +568,6 @@ class Pokemon
   def attribute=(value)
     return if value && !GameData::Attribute.exists?(value)
     @attribute = (value) ? GameData::Attribute.get(value).id : value
-    calc_stats if !@attribute_for_stats
-  end
-
-  # Returns the calculated attribute. Only used for calculating stats.
-  # @return [GameData::Attribute, nil] this Pokémon's calculated attribute
-
-  def attribute_for_stats
-    return GameData::Attribute.try_get(@attribute_for_stats) if @attribute_for_stats
-    return self.attribute
-  end
-
-  def attribute_for_stats_id
-    return @attribute_for_stats
-  end
-
-  # If defined, this Pokémon's attribute is considered to be this when calculating stats.
-  # @param value [Symbol, String, GameData::Attribute, nil] ID of the attribute to use for calculating stats
-
-  def attribute_for_stats=(value)
-    return if value && !GameData::Attribute.exists?(value)
-    @attribute_for_stats = (value) ? GameData::Attribute.get(value).id : value
-    calc_stats
   end
 
   # Returns whether this Pokémon has a particular atrribute. If no value is given,
@@ -602,7 +580,6 @@ class Pokemon
     return !@attribute_id.nil? if check_attribute.nil?
     return self.attribute == check_attribute
   end
-
   #=============================================================================
   # Items
   #=============================================================================
@@ -1242,7 +1219,6 @@ class Pokemon
     @poke_ball        = :POKEBALL
     #PTLO attribute
     @attribute = nil
-    @attribute_for_stats = nil
     @markings         = []
     @iv               = {}
     @ivMaxed          = {}

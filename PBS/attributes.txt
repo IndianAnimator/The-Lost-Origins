@@ -1,0 +1,76 @@
+#------------------------------------------------------------
+[MATYR]
+Name = The Matyr
+Description = Self-destructing moves are boosted by 1.3x, 10% to not self-destruct
+#------------------------------------------------------------
+[DEVASTATION]
+Name = Devastation
+Description = All pokemon on the field take 1.2x more damage
+#------------------------------------------------------------
+[HERO]
+Name = The Hero
+Description = All moves gain a 1.1x boost upon defeating an enemy
+#------------------------------------------------------------
+[ROYALGUARD]
+Name = The Royal Guard
+Description = All allied pokemon take 1.3x less damage
+#------------------------------------------------------------
+[MONK]
+Name = The Monk
+Description = Serene Grace effect, Meditate increases spatk
+#------------------------------------------------------------
+[WARMONGER]
+Name = The Warmonger
+Description = Moxie effect, all blade moves are boosted
+#------------------------------------------------------------
+[KING]
+Name = The King
+Description = All allied pokemons accuracy are boosted by 10%, crit by 10%
+#------------------------------------------------------------
+[PRIEST]
+Name = The Priest
+Description = Leftovers effect for the party while active
+#------------------------------------------------------------
+[PHOENIX]
+Name = The Phoenix
+Description = User will regain 25% hp after fainting, using healing, items and protect/substitute will have no effect
+#------------------------------------------------------------
+[DEMIGOD]
+Name = The Demigod
+Description = All moves will have infinite PP and two turn moves will be one turn, using healing, items and and status moves will fail.
+#------------------------------------------------------------
+[FORGOTTEN]
+Name = The Forgotten
+Description = 1.1x evasion, applies magic coat for 2 turns
+#------------------------------------------------------------
+[CORRUPTED]
+Name = The Corrupted
+Description = 1.5x attack, applies the ghost type to itself, applies the curse effect to itself
+#------------------------------------------------------------
+[HOLYMAGE]
+Name = The Holy Mage
+Description = 1.2 boost to psychic and fairy moves
+#------------------------------------------------------------
+[DELUSIONAL]
+Name = The Delusional
+Description = The user is always confused and all opponents take damage from its rambling while it's on the field. Sound-based moves used have a chance to confuse the opponent.
+#------------------------------------------------------------
+[REINCARNATED]
+Name = The Reincarnated
+Description = Gain 1/8 hp after death, both attacking stat are boosted OR if the user will tranform into an alternate form if it exists
+#------------------------------------------------------------
+[DAMNED]
+Name = The Damned
+Description = All statuses effects are doubled. Defeatist effect, Mummy Effect
+#------------------------------------------------------------
+[PROUD]
+Name = The Proud
+Description = Boosts the highest stat but 1.2, Klutz effect
+#------------------------------------------------------------
+[SPY]
+Name = The Spy
+Description = Boosts hiding moves, Infiltrator effect
+#------------------------------------------------------------
+[BERSERKER]
+Name = The Berserker
+Description = Boosts Attack by 1.5, has a chance to disobey or use another move

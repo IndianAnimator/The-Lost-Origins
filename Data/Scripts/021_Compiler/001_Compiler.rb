@@ -760,6 +760,7 @@ module Compiler
     compile_phone
     compile_types
     compile_abilities
+    compile_attributes
     compile_moves             # Depends on Type
     compile_items             # Depends on Move
     compile_berry_plants      # Depends on Item
