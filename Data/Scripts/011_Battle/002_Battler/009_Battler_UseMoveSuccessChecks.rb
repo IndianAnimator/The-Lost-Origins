@@ -83,9 +83,9 @@ class Battle::Battler
       end
       return false
     end
-    # Assault Vest (prevents choosing status moves but doesn't prevent
+    # Assault Vest and Demigod (prevents choosing status moves but doesn't prevent
     # executing them)
-    if hasActiveItem?(:ASSAULTVEST) && move.statusMove? && move.id != :MEFIRST && commandPhase
+    if hasActiveItem?(:ASSAULTVEST) || self.attribute == :DEMIGOD && move.statusMove? && move.id != :MEFIRST && commandPhase
       if showMessages
         msg = _INTL("The effects of the {1} prevent status moves from being used!", itemName)
         (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)

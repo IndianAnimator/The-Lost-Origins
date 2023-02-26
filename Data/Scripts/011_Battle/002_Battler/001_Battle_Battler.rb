@@ -538,6 +538,14 @@ class Battle::Battler
     return true
   end
 
+  #add check for Delusion attribute
+  def takesDelusionalDamage?
+    return false if !takesIndirectDamage?
+    return false if self.attribute == :DELUSIONAL
+    return false if hasActiveAbility?([:INNERFOCUS, :OWNTEMPO])
+    return true
+  end
+
   def takesSandstormDamage?
     return false if !takesIndirectDamage?
     return false if pbHasType?(:GROUND) || pbHasType?(:ROCK) || pbHasType?(:STEEL)
@@ -602,6 +610,7 @@ class Battle::Battler
   def canHeal?
     return false if fainted? || @hp >= @totalhp
     return false if @effects[PBEffects::HealBlock] > 0
+    return false if self.attribute == :DEMIGOD
     return true
   end
 

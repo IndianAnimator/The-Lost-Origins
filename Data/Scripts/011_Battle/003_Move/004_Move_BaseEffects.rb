@@ -303,7 +303,7 @@ class Battle::Move::TwoTurnMove < Battle::Move
     @damagingTurn = true
     # nil at start of charging turn, move's ID at start of damaging turn
     if !user.effects[PBEffects::TwoTurnAttack]
-      @powerHerb = user.hasActiveItem?(:POWERHERB)
+      @powerHerb = user.hasActiveItem?(:POWERHERB) || user.attribute == :DEMIGOD
       @chargingTurn = true
       @damagingTurn = @powerHerb
     end

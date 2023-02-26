@@ -426,7 +426,12 @@ module GameData
       when "019" then new_code = "CureUserPartyStatus"
       when "01A" then new_code = "StartUserSideImmunityToInflictedStatus"
       when "01B" then new_code = "GiveUserStatusToTarget"
-      when "01C" then new_code = "RaiseUserAttack1"
+      when "01C"
+        if data[:id] == :MEDITATE
+          new_code = "Meditate"
+        else
+          new_code = "RaiseUserAttack1"
+        end
       when "01D" then new_code = "RaiseUserDefense1"
       when "01E" then new_code = "RaiseUserDefense1CurlUpUser"
       when "01F" then new_code = "RaiseUserSpeed1"

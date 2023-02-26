@@ -84,6 +84,7 @@ class Battle::Battler
   # Effects after all hits (i.e. at end of move usage)
   #=============================================================================
   def pbEffectsAfterMove(user, targets, move, numHits)
+    # add end of move attribute effect
     Battle::AttributeEffects.triggerOnEndOfUsingMove(user.attribute, user, targets, move, @battle)
     # Defrost
     if move.damagingMove?

@@ -306,3 +306,117 @@ Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
     mults[:base_damage_multiplier] *= dmgboost
   }
 )
+
+Battle::AttributeEffects::DamageCalcFromTarget.add(:ROYALGUARD,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:final_damage_multiplier] *= 0.70
+  }
+)
+
+Battle::AttributeEffects::DamageCalcFromTargetAlly.add(:ROYALGUARD,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:final_damage_multiplier] *= 0.7
+  }
+)
+
+
+Battle::AttributeEffects::OnEndOfUsingMove.add(:WARMONGER,
+  proc { |attribute, user, targets, move, battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    numFainted = 0
+    targets.each { |b| numFainted += 1 if b.damageState.fainted }
+    next if numFainted == 0 || !user.pbCanRaiseStatStage?(:ATTACK, user)
+    user.pbRaiseStatStageByattribute(:ATTACK, numFainted, user)
+  }
+)
+
+Battle::AttributeEffects::DamageCalcFromUser.add(:WARMONGER,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.5 if move.blademove?
+  }
+)
+
+Battle::AttributeEffects::AccuracyCalcFromUser.add(:KING,
+  proc { |attribute, mods, user, target, move, type|
+    mods[:accuracy_multiplier] *= 1.1
+  }
+)
+
+Battle::AttributeEffects::AccuracyCalcFromAlly.add(:KING,
+  proc { |attribute, mods, user, target, move, type|
+    mods[:accuracy_multiplier] *= 1.1
+  }
+)
+
+
+Battle::AttributeEffects::EndOfRoundHealing.add(:PRIEST,
+  proc { |attribute, battler, battle|
+    battler.allAllies.each do |b|
+      next if !b.canHeal?
+      b.pbRecoverHP(b.totalhp / 16)
+      battle.pbDisplay(_INTL("{1}'s {2} Healed it's allies!", battler.pbThis, battler.attribute.name))
+    end
+  }
+)
+
+Battle::AttributeEffects::OnEndOfUsingMove.add(:DEMIGOD,
+  proc { |attribute, user, targets, move, battle|
+    user.eachMove do |m|
+      next if m.id != user.lastRegularMoveUsed
+      regularMove = m
+      break
+    end
+    regularMove.pp = regularMove.total_pp
+  }
+)
+
+Battle::AttributeEffects::AccuracyCalcFromTarget.add(:FORGOTTEN,
+  proc { |attribute, mods, user, target, move, type|
+    mods[:evasion_multiplier] *= 1.25
+    target.effects[PBEffects::MagicCoat] = true
+  }
+)
+
+Battle::AttributeEffects::DamageCalcFromUser.add(:CORRUPTED,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.5
+    user.effects[PBEffects::Type3] = :GHOST
+    user.effects[PBEffects::Curse] = true
+  }
+)
+
+Battle::AttributeEffects::OnDealingHit.add(:DELUSIONAL,
+  proc { |attribute, user, target, move, battle|
+    next if !move.soundMove?
+    next if battle.pbRandom(100) >= 15
+    if target.pbCanConfuse?(user, false)
+      msg = nil
+      if !Battle::Scene::USE_attribute_SPLASH
+        msg = _INTL("{1}'s {2} confused {3}!", user.pbThis,
+                    user.attributeName, target.pbThis(true))
+      end
+      target.pbConfuse
+    end
+  }
+)
+
+Battle::AttributeEffects::DamageCalcFromUser.add(:DAMNED,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:attack_multiplier] /= 2 if user.hp <= user.totalhp / 2
+  }
+)
+
+Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
+  proc { |attribute, user, target, move, battle|
+    next if !move.pbContactMove?(user)
+    next if user.fainted?
+    next if user.attribute == attribute
+    oldAtr = nil
+    if user.affectedByContactEffect?(Battle::Scene::USE_attribute_SPLASH)
+      oldAtr = user.attribute
+      user.attribute = attribute
+      battle.pbDisplay(_INTL("{1}'s attribute became {2} because of {3}!",
+           user.pbThis, user.attributeName, target.pbThis(true)))
+    end
+  }
+)

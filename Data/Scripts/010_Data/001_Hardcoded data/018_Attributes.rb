@@ -19,7 +19,7 @@ module GameData
       @real_name    = hash[:name]         || "Unnamed"
       @stat_changes = hash[:stat_changes] || []
       @description  = hash[:description]  || ""
-      @effect       = hash[:effect] 
+      @effect       = hash[:effect]
     end
 
     # @return [String] the translated name of this Attribute
@@ -100,13 +100,13 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :FORGOTTEN,
   :name         => _INTL("The Forgotten"),
-  :description  => _INTL("1.1x evasion, applies magic coat for 2 turns")
+  :description  => _INTL("1.25x evasion, applies magic coat for 1 turns")
 })
 
 GameData::Attribute.register({
   :id           => :CORRUPTED,
   :name         => _INTL("The Corrupted"),
-  :description  => _INTL("1.5x attack, applies the ghost type to itself, applies the curse effect to itself")
+  :description  => _INTL("1.5x move boost, gains the ghost type, applies the curse effect to itself")
 })
 
 GameData::Attribute.register({
@@ -119,7 +119,7 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :DELUSIONAL,
   :name         => _INTL("The Delusional"),
-  :description  => _INTL("The user is always confused and all opponents take damage from its rambling while it's on the field. Sound-based moves used have a chance to confuse the opponent.")
+  :description  => _INTL("The user is always confused and all opponents take damage from its rambling while it's on the field. Sound-based moves have a chance to confuse the opponent.")
 })
 
 GameData::Attribute.register({
@@ -137,7 +137,7 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :PROUD,
   :name         => _INTL("The Proud"),
-  :description  => _INTL("Boosts the highest stat but 1.2, Klutz effect")
+  :description  => _INTL("Boosts the highest stat by 1.2, Klutz effect")
 })
 
 GameData::Attribute.register({
@@ -149,5 +149,5 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :BERSERKER,
   :name         => _INTL("The Berserker"),
-  :description  => _INTL("Boosts Attack by 1.5, has a chance to disobey or use another move")
+  :description  => _INTL("Boosts moves by 1.5, has a chance to disobey or use another move")
 })

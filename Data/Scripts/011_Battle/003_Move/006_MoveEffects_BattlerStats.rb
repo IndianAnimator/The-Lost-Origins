@@ -1,10 +1,20 @@
 #===============================================================================
-# Increases the user's Attack by 1 stage.
+# Increases the user's Attack by 1 stage and may raise Special Attack by 2 if has Monk Attribute.
 #===============================================================================
 class Battle::Move::RaiseUserAttack1 < Battle::Move::StatUpMove
   def pbEffectGeneral(user)
     user.pbRaiseStatStage(:ATTACK, 1, user)
-    user.pbRaiseStatStage(:SPECIAL_ATTACK, 1, user) if user.attribute == :MONK
+    user.pbRaiseStatStage(:SPECIAL_ATTACK, 2, user) if user.attribute == :MONK
+  end
+end
+
+#===============================================================================
+# Increases the user's Attack by 1 stage.
+#===============================================================================
+class Battle::Move::RaiseUserAttack1 < Battle::Move::StatUpMove
+  def initialize(battle, move)
+    super
+    @statUp = [:ATTACK, 1]
   end
 end
 #===============================================================================

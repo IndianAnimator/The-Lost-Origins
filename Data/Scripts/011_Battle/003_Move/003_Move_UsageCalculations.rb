@@ -92,6 +92,10 @@ class Battle::Move
 
   # Accuracy calculations for one-hit KO moves are handled elsewhere.
   def pbAccuracyCheck(user, target)
+    # add evasion attribute stuff
+    Battle::AttributeEffects.triggerAccuracyCalcFromTarget(
+      target.attribute, modifiers, user, target, self, @calcType
+    )
     # "Always hit" effects and "always hit" accuracy
     return true if target.effects[PBEffects::Telekinesis] > 0
     return true if target.effects[PBEffects::Minimize] && tramplesMinimize? && Settings::MECHANICS_GENERATION >= 6
@@ -130,6 +134,15 @@ class Battle::Move
   end
 
   def pbCalcAccuracyModifiers(user, target, modifiers)
+    # add accuracy attribute effects
+    Battle::AttributeEffects.triggerAccuracyCalcFromUser(
+      user.attribute, modifiers, user, target, self, @calcType
+    )
+    user.allAllies.each do |b|
+      Battle::AttributeEffects.triggerAccuracyCalcFromAlly(
+        b.attribute, modifiers, user, target, self, @calcType
+      )
+    end
     # Ability effects that alter accuracy calculation
     if user.abilityActive?
       Battle::AbilityEffects.triggerAccuracyCalcFromUser(
@@ -290,9 +303,18 @@ class Battle::Move
   end
 
   def pbCalcDamageMultipliers(user, target, numTargets, type, baseDmg, multipliers)
-     Battle::AttributeEffects.triggerDamageCalcFromUser(
-        user.attribute, user, target, self, multipliers, baseDmg, type
+   # add damage related attribute effects
+   Battle::AttributeEffects.triggerDamageCalcFromUser(
+      user.attribute, user, target, self, multipliers, baseDmg, type
+    )
+    target.allAllies.each do |b|
+      Battle::AttributeEffects.triggerDamageCalcFromTargetAlly(
+        b.ability, user, target, self, multipliers, baseDmg, type
       )
+    end
+    Battle::AttributeEffects.triggerDamageCalcFromTarget(
+      target.attribute, user, target, self, multipliers, baseDmg, type
+    )
     # Global abilities
     if (@battle.pbCheckGlobalAbility(:DARKAURA) && type == :DARK) ||
       (@battle.pbCheckGlobalAbility(:FAIRYAURA) && type == :FAIRY)
@@ -519,11 +541,13 @@ class Battle::Move
     return 0 if target.hasActiveAbility?(:SHIELDDUST) && !@battle.moldBreaker
     ret = 0
     if user.hasActiveAbility?(:STENCH, true) ||
-       user.hasActiveItem?([:KINGSROCK, :RAZORFANG], true)
+       user.hasActiveItem?([:KINGSROCK, :RAZORFANG], true) ||
+       user.attribute == :KING
       ret = 10
     end
     ret *= 2 if user.hasActiveAbility?(:SERENEGRACE) ||
-                user.pbOwnSide.effects[PBEffects::Rainbow] > 0
+                user.pbOwnSide.effects[PBEffects::Rainbow] > 0 ||
+                user.attibute == :MONK
     return ret
   end
 end

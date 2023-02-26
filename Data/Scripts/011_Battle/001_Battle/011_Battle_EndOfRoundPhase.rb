@@ -271,6 +271,12 @@ class Battle
         pbDisplay(_INTL("{1} is afflicted by the curse!", battler.pbThis))
       }
     end
+    priority.each do |battler|
+      next if !battler.takesDelusionalDamage?
+      battler.pbTakeEffectDamage(battler.totalhp / 8) { |hp_lost|
+        pbDisplay(_INTL("{1} is losing it's sanity from the rambling!", battler.pbThis))
+      }
+    end
   end
 
   #=============================================================================
@@ -613,6 +619,8 @@ class Battle
     # Status-curing effects/abilities and HP-healing items
     priority.each do |battler|
       pbEORTerrainHealing(battler)
+      # add priest attribute
+      Battle::AttributeEffects.triggerEndOfRoundHealing(battler.attribute, battler, self)
       # Healer, Hydration, Shed Skin
       if battler.abilityActive?
         Battle::AbilityEffects.triggerEndOfRoundHealing(battler.ability, battler, self)
