@@ -291,9 +291,8 @@ module Battle::AttributeEffects
     return trigger(CertainEscapeFromBattle, attribute, battler)
   end
 end
-#===============================================================================
 
-Battle::AbilityEffects::OnEndOfUsingMove.add(:HERO,
+Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
   proc { |attribute, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     targets.each { |b| user.effects[PBEffects::HeroCount] += 0.1 if b.damageState.fainted }
@@ -301,8 +300,9 @@ Battle::AbilityEffects::OnEndOfUsingMove.add(:HERO,
   }
 )
 
-Battle::AbilityEffects::DamageCalcFromUser.add(:HERO,
+Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
   proc { |attribute, user, target, move, mults, baseDmg, type|
-    mults[:base_damage_multiplier] *=  user.effects[PBEffects::HeroCount]
+    dmgboost = 1 + user.effects[PBEffects::HeroCount]
+    mults[:base_damage_multiplier] *= dmgboost
   }
 )

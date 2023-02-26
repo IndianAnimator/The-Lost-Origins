@@ -301,12 +301,13 @@ end
 class AbilityHandlerHash < HandlerHash2
 end
 
+#PTLO attribute handler
+class AttributeHandlerHash < HandlerHash2
+end
+
+
 class ItemHandlerHash < HandlerHash2
 end
 
 class MoveHandlerHash < HandlerHash2
-end
-
-#PTLO attribute handler
-class AttributeHandlerHash < HandlerHash2
 end
