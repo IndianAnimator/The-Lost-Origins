@@ -271,10 +271,11 @@ class Battle
         pbDisplay(_INTL("{1} is afflicted by the curse!", battler.pbThis))
       }
     end
+    # Delusional
     priority.each do |battler|
-      next if !battler.takesDelusionalDamage?
-      battler.pbTakeEffectDamage(battler.totalhp / 8) { |hp_lost|
-        pbDisplay(_INTL("{1} is losing it's sanity from the rambling!", battler.pbThis))
+      next if !(battler.attribute == :DELUSIONAL && battler.fainted?) || !battler.takesIndirectDamage?
+      battler.pbTakeEffectDamage(battler.totalhp / 4) { |hp_lost|
+        pbDisplay(_INTL("{1} is afflicted by the curse!", battler.pbThis))
       }
     end
   end

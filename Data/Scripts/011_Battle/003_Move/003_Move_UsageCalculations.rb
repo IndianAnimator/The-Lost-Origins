@@ -92,10 +92,6 @@ class Battle::Move
 
   # Accuracy calculations for one-hit KO moves are handled elsewhere.
   def pbAccuracyCheck(user, target)
-    # add evasion attribute stuff
-    Battle::AttributeEffects.triggerAccuracyCalcFromTarget(
-      target.attribute, modifiers, user, target, self, @calcType
-    )
     # "Always hit" effects and "always hit" accuracy
     return true if target.effects[PBEffects::Telekinesis] > 0
     return true if target.effects[PBEffects::Minimize] && tramplesMinimize? && Settings::MECHANICS_GENERATION >= 6
@@ -143,6 +139,10 @@ class Battle::Move
         b.attribute, modifiers, user, target, self, @calcType
       )
     end
+    # add evasion attribute stuff
+    Battle::AttributeEffects.triggerAccuracyCalcFromTarget(
+      target.attribute, modifiers, user, target, self, @calcType
+    )
     # Ability effects that alter accuracy calculation
     if user.abilityActive?
       Battle::AbilityEffects.triggerAccuracyCalcFromUser(
@@ -489,7 +489,7 @@ class Battle::Move
     end
     # Aurora Veil, Reflect, Light Screen
     if !ignoresReflect? && !target.damageState.critical &&
-       !user.hasActiveAbility?(:INFILTRATOR)
+       !(user.hasActiveAbility?(:INFILTRATOR) || user.attribute == :SPY)
       if target.pbOwnSide.effects[PBEffects::AuroraVeil] > 0
         if @battle.pbSideBattlerCount(target) > 1
           multipliers[:final_damage_multiplier] *= 2 / 3.0
@@ -547,7 +547,7 @@ class Battle::Move
     end
     ret *= 2 if user.hasActiveAbility?(:SERENEGRACE) ||
                 user.pbOwnSide.effects[PBEffects::Rainbow] > 0 ||
-                user.attibute == :MONK
+                user.attribute == :MONK
     return ret
   end
 end

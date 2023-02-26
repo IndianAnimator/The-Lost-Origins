@@ -592,10 +592,10 @@ class Pokemon
     calc_stats
   end
 
-  # Returns whether this Pokémon has a particular atrribute. If no value is given,
+  # Returns whether this Pokémon has a particular attribute. If no value is given,
   # returns whether this Pokémon has a attribute set.
-  # @param check_nature [Symbol, String, GameData::Atrribute, nil] attribute ID to check
-  # @return [Boolean] whether this Pokémon has a particular attribute or a atrribute
+  # @param check_nature [Symbol, String, GameData::attribute, nil] attribute ID to check
+  # @return [Boolean] whether this Pokémon has a particular attribute or a attribute
   # at all
 
   def hasAttribute?(check_attribute = nil)

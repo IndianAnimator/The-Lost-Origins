@@ -361,6 +361,16 @@ class Battle::Battler
   end
   alias hasWorkingAbility hasActiveAbility?
 
+  def attributeActive?(ignore_fainted = false, check_attribute = nil)
+    return false if fainted? && !ignore_fainted
+    return true
+  end
+
+  def hasActiveAttribute?(check_attribute, ignore_fainted = false)
+    return false if !attributeActive?(ignore_fainted, check_attribute)
+    return check_attribute.include?(@attribute) if check_attribute.is_a?(Array)
+    return self.attribute == check_attribute
+  end
   # Applies to both losing self's ability (i.e. being replaced by another) and
   # having self's ability be negated.
   def unstoppableAbility?(abil = nil)
@@ -535,14 +545,6 @@ class Battle::Battler
       end
       return false
     end
-    return true
-  end
-
-  #add check for Delusion attribute
-  def takesDelusionalDamage?
-    return false if !takesIndirectDamage?
-    return false if self.attribute == :DELUSIONAL
-    return false if hasActiveAbility?([:INNERFOCUS, :OWNTEMPO])
     return true
   end
 

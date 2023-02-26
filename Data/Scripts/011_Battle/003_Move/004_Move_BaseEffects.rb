@@ -299,13 +299,15 @@ class Battle::Move::TwoTurnMove < Battle::Move
   # Non-nil means the charging turn. nil means the attacking turn.
   def pbIsChargingTurn?(user)
     @powerHerb = false
+    @demigod = false
     @chargingTurn = false   # Assume damaging turn by default
     @damagingTurn = true
     # nil at start of charging turn, move's ID at start of damaging turn
     if !user.effects[PBEffects::TwoTurnAttack]
-      @powerHerb = user.hasActiveItem?(:POWERHERB) || user.attribute == :DEMIGOD
+      @powerHerb = user.hasActiveItem?(:POWERHERB)
+      @demigod = user.attribute == :DEMIGOD
       @chargingTurn = true
-      @damagingTurn = @powerHerb
+      @damagingTurn = @powerHerb || @demigod
     end
     return !@damagingTurn   # Deliberately not "return @chargingTurn"
   end
@@ -339,6 +341,19 @@ class Battle::Move::TwoTurnMove < Battle::Move
         end
         @battle.pbDisplay(_INTL("{1} became fully charged due to its Power Herb!", user.pbThis))
         user.pbConsumeItem
+      end
+      if @demigod
+        # Moves that would make the user semi-invulnerable will hide the user
+        # after the charging animation, so the "UseItem" animation shouldn't show
+        # for it
+        if !["TwoTurnAttackInvulnerableInSky",
+             "TwoTurnAttackInvulnerableUnderground",
+             "TwoTurnAttackInvulnerableUnderwater",
+             "TwoTurnAttackInvulnerableInSkyParalyzeTarget",
+             "TwoTurnAttackInvulnerableRemoveProtections",
+             "TwoTurnAttackInvulnerableInSkyTargetCannotAct"].include?(@function)
+        end
+        @battle.pbDisplay(_INTL("{1} became fully charged due to its divine energy", user.pbThis))
       end
     end
     pbAttackingTurnMessage(user, targets) if @damagingTurn

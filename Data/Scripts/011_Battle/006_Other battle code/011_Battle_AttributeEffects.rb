@@ -361,6 +361,7 @@ Battle::AttributeEffects::EndOfRoundHealing.add(:PRIEST,
 
 Battle::AttributeEffects::OnEndOfUsingMove.add(:DEMIGOD,
   proc { |attribute, user, targets, move, battle|
+    regularMove = nil
     user.eachMove do |m|
       next if m.id != user.lastRegularMoveUsed
       regularMove = m
@@ -387,6 +388,7 @@ Battle::AttributeEffects::DamageCalcFromUser.add(:CORRUPTED,
 
 Battle::AttributeEffects::OnDealingHit.add(:DELUSIONAL,
   proc { |attribute, user, target, move, battle|
+    user.effects[PBEffects::Confusion] = 999
     next if !move.soundMove?
     next if battle.pbRandom(100) >= 15
     if target.pbCanConfuse?(user, false)
@@ -418,5 +420,16 @@ Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
       battle.pbDisplay(_INTL("{1}'s attribute became {2} because of {3}!",
            user.pbThis, user.attributeName, target.pbThis(true)))
     end
+  }
+)
+
+Battle::AttributeEffects::DamageCalcFromUser.add(:SPY,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.5 if user.inTwoTurnAttack?("TwoTurnAttackInvulnerableInSky",                  # Fly
+    "TwoTurnAttackInvulnerableUnderground",            # Dig
+    "TwoTurnAttackInvulnerableUnderwater",             # Dive
+    "TwoTurnAttackInvulnerableInSkyParalyzeTarget",    # Bounce
+    "TwoTurnAttackInvulnerableRemoveProtections",      # Shadow Force/Phantom Force
+    "TwoTurnAttackInvulnerableInSkyTargetCannotAct")
   }
 )
