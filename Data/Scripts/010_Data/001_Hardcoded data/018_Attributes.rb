@@ -149,5 +149,5 @@ GameData::Attribute.register({
 GameData::Attribute.register({
   :id           => :BERSERKER,
   :name         => _INTL("The Berserker"),
-  :description  => _INTL("Boosts moves by 1.5, has a chance to disobey or use another move")
+  :description  => _INTL("Boosts attack by one stage, has a chance to disobey or use another move")
 })

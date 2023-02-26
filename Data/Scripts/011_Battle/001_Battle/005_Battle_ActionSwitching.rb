@@ -330,6 +330,7 @@ class Battle
     # For each battler that entered battle, in speed order
     pbPriority(true).each do |b|
       next if !battler_index.include?(b.index) || b.fainted?
+      Battle::AttributeEffects.triggerOnSwitchIn(b.attribute, b, self, true)
       pbRecordBattlerAsParticipated(b)
       pbMessagesOnBattlerEnteringBattle(b)
       # Position/field effects triggered by the battler appearing

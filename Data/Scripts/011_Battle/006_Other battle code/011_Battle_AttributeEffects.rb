@@ -309,7 +309,7 @@ Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
 
 Battle::AttributeEffects::DamageCalcFromTarget.add(:ROYALGUARD,
   proc { |attribute, user, target, move, mults, baseDmg, type|
-    mults[:final_damage_multiplier] *= 0.70
+    mults[:final_damage_multiplier] *= 0.7
   }
 )
 
@@ -326,7 +326,7 @@ Battle::AttributeEffects::OnEndOfUsingMove.add(:WARMONGER,
     numFainted = 0
     targets.each { |b| numFainted += 1 if b.damageState.fainted }
     next if numFainted == 0 || !user.pbCanRaiseStatStage?(:ATTACK, user)
-    user.pbRaiseStatStageByattribute(:ATTACK, numFainted, user)
+    user.pbRaiseStatStage(:ATTACK, numFainted, user)
   }
 )
 
@@ -348,19 +348,22 @@ Battle::AttributeEffects::AccuracyCalcFromAlly.add(:KING,
   }
 )
 
-
 Battle::AttributeEffects::EndOfRoundHealing.add(:PRIEST,
   proc { |attribute, battler, battle|
+    next if !battler.canHeal?
+    battler.pbRecoverHP(battler.totalhp / 8)
+    battle.pbDisplay(_INTL("{1}'s {2} restored its hp!", battler.pbThis, battler.attribute.name))
     battler.allAllies.each do |b|
       next if !b.canHeal?
-      b.pbRecoverHP(b.totalhp / 16)
-      battle.pbDisplay(_INTL("{1}'s {2} Healed it's allies!", battler.pbThis, battler.attribute.name))
+      b.pbRecoverHP(b.totalhp / 8)
+      battle.pbDisplay(_INTL("{1}'s {2} restored {3}'s' hp!", battler.pbThis, battler.attribute.name, b.pbthis(true)))
     end
   }
 )
 
 Battle::AttributeEffects::OnEndOfUsingMove.add(:DEMIGOD,
   proc { |attribute, user, targets, move, battle|
+    user.effects[PBEffects::Taunt] = 999
     regularMove = nil
     user.eachMove do |m|
       next if m.id != user.lastRegularMoveUsed
@@ -392,11 +395,8 @@ Battle::AttributeEffects::OnDealingHit.add(:DELUSIONAL,
     next if !move.soundMove?
     next if battle.pbRandom(100) >= 15
     if target.pbCanConfuse?(user, false)
-      msg = nil
-      if !Battle::Scene::USE_attribute_SPLASH
-        msg = _INTL("{1}'s {2} confused {3}!", user.pbThis,
+      msg = _INTL("{1}'s {2} confused {3}!", user.pbThis,
                     user.attributeName, target.pbThis(true))
-      end
       target.pbConfuse
     end
   }
@@ -410,26 +410,43 @@ Battle::AttributeEffects::DamageCalcFromUser.add(:DAMNED,
 
 Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
   proc { |attribute, user, target, move, battle|
-    next if !move.pbContactMove?(user)
-    next if user.fainted?
-    next if user.attribute == attribute
-    oldAtr = nil
-    if user.affectedByContactEffect?(Battle::Scene::USE_attribute_SPLASH)
-      oldAtr = user.attribute
-      user.attribute = attribute
-      battle.pbDisplay(_INTL("{1}'s attribute became {2} because of {3}!",
-           user.pbThis, user.attributeName, target.pbThis(true)))
+  next if !move.pbContactMove?(user)
+  next if user.fainted?
+  next if user.unstoppableAbility? || user.attribute == attribute
+  oldAtr = nil
+  battle.pbShowAttributeSplash(target) if user.opposes?(target)
+  if user.affectedByContactEffect?(Battle::Scene::USE_ABILITY_SPLASH)
+    oldAtr = user.attribute
+    battle.pbShowAttributeSplash(user, true, false) if user.opposes?(target)
+    user.attribute = attribute
+    battle.pbReplaceAttributeSplash(user) if user.opposes?(target)
+    if Battle::Scene::USE_ABILITY_SPLASH
+      battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
+    else
+      battle.pbDisplay(_INTL("{1}'s Ability became {2} because of {3}!",
+         user.pbThis, user.user.attribute.name, target.pbThis(true)))
     end
+    battle.pbHideAttributeSplash(user) if user.opposes?(target)
+  end
+  battle.pbHideAttributeSplash(target) if user.opposes?(target)
+  user.pbOnLosingAttribute(oldAtr)
+  user.pbTriggerAttributeOnGainingIt
   }
 )
 
 Battle::AttributeEffects::DamageCalcFromUser.add(:SPY,
   proc { |attribute, user, target, move, mults, baseDmg, type|
-    mults[:base_damage_multiplier] *= 1.5 if user.inTwoTurnAttack?("TwoTurnAttackInvulnerableInSky",                  # Fly
-    "TwoTurnAttackInvulnerableUnderground",            # Dig
-    "TwoTurnAttackInvulnerableUnderwater",             # Dive
-    "TwoTurnAttackInvulnerableInSkyParalyzeTarget",    # Bounce
-    "TwoTurnAttackInvulnerableRemoveProtections",      # Shadow Force/Phantom Force
-    "TwoTurnAttackInvulnerableInSkyTargetCannotAct")
+    mults[:base_damage_multiplier] *= 1.5 if move.function() == "TwoTurnAttackInvulnerableInSky" ||               # Fly
+    "TwoTurnAttackInvulnerableUnderground" ||            # Dig
+    "TwoTurnAttackInvulnerableUnderwater" ||             # Dive
+    "TwoTurnAttackInvulnerableInSkyParalyzeTarget" ||    # Bounce
+    "TwoTurnAttackInvulnerableRemoveProtections" ||      # Shadow Force/Phantom Force
+    "TwoTurnAttackInvulnerableInSkyTargetCannotAct"
+  }
+)
+
+Battle::AttributeEffects::OnSwitchIn.add(:BERSERKER,
+  proc { |ability, battler, battle, switch_in|
+    battler.pbRaiseStatStage(:ATTACK, 1, battler)
   }
 )

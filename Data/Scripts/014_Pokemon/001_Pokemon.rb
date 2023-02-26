@@ -568,7 +568,6 @@ class Pokemon
   def attribute=(value)
     return if value && !GameData::Attribute.exists?(value)
     @attribute = (value) ? GameData::Attribute.get(value).id : value
-    calc_stats if !@attribute_for_stats
   end
 
   # Returns the calculated attribute. Only used for calculating stats.

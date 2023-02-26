@@ -876,4 +876,23 @@ class Battle
     return if !Scene::USE_ABILITY_SPLASH
     @scene.pbReplaceAbilitySplash(battler)
   end
+
+  def pbShowAttributeSplash(battler, delay = false, logTrigger = true)
+    PBDebug.log("[Ability triggered] #{battler.pbThis}'s #{battler.abilityName}") if logTrigger
+    return if !Scene::USE_ABILITY_SPLASH
+    @scene.pbShowAttributeSplash(battler)
+    if delay
+      Graphics.frame_rate.times { @scene.pbUpdate }   # 1 second
+    end
+  end
+
+  def pbHideAttributeSplash(battler)
+    return if !Scene::USE_ABILITY_SPLASH
+    @scene.pbHideAttributeSplash(battler)
+  end
+
+  def pbReplaceAttributeSplash(battler)
+    return if !Scene::USE_ABILITY_SPLASH
+    @scene.pbReplaceAttributeSplash(battler)
+  end
 end

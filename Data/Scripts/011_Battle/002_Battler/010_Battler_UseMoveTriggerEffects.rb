@@ -4,6 +4,8 @@ class Battle::Battler
   #=============================================================================
   def pbEffectsOnMakingHit(move, user, target)
     if target.damageState.calcDamage > 0 && !target.damageState.substitute
+      # add OnBeingHit AttributeEffects
+      Battle::AttributeEffects.triggerOnBeingHit(target.attribute, user, target, move, @battle)
       # Target's ability
       if target.abilityActive?(true)
         oldHP = user.hp
