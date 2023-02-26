@@ -290,6 +290,9 @@ class Battle::Move
   end
 
   def pbCalcDamageMultipliers(user, target, numTargets, type, baseDmg, multipliers)
+     Battle::AttributeEffects.triggerDamageCalcFromUser(
+        user.attribute, user, target, self, multipliers, baseDmg, type
+      )
     # Global abilities
     if (@battle.pbCheckGlobalAbility(:DARKAURA) && type == :DARK) ||
       (@battle.pbCheckGlobalAbility(:FAIRYAURA) && type == :FAIRY)

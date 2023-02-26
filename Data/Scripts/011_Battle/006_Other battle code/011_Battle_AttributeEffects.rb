@@ -295,14 +295,14 @@ end
 Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
   proc { |attribute, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
-    targets.each { |b| user.effects[PBEffects::HeroCount] += 0.1 if b.damageState.fainted }
+    targets.each { |b| user.effects[PBEffects::HeroCount] += 1 if b.damageState.fainted }
     battle.pbDisplay(_INTL("{1}'s {2} increased!", user.pbThis, user.attribute.name))
   }
 )
 
 Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
   proc { |attribute, user, target, move, mults, baseDmg, type|
-    dmgboost = 1 + user.effects[PBEffects::HeroCount]
+    dmgboost = user.effects[PBEffects::HeroCount] * 0.1
     mults[:base_damage_multiplier] *= dmgboost
   }
 )
