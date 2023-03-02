@@ -412,23 +412,13 @@ Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
   proc { |attribute, user, target, move, battle|
   next if !move.pbContactMove?(user)
   next if user.fainted?
-  next if user.unstoppableAbility? || user.attribute == attribute
+  next if user.attribute == attribute
   oldAtr = nil
-  battle.pbShowAttributeSplash(target) if user.opposes?(target)
-  if user.affectedByContactEffect?(Battle::Scene::USE_ABILITY_SPLASH)
+  if user.affectedByContactEffect?()
     oldAtr = user.attribute
-    battle.pbShowAttributeSplash(user, true, false) if user.opposes?(target)
-    user.attribute = attribute
-    battle.pbReplaceAttributeSplash(user) if user.opposes?(target)
-    if Battle::Scene::USE_ABILITY_SPLASH
-      battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
-    else
-      battle.pbDisplay(_INTL("{1}'s Ability became {2} because of {3}!",
-         user.pbThis, user.user.attribute.name, target.pbThis(true)))
-    end
-    battle.pbHideAttributeSplash(user) if user.opposes?(target)
+    user.attribute = attribute.to_sym
+    battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
   end
-  battle.pbHideAttributeSplash(target) if user.opposes?(target)
   user.pbOnLosingAttribute(oldAtr)
   user.pbTriggerAttributeOnGainingIt
   }

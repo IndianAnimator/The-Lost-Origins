@@ -708,7 +708,7 @@ MenuHandlers.add(:pokemon_debug_menu, :set_attribute, {
     ids = []
     GameData::Attribute.each do |attribute|
       if attribute.stat_changes.length == 0
-        commands.push(_INTL("{1} (---)", attribute.real_name))
+        commands.push(_INTL("{1}", attribute.real_name))
       else
         plus_text = ""
         minus_text = ""

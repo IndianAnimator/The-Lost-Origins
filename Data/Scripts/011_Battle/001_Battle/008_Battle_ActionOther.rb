@@ -135,6 +135,7 @@ class Battle
     trainerName = pbGetOwnerName(idxBattler)
     old_ability = battler.ability_id
     # Break Illusion
+    Battle::AttributeEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)
     if battler.hasActiveAbility?(:ILLUSION)
       Battle::AbilityEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)
     end
