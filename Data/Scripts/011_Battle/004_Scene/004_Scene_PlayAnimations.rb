@@ -216,39 +216,6 @@ class Battle::Scene
   end
 
   #=============================================================================
-  def pbShowAttributeSplash(battler)
-    return if !USE_ABILITY_SPLASH
-    side = battler.index % 2
-    pbHideAbilitySplash(battler) if @sprites["abilityBar_#{side}"].visible
-    @sprites["abilityBar_#{side}"].battler = battler
-    abilitySplashAnim = Animation::AbilitySplashAppear.new(@sprites, @viewport, side)
-    loop do
-      abilitySplashAnim.update
-      pbUpdate
-      break if abilitySplashAnim.animDone?
-    end
-    abilitySplashAnim.dispose
-  end
-
-  def pbHideAttributeSplash(battler)
-    return if !USE_ABILITY_SPLASH
-    side = battler.index % 2
-    return if !@sprites["abilityBar_#{side}"].visible
-    abilitySplashAnim = Animation::AbilitySplashDisappear.new(@sprites, @viewport, side)
-    loop do
-      abilitySplashAnim.update
-      pbUpdate
-      break if abilitySplashAnim.animDone?
-    end
-    abilitySplashAnim.dispose
-  end
-
-  def pbReplaceAttributeSplash(battler)
-    return if !USE_ABILITY_SPLASH
-    pbShowAbilitySplash(battler)
-  end
-
-  #=============================================================================
   # HP change animations
   #=============================================================================
   # Shows a HP-changing common animation and animates a data box's HP bar.

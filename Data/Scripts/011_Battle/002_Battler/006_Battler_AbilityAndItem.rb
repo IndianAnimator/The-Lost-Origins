@@ -196,23 +196,6 @@ class Battle::Battler
     @battle.pbEndPrimordialWeather
   end
 
-  def pbOnLosingAttribute(oldAtr, suppressed = false)
-    @effects[PBEffects::Phoenix]       = false if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Embargo]       = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Substitute]    = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Taunt]         = 0 if oldAtr == :DEMIGOD
-    @effects[PBEffects::Confusion]     = 0 if oldAtr == :DELUSIONAL
-    @effects[PBEffects::Type3]         = nil if oldAtr == :CORRUPTED
-    @effects[PBEffects::Curse]         = false if oldAtr == :CORRUPTED
-    @effects[PBEffects::MagicCoat]     = false if oldAtr == :FORGOTTEN
-  end
-
-  def pbTriggerAttributeOnGainingIt
-    if !fainted?
-      Battle::AttributeEffects.triggerOnSwitchIn(self.attribute, self, @battle)
-    end
-  end
-
   #=============================================================================
   # Held item consuming/removing
   #=============================================================================
@@ -348,7 +331,7 @@ class Battle::Battler
     return if fainted?
     return if !item_to_use && !itemActive?
     itm = item_to_use || self.item
-    if Battle::ItemEffects.triggerOnEndOfUsingMove(itm, self, @battle, !item_to_use.nil?)
+    if Battle::ItemEffects.triggerOnEndOfUsingMove(itm, self, @battle, !item_to_use.nil?) 
       pbHeldItemTriggered(itm, item_to_use.nil?, fling)
     elsif Battle::ItemEffects.triggerOnEndOfUsingMoveStatRestore(itm, self, @battle, !item_to_use.nil?)
       pbHeldItemTriggered(itm, item_to_use.nil?, fling)
