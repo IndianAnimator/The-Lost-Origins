@@ -68,7 +68,6 @@ class Battle::Battler
     if @fainted
       return true
     end
-
     if (self.attribute == :PHOENIX || self.attribute == :REINCARNATED) && self.effects[PBEffects::Phoenix] == false #stops pokemon from fainting if it has one of these attributes
       self.effects[PBEffects::Phoenix] = true
       self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
@@ -110,9 +109,24 @@ class Battle::Battler
       end
       @battle.pbDisplay(msg)
       @battle.scene.pbRefresh
-      return false
       @fainted = true
     end
+
+    if self.attribute == :SOULKEEPER
+      if @battle.pbSideBattlerCount(self.index) > 1
+        self.allAllies.each do |b|
+          next if !b.canHeal?
+          b.pbRecoverHP(b.totalhp / 2)
+          battle.pbDisplay(_INTL("{1}'s {2} restored {3}'s' hp!", self.name, self.attribute.name, pbThis))
+        end
+      else
+        @battle.positions[self.index].effects[PBEffects::Wish]       = 2
+        @battle.positions[self.index].effects[PBEffects::WishAmount] = (self.totalhp / 2.0).round
+        @battle.positions[self.index].effects[PBEffects::WishMaker]  = self.pokemonIndex
+      end
+    end
+
+    return if @fainted
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
     PBDebug.log("[Pokémon fainted] #{pbThis} (#{@index})") if !showMessage
     @battle.scene.pbFaintBattler(self)

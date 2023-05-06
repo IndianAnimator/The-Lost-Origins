@@ -3330,7 +3330,7 @@ Battle::AbilityEffects::OnEndOfUsingMove.add(:SAVAGERY,
   proc { |ability, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     targets.each { |b| user.effects[PBEffects::Savagery] += 1 if b.damageState.fainted }
-    battle.pbDisplay(_INTL("{1}'s {2} increased!", user.pbThis,
+    battle.pbDisplay(_INTL("{1}'s savagery increased!", user.pbThis,
                 user.abilityName))
   }
 )

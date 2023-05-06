@@ -395,8 +395,8 @@ Battle::AttributeEffects::OnDealingHit.add(:DELUSIONAL,
     next if !move.soundMove?
     next if battle.pbRandom(100) >= 15
     if target.pbCanConfuse?(user, false)
-      msg = _INTL("{1}'s {2} confused {3}!", user.pbThis,
-                    user.attributeName, target.pbThis(true))
+      battle.pbDisplay(_INTL("{1}'s {2} confused {3}!", user.pbThis,
+        user.attributeName, target.pbThis(true)))
       target.pbConfuse
     end
   }
@@ -416,7 +416,7 @@ Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
   oldAtr = nil
   if user.affectedByContactEffect?()
     oldAtr = user.attribute
-    user.attribute = attribute.to_sym
+    user.attribute = attribute
     battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
   end
   user.pbOnLosingAttribute(oldAtr)
@@ -426,7 +426,7 @@ Battle::AttributeEffects::OnBeingHit.add(:DAMNED,
 
 Battle::AttributeEffects::DamageCalcFromUser.add(:SPY,
   proc { |attribute, user, target, move, mults, baseDmg, type|
-    mults[:base_damage_multiplier] *= 1.5 if move.function() == "TwoTurnAttackInvulnerableInSky" ||               # Fly
+    mults[:base_damage_multiplier] *= 1.5 if move.function == "TwoTurnAttackInvulnerableInSky" ||               # Fly
     "TwoTurnAttackInvulnerableUnderground" ||            # Dig
     "TwoTurnAttackInvulnerableUnderwater" ||             # Dive
     "TwoTurnAttackInvulnerableInSkyParalyzeTarget" ||    # Bounce
@@ -438,5 +438,53 @@ Battle::AttributeEffects::DamageCalcFromUser.add(:SPY,
 Battle::AttributeEffects::OnSwitchIn.add(:BERSERKER,
   proc { |ability, battler, battle, switch_in|
     battler.pbRaiseStatStage(:ATTACK, 1, battler)
+  }
+)
+
+Battle::AttributeEffects::OnEndOfUsingMove.add(:REAPER,
+  proc { |attribute, user, targets, move, battle|
+    next if battle.pbAllFainted?(user.idxOpposingSide)
+    numFainted = 0
+    targets.each do |b| 
+      if b.damageState.fainted && user.canHeal?
+        user.pbRecoverHP(user.totalhp / 5) 
+        battle.pbDisplay(_INTL("{1}'s {2} absorbed {3}'s energy!", user.pbThis, user.attribute.name, b.pbThis(true)))
+      end
+    end
+  }
+)
+
+
+Battle::AttributeEffects::OnSwitchIn.add(:BEASTMASTER,
+  proc { |ability, battler, battle, switch_in|
+
+    if battler.pokemon.species_data.get_evolutions(true).length > 0
+      battler.pbRaiseStatStageByAbility(:DEFENSE, 1, battler)
+      battler.pbRaiseStatStageByAbility(:SPECIAL_DEFENSE, 1, battler)
+    else
+      battlerStats = battler.plainStats
+      highestStatValue = 0
+      battlerStats.each_value { |value| highestStatValue = value if highestStatValue < value }
+      GameData::Stat.each_main_battle do |s|
+        next if battlerStats[s.id] < highestStatValue
+        battler.pbRaiseStatStageByAbility(s.id, 1, battler)
+        break
+      end
+    end
+  }
+)
+
+Battle::AbilityEffects::ModifyMoveBaseType.add(:ENTREPRENEUR,
+  proc { |attribute, user, move, type|
+    moveType = pbRandom(user.types)
+    next if type != :NORMAL || !GameData::Type.exists?(moveType)
+    move.powerBoost = true
+    next :moveType
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:ENTREPRENEUR,
+  proc { |attribute, user, target, move, mults, baseDmg, type|
+    mults[:base_damage_multiplier] *= 1.2 if move.powerBoost
   }
 )

@@ -273,7 +273,7 @@ class Battle
     end
     # Delusional
     priority.each do |battler|
-      next if (battler.attribute == :DELUSIONAL && !battler.fainted?) || !battler.takesIndirectDamage?
+      next if !battler.attribute == :DELUSIONAL || !battler.takesIndirectDamage?
       battler.pbTakeEffectDamage(battler.totalhp / 8) { |hp_lost|
         pbDisplay(_INTL("{1} is losing it's sanity from the rambling", battler.pbThis))
       }

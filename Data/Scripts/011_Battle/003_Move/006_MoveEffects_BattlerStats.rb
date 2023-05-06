@@ -1,5 +1,5 @@
 #===============================================================================
-# Increases the user's Attack by 1 stage and may raise Special Attack by 2 if has Monk Attribute.
+# Increases the user's Attack by 1 stage and may raise Special Attack by 2 if has Monk Attribute. | Meditate |
 #===============================================================================
 class Battle::Move::RaiseUserAttack1 < Battle::Move::StatUpMove
   def pbEffectGeneral(user)
