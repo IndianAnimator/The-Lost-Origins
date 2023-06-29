@@ -117,12 +117,13 @@ class Battle::Battler
         self.allAllies.each do |b|
           next if !b.canHeal?
           b.pbRecoverHP(b.totalhp / 2)
-          battle.pbDisplay(_INTL("{1}'s {2} restored {3}'s' hp!", self.name, self.attribute.name, pbThis))
+          battle.pbDisplay(_INTL("{1}'s {2} restored {3}'s' hp!", self.name, self.attribute.name, b.pbThis))
         end
       else
         @battle.positions[self.index].effects[PBEffects::Wish]       = 2
         @battle.positions[self.index].effects[PBEffects::WishAmount] = (self.totalhp / 2.0).round
         @battle.positions[self.index].effects[PBEffects::WishMaker]  = self.pokemonIndex
+        battle.pbDisplay(_INTL("{1}'s {2} set a wish for it's allies!", self.name, self.attribute.name))
       end
     end
 

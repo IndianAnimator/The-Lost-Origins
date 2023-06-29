@@ -296,7 +296,8 @@ Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
   proc { |attribute, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     targets.each { |b| user.effects[PBEffects::HeroCount] += 1 if b.damageState.fainted }
-    battle.pbDisplay(_INTL("{1}'s {2} increased!", user.pbThis, user.attribute.name))
+    next if user.effects[PBEffects::HeroCount] == 0
+    battle.pbDisplay(_INTL("{1}'s heroism increased!", user.pbThis))
   }
 )
 
@@ -445,29 +446,27 @@ Battle::AttributeEffects::OnEndOfUsingMove.add(:REAPER,
   proc { |attribute, user, targets, move, battle|
     next if battle.pbAllFainted?(user.idxOpposingSide)
     numFainted = 0
-    targets.each do |b| 
+    targets.each do |b|
       if b.damageState.fainted && user.canHeal?
-        user.pbRecoverHP(user.totalhp / 5) 
+        user.pbRecoverHP(user.totalhp / 5)
         battle.pbDisplay(_INTL("{1}'s {2} absorbed {3}'s energy!", user.pbThis, user.attribute.name, b.pbThis(true)))
       end
     end
   }
 )
 
-
 Battle::AttributeEffects::OnSwitchIn.add(:BEASTMASTER,
   proc { |ability, battler, battle, switch_in|
-
     if battler.pokemon.species_data.get_evolutions(true).length > 0
-      battler.pbRaiseStatStageByAbility(:DEFENSE, 1, battler)
-      battler.pbRaiseStatStageByAbility(:SPECIAL_DEFENSE, 1, battler)
+      battler.pbRaiseStatStage(:DEFENSE, 1, battler)
+      battler.pbRaiseStatStage(:SPECIAL_DEFENSE, 1, battler)
     else
       battlerStats = battler.plainStats
       highestStatValue = 0
       battlerStats.each_value { |value| highestStatValue = value if highestStatValue < value }
       GameData::Stat.each_main_battle do |s|
         next if battlerStats[s.id] < highestStatValue
-        battler.pbRaiseStatStageByAbility(s.id, 1, battler)
+        battler.pbRaiseStatStage(s.id, 1, battler)
         break
       end
     end
