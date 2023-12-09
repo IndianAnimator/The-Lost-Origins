@@ -634,8 +634,10 @@ class Battle
     pbEORSeaOfFireDamage(priority)
     # Status-curing effects/abilities and HP-healing items
     priority.each do |battler|
-      Battle::AttributeEffects.triggerEndOfRoundHealing(battler.attribute, battler, self)
+      #delusional AttributeEffects
       pbEORDelusionalDamage(priority,battler)
+      # priest AttributeEffects
+      Battle::AttributeEffects.triggerEndOfRoundHealing(battler.attribute, battler, self)
       pbEORTerrainHealing(battler)
       # Healer, Hydration, Shed Skin
       if battler.abilityActive?

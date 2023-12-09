@@ -213,6 +213,7 @@ class Battle::Battler
     return (abil) ? abil.name : ""
   end
 
+  # get attribute name
   def attributeName
     attribute = self.attribute
     return (attribute) ? attribute.name : ""

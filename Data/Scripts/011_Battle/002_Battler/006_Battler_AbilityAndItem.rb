@@ -8,21 +8,12 @@ class Battle::Battler
     end
     # Reset form
     @battle.peer.pbOnLeavingBattle(@battle, @pokemon, @battle.usedInBattle[idxOwnSide][@index / 2])
-    # Check for end of Neutralizing Gas/Unnerve
-    if hasActiveAbility?(:NEUTRALIZINGGAS)
-      # Treat self as fainted
-      @hp = 0
-      @fainted = true
-      pbAbilitiesOnNeutralizingGasEnding
-    elsif hasActiveAbility?([:UNNERVE, :ASONECHILLINGNEIGH, :ASONEGRIMNEIGH])
-      # Treat self as fainted
-      @hp = 0
-      @fainted = true
-      pbItemsOnUnnerveEnding
-    end
     # Treat self as fainted
     @hp = 0
     @fainted = true
+    # Check for end of Neutralizing Gas/Unnerve
+    pbAbilitiesOnNeutralizingGasEnding if hasActiveAbility?(:NEUTRALIZINGGAS, true)
+    pbItemsOnUnnerveEnding if hasActiveAbility?([:UNNERVE, :ASONECHILLINGNEIGH, :ASONEGRIMNEIGH], true)
     # Check for end of primordial weather
     @battle.pbEndPrimordialWeather
   end
@@ -195,8 +186,7 @@ class Battle::Battler
 
   def pbTriggerAbilityOnGainingIt
     # Ending primordial weather, checking Trace
-    pbContinualAbilityChecks(true)   
-    # Don't trigger Traced ability as it's triggered below
+    pbContinualAbilityChecks(true)   # Don't trigger Traced ability as it's triggered below
     # Abilities that trigger upon switching in
     if (!fainted? && unstoppableAbility?) || abilityActive?
       Battle::AbilityEffects.triggerOnSwitchIn(self.ability, self, @battle)
@@ -206,20 +196,26 @@ class Battle::Battler
     # Check for end of primordial weather
     @battle.pbEndPrimordialWeather
   end
-  
+
   #=============================================================================
-  # Attribute change
-  #=============================================================================
-  def pbOnLosingAttribute(oldAtr, suppressed = false)
-    @effects[PBEffects::Phoenix]       = false if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Embargo]       = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Substitute]    = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
-    @effects[PBEffects::Taunt]         = 0 if oldAtr == :DEMIGOD
-    @effects[PBEffects::Confusion]     = 0 if oldAtr == :DELUSIONAL
-    @effects[PBEffects::Type3]         = nil if oldAtr == :CORRUPTED
-    @effects[PBEffects::Curse]         = false if oldAtr == :CORRUPTED
-    @effects[PBEffects::MagicCoat]     = false if oldAtr == :FORGOTTEN
-  end
+    # Attribute change
+    #=============================================================================
+    def pbOnLosingAttribute(oldAtr, suppressed = false)
+      @effects[PBEffects::Phoenix]       = false if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
+      @effects[PBEffects::Embargo]       = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
+      @effects[PBEffects::Substitute]    = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
+      @effects[PBEffects::Taunt]         = 0 if oldAtr == :DEMIGOD
+      @effects[PBEffects::Confusion]     = 0 if oldAtr == :DELUSIONAL
+      @effects[PBEffects::Type3]         = nil if oldAtr == :CORRUPTED
+      @effects[PBEffects::Curse]         = false if oldAtr == :CORRUPTED
+      @effects[PBEffects::MagicCoat]     = false if oldAtr == :FORGOTTEN
+    end
+
+    def pbTriggerAttributeOnGainingIt
+      if !fainted?
+        Battle::AttributeEffects.triggerOnSwitchIn(self.attribute, self, @battle)
+      end
+    end
 
   #=============================================================================
   # Held item consuming/removing

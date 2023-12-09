@@ -306,6 +306,13 @@ class Battle::Move
     Battle::AttributeEffects.triggerDamageCalcFromTarget(
       target.attribute, user, target, self, multipliers, baseDmg, type
     )
+    if @battle.pbCheckGlobalAttribute(:DEVASTATION)
+      multipliers[:base_damage_multiplier] *= 1.2
+    end
+    #SCREECHINGSOULS
+    if (@battle.pbCheckGlobalAbility(:SCREECHINGSOULS) && type == :DARK || type == :GHOST || type == :DEMON)
+      multipliers[:base_damage_multiplier] *= 4 / 3.0
+    end
     # Global abilities
     if (@battle.pbCheckGlobalAbility(:DARKAURA) && type == :DARK) ||
        (@battle.pbCheckGlobalAbility(:FAIRYAURA) && type == :FAIRY)
@@ -314,14 +321,6 @@ class Battle::Move
       else
         multipliers[:power_multiplier] *= 4 / 3.0
       end
-    end
-
-    if @battle.pbCheckGlobalAttribute(:DEVASTATION)
-      multipliers[:base_damage_multiplier] *= 1.2
-    end
-    #SCREECHINGSOULS
-    if (@battle.pbCheckGlobalAbility(:SCREECHINGSOULS) && type == :DARK || type == :GHOST || type == :DEMON)
-      multipliers[:base_damage_multiplier] *= 4 / 3.0
     end
     # Ability effects that alter damage
     if user.abilityActive?
@@ -524,7 +523,7 @@ class Battle::Move
     ret = (effectChance > 0) ? effectChance : @addlEffect
     return ret if ret > 100
     if (Settings::MECHANICS_GENERATION >= 6 || @function_code != "EffectDependsOnEnvironment") &&
-       (user.hasActiveAbility?(:SERENEGRACE) || user.pbOwnSide.effects[PBEffects::Rainbow] > 0|| user.attribute == :MONK)
+       (user.hasActiveAbility?(:SERENEGRACE) || user.pbOwnSide.effects[PBEffects::Rainbow] > 0 || user.attribute == :MONK)
       ret *= 2
     end
     ret = 100 if $DEBUG && Input.press?(Input::CTRL)

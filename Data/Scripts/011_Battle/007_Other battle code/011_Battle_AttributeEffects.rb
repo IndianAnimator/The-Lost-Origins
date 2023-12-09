@@ -303,8 +303,8 @@ module Battle::AttributeEffects
   
   Battle::AttributeEffects::DamageCalcFromUser.add(:HERO,
     proc { |attribute, user, target, move, mults, baseDmg, type|
-      dmgboost = user.effects[PBEffects::HeroCount] / 10
-      mults[:power_multiplier] *= dmgboost
+      dmgboost = user.effects[PBEffects::HeroCount] * 0.1
+      mults[:base_damage_multiplier] *= dmgboost
     }
   )
   
@@ -333,7 +333,7 @@ module Battle::AttributeEffects
   
   Battle::AttributeEffects::DamageCalcFromUser.add(:WARMONGER,
     proc { |attribute, user, target, move, mults, baseDmg, type|
-      mults[:power_multiplier] *= 1.5 if move.blademove?
+      mults[:base_damage_multiplier] *= 1.5 if move.blademove?
     }
   )
   
@@ -384,7 +384,7 @@ module Battle::AttributeEffects
   
   Battle::AttributeEffects::DamageCalcFromUser.add(:CORRUPTED,
     proc { |attribute, user, target, move, mults, baseDmg, type|
-      mults[:power_multiplier] *= 1.5
+      mults[:base_damage_multiplier] *= 1.5
       user.effects[PBEffects::Type3] = :GHOST
       user.effects[PBEffects::Curse] = true
     }
@@ -392,7 +392,7 @@ module Battle::AttributeEffects
   
   Battle::AttributeEffects::OnDealingHit.add(:DELUSIONAL,
     proc { |attribute, user, target, move, battle|
-      user.effects[PBEffects::Confusion] = 9999
+      user.effects[PBEffects::Confusion] = 999
       next if !move.soundMove?
       next if battle.pbRandom(100) >= 15
       if target.pbCanConfuse?(user, false)
@@ -421,12 +421,13 @@ module Battle::AttributeEffects
       battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
     end
     user.pbOnLosingAttribute(oldAtr)
+    user.pbTriggerAttributeOnGainingIt
     }
   )
   
   Battle::AttributeEffects::DamageCalcFromUser.add(:SPY,
     proc { |attribute, user, target, move, mults, baseDmg, type|
-      mults[:power_multiplier] *= 1.5 if move.function == "TwoTurnAttackInvulnerableInSky" ||               # Fly
+      mults[:base_damage_multiplier] *= 1.5 if move.function == "TwoTurnAttackInvulnerableInSky" ||               # Fly
       "TwoTurnAttackInvulnerableUnderground" ||            # Dig
       "TwoTurnAttackInvulnerableUnderwater" ||             # Dive
       "TwoTurnAttackInvulnerableInSkyParalyzeTarget" ||    # Bounce
@@ -483,7 +484,7 @@ module Battle::AttributeEffects
   
   Battle::AbilityEffects::DamageCalcFromUser.add(:ENTREPRENEUR,
     proc { |attribute, user, target, move, mults, baseDmg, type|
-      mults[:power_multiplier] *= 1.2 if move.powerBoost
+      mults[:base_damage_multiplier] *= 1.2 if move.powerBoost
     }
   )
   

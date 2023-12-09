@@ -164,7 +164,7 @@ class Battle::Battler
     end
     # Safeguard immunity
     if pbOwnSide.effects[PBEffects::Safeguard] > 0 && !self_inflicted && move &&
-       !(user && (user.hasActiveAbility?(:INFILTRATOR)|| user.attribute == :SPY))
+       !(user && (user.hasActiveAbility?(:INFILTRATOR) || user.attribute == :SPY))
       @battle.pbDisplay(_INTL("{1}'s team is protected by Safeguard!", pbThis)) if showMessages
       return false
     end
@@ -207,7 +207,7 @@ class Battle::Battler
     # Safeguard immunity
     # NOTE: user will have Synchronize, so it can't have Infiltrator.
     if pbOwnSide.effects[PBEffects::Safeguard] > 0 &&
-       !(user && (user.hasActiveAbility?(:INFILTRATOR)|| user.attribute == :SPY))
+       !(user && (user.hasActiveAbility?(:INFILTRATOR) || user.attribute == :SPY))
       return false
     end
     return true
@@ -469,7 +469,7 @@ class Battle::Battler
       return false
     end
     if pbOwnSide.effects[PBEffects::Safeguard] > 0 && !selfInflicted &&
-       !(user && (user.hasActiveAbility?(:INFILTRATOR)|| user.attribute == :SPY))
+       !(user && (user.hasActiveAbility?(:INFILTRATOR) || user.attribute == :SPY))
       @battle.pbDisplay(_INTL("{1}'s team is protected by Safeguard!", pbThis)) if showMessages
       return false
     end

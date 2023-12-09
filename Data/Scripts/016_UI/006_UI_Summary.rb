@@ -343,7 +343,7 @@ class PokemonSummary_Scene
                 _INTL("TRAINER MEMO"),
                 _INTL("SKILLS"),
                 _INTL("MOVES"),
-                _INTL("EVs/IVs")][page - 1]
+                _INTL("RIBBONS")][page - 1]
     textpos = [
       [pagename, 26, 22, :left, base, shadow],
       [@pokemon.name, 46, 68, :left, base, shadow],
@@ -586,6 +586,7 @@ class PokemonSummary_Scene
     else
       memo += "\n"   # Empty line
     end
+    #write attribute
     name = @pokemon.attribute.name
 		memo += _INTL("Attribute of <c3=F83820,E09890>{1}<c3=404040,B0B0B0>\n", name)
 		memo += "\n"  # Empty line

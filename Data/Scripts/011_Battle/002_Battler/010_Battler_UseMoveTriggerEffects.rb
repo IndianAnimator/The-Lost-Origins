@@ -4,9 +4,9 @@ class Battle::Battler
   #=============================================================================
   def pbEffectsOnMakingHit(move, user, target)
     if target.damageState.calcDamage > 0 && !target.damageState.substitute
-      #add OnBeingHit AttributeEffects
-      Battle::AttributeEffects.triggerOnBeingHit(target.attribute, user, target, move, @battle)
       # Target's ability
+      # add OnBeingHit AttributeEffects
+      Battle::AttributeEffects.triggerOnBeingHit(target.attribute, user, target, move, @battle)
       if target.abilityActive?(true)
         oldHP = user.hp
         Battle::AbilityEffects.triggerOnBeingHit(target.ability, user, target, move, @battle)
@@ -20,7 +20,6 @@ class Battle::Battler
         #       target Cramorant attacking the user) and the ability splash
         #       shouldn't be shown.
         @battle.pbShowAbilitySplash(target)
-        target.pbChangeForm(0, nil)
         if user.takesIndirectDamage?(Battle::Scene::USE_ABILITY_SPLASH)
           @battle.scene.pbDamageAnimation(user)
           user.pbReduceHP(user.totalhp / 4, false)

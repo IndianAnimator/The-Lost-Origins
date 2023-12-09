@@ -213,8 +213,8 @@ class PokemonPartyPanel < Sprite
     @ballsprite.z = self.z + 5
     @ballsprite.addBitmap("desel", "Graphics/UI/Party/icon_ball")
     @ballsprite.addBitmap("sel", "Graphics/UI/Party/icon_ball_sel")
-    @ballsprite.addBitmap("desel_canevo", "Graphics/UI/Party/evo_icon_ball") #evolve from party
-    @ballsprite.addBitmap("sel_canevo", "Graphics/UI/Party/evo_icon_ball_sel") #evolve from party
+    @ballsprite.addBitmap("desel_canevo", "Graphics/UI/Party/evo_icon_ball")
+    @ballsprite.addBitmap("sel_canevo", "Graphics/UI/Party/evo_icon_ball_sel")
     @pkmnsprite = PokemonIconSprite.new(pokemon, viewport)
     @pkmnsprite.setOffset(PictureOrigin::CENTER)
     @pkmnsprite.active = @active
@@ -226,7 +226,7 @@ class PokemonPartyPanel < Sprite
     pbSetSystemFont(@overlaysprite.bitmap)
     @hpbar    = AnimatedBitmap.new("Graphics/UI/Party/overlay_hp")
     @statuses = AnimatedBitmap.new(_INTL("Graphics/UI/statuses"))
-    @typeoverlay = AnimatedBitmap.new("Graphics/UI/Party/type_overlay") #type overlay
+    @typeoverlay = AnimatedBitmap.new("Graphics/UI/Party/type_overlay")
     @selected      = false
     @preselected   = false
     @switching     = false
@@ -246,7 +246,7 @@ class PokemonPartyPanel < Sprite
     @overlaysprite.dispose
     @hpbar.dispose
     @statuses.dispose
-    @typeoverlay.dispose #evolve from party
+    @typeoverlay.dispose
     super
   end
 
@@ -301,7 +301,7 @@ class PokemonPartyPanel < Sprite
 
   def hp; return @pokemon.hp; end
 
-  def refresh_evoreqs #check for evolutions
+  def refresh_evoreqs
     return if @pokemon.egg? || @evoreqs.nil?
     # [new_species, item[optional]
     @evoreqs.clear
@@ -462,7 +462,7 @@ class PokemonPartyPanel < Sprite
     statusrect = Rect.new(0, STATUS_ICON_HEIGHT * status, STATUS_ICON_WIDTH, STATUS_ICON_HEIGHT)
     @overlaysprite.bitmap.blt(78, 68, @statuses.bitmap, statusrect)
   end
-  #party panels shit
+
   def draw_type
     return if @pokemon.egg? || (@text && @text.length > 0)
     return unless (type = @pokemon.types[0])
@@ -516,7 +516,7 @@ end
 # Pokémon party visuals
 #===============================================================================
 class PokemonParty_Scene
-  attr_reader :all_evoreqs
+  attr_accessor :all_evoreqs
 
   def pbStartScene(party, starthelptext, annotations = nil, multiselect = false, can_access_storage = false)
     @sprites = {}
@@ -907,7 +907,7 @@ class PokemonParty_Scene
     lastselected = Settings::MAX_PARTY_SIZE if lastselected < 0
     Settings::MAX_PARTY_SIZE.times do |i|
       if @party[i]
-        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
+        sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
       else
         @sprites["pokemon#{i}"] = PokemonPartyBlankPanel.new(@party[i], i, @viewport)
       end
@@ -1391,20 +1391,20 @@ MenuHandlers.add(:party_menu, :switch, {
     screen.pbSwitch(old_party_idx, party_idx) if party_idx >= 0 && party_idx != old_party_idx
   }
 })
-#RELEARN FROM PARTY
+
 MenuHandlers.add(:party_menu, :relearn, {
   "name"      => _INTL("Relearn"),
-  "order"     => 30,
-  "condition" =>proc {|screen, party, party_idx| next !MoveRelearnerScreen.pbGetRelearnableMoves(party[party_idx]).empty?},
+  "order"     => 31,
+  "condition" => proc { |screen, party, party_idx| next !MoveRelearnerScreen.pbGetRelearnableMoves(party[party_idx]).empty?},
   "effect"    => proc { |screen, party, party_idx|
     pkmn = party[party_idx]
     pbRelearnMoveScreen(pkmn)
   }
 })
-#EVOLVE FROM PARTY
+
 MenuHandlers.add(:party_menu, :evolve, {
   "name"      => _INTL("Evolve"),
-  "order"     => 40,
+  "order"     => 32,
   "condition" => proc { |screen, party, party_idx| next !screen.scene.all_evoreqs[party_idx].empty? },
   "effect"    => proc { |screen, party, party_idx|
     evoreqs = screen.scene.all_evoreqs[party_idx]

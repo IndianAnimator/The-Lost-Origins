@@ -1,6 +1,18 @@
-# This stuff is compiled from other files, so redundant
-Data/PluginScripts.rxdata
-Data/*.dat
+# Audio, Graphics and Plugins folders
+Audio/
+Graphics/
+Plugins/
+
+# Data folder, but not Data/Scripts folder or messages_core.dat
+Data/*
+!Data/Scripts.rxdata
+!Data/Scripts/
+!Data/messages_core.dat
+
+# Files in the main project folder
+Game.ini
+Game.rxproj
+RGSS*.dll
 
 # Common code editor folders & files
 .vscode/

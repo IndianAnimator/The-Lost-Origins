@@ -313,18 +313,16 @@ class Game_Player < Game_Character
     return result
   end
 
-  def check_event_trigger_after_turning; end
+  def pbCheckEventTriggerAfterTurning; end
 
   def pbCheckEventTriggerFromDistance(triggers)
-    events = pbTriggeredTrainerEvents(triggers)
-    events.concat(pbTriggeredCounterEvents(triggers))
-    return false if events.length == 0
-    ret = false
-    events.each do |event|
+    ret = pbTriggeredTrainerEvents(triggers)
+    ret.concat(pbTriggeredCounterEvents(triggers))
+    return false if ret.length == 0
+    ret.each do |event|
       event.start
-      ret = true if event.starting
     end
-    return ret
+    return true
   end
 
   # Trigger event(s) at the same coordinates as self with the appropriate
@@ -341,7 +339,7 @@ class Game_Player < Game_Character
       # If starting determinant is same position event (other than jumping)
       next if event.jumping? || !event.over_trigger?
       event.start
-      result = true if event.starting
+      result = true
     end
     return result
   end
@@ -363,7 +361,7 @@ class Game_Player < Game_Character
       # If starting determinant is front event (other than jumping)
       next if event.jumping? || event.over_trigger?
       event.start
-      result = true if event.starting
+      result = true
     end
     # If fitting event is not found
     if result == false && $game_map.counter?(new_x, new_y)
@@ -379,7 +377,7 @@ class Game_Player < Game_Character
         # If starting determinant is front event (other than jumping)
         next if event.jumping? || event.over_trigger?
         event.start
-        result = true if event.starting
+        result = true
       end
     end
     return result
@@ -406,7 +404,7 @@ class Game_Player < Game_Character
       # If starting determinant is front event (other than jumping)
       next if event.jumping? || event.over_trigger?
       event.start
-      result = true if event.starting
+      result = true
     end
     return result
   end

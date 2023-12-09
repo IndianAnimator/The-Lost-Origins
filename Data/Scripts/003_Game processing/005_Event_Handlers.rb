@@ -70,7 +70,7 @@ class NamedEvent
 
   # Adds an event handler procedure from the event.
   def add(key, proc)
-    @callbacks[key] = proc
+    @callbacks[key] = proc if !@callbacks.has_key?(key)
   end
 
   # Removes an event handler procedure from the event.
@@ -291,11 +291,12 @@ end
 class AbilityHandlerHash < HandlerHashSymbol
 end
 
+#PTLO attribute handler
+class AttributeHandlerHash < HandlerHashSymbol
+end
+
 class ItemHandlerHash < HandlerHashSymbol
 end
 
 class MoveHandlerHash < HandlerHashSymbol
-end
-
-class AttributeHandlerHash < HandlerHashSymbol
 end

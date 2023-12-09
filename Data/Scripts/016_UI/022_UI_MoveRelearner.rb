@@ -147,7 +147,7 @@ class MoveRelearnerScreen
     @scene = scene
   end
 
-  def self.pbGetRelearnableMoves(pkmn) #added self. for usage in party relearner
+  def self.pbGetRelearnableMoves(pkmn) #added self. for use in party move relearner
     return [] if !pkmn || pkmn.egg? || pkmn.shadowPokemon?
     moves = []
     pkmn.getMoveList.each do |m|
@@ -165,7 +165,7 @@ class MoveRelearnerScreen
   end
 
   def pbStartScreen(pkmn)
-    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn) #edited for usage in party relearner 
+    moves = MoveRelearnerScreen.pbGetRelearnableMoves(pkmn) #added moverelearnscreen. for above purpose
     @scene.pbStartScene(pkmn, moves)
     loop do
       move = @scene.pbChooseMove

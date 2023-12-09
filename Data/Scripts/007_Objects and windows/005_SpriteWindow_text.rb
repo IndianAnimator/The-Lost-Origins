@@ -406,15 +406,19 @@ class Window_AdvancedTextPokemon < SpriteWindow_Base
     return if !busy?
     return if @textchars[@curchar] == "\n"
     resume
-    if curcharSkip(true)
-      visiblelines = (self.height - self.borderY) / @lineHeight
-      if @textchars[@curchar] == "\n" && @linesdrawn >= visiblelines - 1
-        @scroll_timer_start = System.uptime
-      elsif @textchars[@curchar] == "\1"
+    visiblelines = (self.height - self.borderY) / @lineHeight
+    loop do
+      curcharSkip(true)
+      break if @curchar >= @fmtchars.length    # End of message
+      if @textchars[@curchar] == "\1"          # Pause message
         @pausing = true if @curchar < @numtextchars - 1
         self.startPause
         refresh
+        break
       end
+      break if @textchars[@curchar] != "\n"    # Skip past newlines only
+      break if @linesdrawn >= visiblelines - 1   # No more empty lines to continue to
+      @linesdrawn += 1
     end
   end
 
@@ -529,7 +533,6 @@ class Window_AdvancedTextPokemon < SpriteWindow_Base
     delta_t = time_now - @display_last_updated
     @display_last_updated = time_now
     visiblelines = (self.height - self.borderY) / @lineHeight
-    @lastchar = -1 if !@lastchar
     show_more_characters = false
     # Pauses and new lines
     if @textchars[@curchar] == "\1"   # Waiting
@@ -551,7 +554,7 @@ class Window_AdvancedTextPokemon < SpriteWindow_Base
           show_more_characters = true
         end
       else   # New line but the next line can be shown without scrolling to it
-        @linesdrawn += 1 if @lastchar < @curchar
+        @linesdrawn += 1
         show_more_characters = true
       end
     elsif @curchar <= @numtextchars   # Displaying more text
@@ -563,7 +566,6 @@ class Window_AdvancedTextPokemon < SpriteWindow_Base
       @scroll_timer_start = nil
       @linesdrawn = 0
     end
-    @lastchar = @curchar
     # Keep displaying more text
     if show_more_characters
       @display_timer += delta_t

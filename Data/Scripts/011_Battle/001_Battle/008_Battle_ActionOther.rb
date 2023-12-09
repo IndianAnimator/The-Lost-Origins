@@ -81,9 +81,7 @@ class Battle
         @mega_rings.each { |item| return GameData::Item.get(item).name if $bag.has?(item) }
       else
         trainer_items = pbGetOwnerItems(idxBattler)
-        if trainer_items
-          @mega_rings.each { |item| return GameData::Item.get(item).name if trainer_items.include?(item) }
-        end
+        @mega_rings.each { |item| return GameData::Item.get(item).name if trainer_items&.include?(item) }
       end
     end
     return _INTL("Mega Ring")
@@ -139,6 +137,7 @@ class Battle
     $stats.mega_evolution_count += 1 if battler.pbOwnedByPlayer?
     trainerName = pbGetOwnerName(idxBattler)
     old_ability = battler.ability_id
+    Battle::AttributeEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)
     # Break Illusion
     if battler.hasActiveAbility?(:ILLUSION)
       Battle::AbilityEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)

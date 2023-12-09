@@ -519,7 +519,7 @@ class Battle::Move::UserFaintsExplosive < Battle::Move
   end
 
   def pbBaseDamage(baseDmg, user, target)
-    baseDmg = baseDmg * 1.3 if user.attribute == :MATYR
+    return baseDmg *= 1.3 if user.attribute == :MATYR
     return baseDmg
   end
 
@@ -539,7 +539,7 @@ end
 class Battle::Move::UserFaintsPowersUpInMistyTerrainExplosive < Battle::Move::UserFaintsExplosive
   def pbBaseDamage(baseDmg, user, target)
     baseDmg = baseDmg * 3 / 2 if @battle.field.terrain == :Misty
-    baseDmg = baseDmg * 1.3 if user.attribute == :MATYR
+    return baseDmg *= 1.3 if user.attribute == :MATYR
     return baseDmg
   end
 
@@ -564,6 +564,7 @@ class Battle::Move::UserFaintsFixedDamageUserHP < Battle::Move::FixedDamageMove
   end
 
   def pbFixedDamage(user, target)
+    return @finalGambitDamage *= 1.3 if user.attribute == :MATYR
     return @finalGambitDamage
   end
 

@@ -315,7 +315,7 @@ class Battle::Move::TwoTurnMove < Battle::Move
       @powerHerb = user.hasActiveItem?(:POWERHERB)
       @demigod = user.attribute == :DEMIGOD
       @chargingTurn = true
-      @damagingTurn = @powerHerb ||@demigod
+      @damagingTurn = @powerHerb || @demigod
     end
     return !@damagingTurn   # Deliberately not "return @chargingTurn"
   end

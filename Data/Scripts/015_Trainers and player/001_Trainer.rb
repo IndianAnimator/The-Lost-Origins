@@ -16,8 +16,7 @@ class Trainer
   end
 
   def full_name
-    return @name if has_flag?("NoName")
-    return "#{trainer_type_name} #{@name}"
+    return _INTL("{1} {2}", trainer_type_name, @name)
   end
 
   #=============================================================================

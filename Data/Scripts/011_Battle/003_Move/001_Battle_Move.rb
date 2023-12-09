@@ -140,7 +140,7 @@ class Battle::Move
   def bombMove?;          return @flags.any? { |f| f[/^Bomb$/i] };                end
   def danceMove?;         return @flags.any? { |f| f[/^Dance$/i] };               end
   def wingMove?;          return @flags.any? { |f| f[/^Wing$/i] };                end
-  def blademove?;         return @flags.any? { |f| f[/^Blade$/i] };              end
+  def blademove?;         return @flags.any? { |f| f[/^Blade$/i] };               end 
   # Causes perfect accuracy and double damage if target used Minimize. Perfect accuracy only with Gen 6+ mechanics.
   def tramplesMinimize?;  return @flags.any? { |f| f[/^TramplesMinimize$/i] };    end
 
