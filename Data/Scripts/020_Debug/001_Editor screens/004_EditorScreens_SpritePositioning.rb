@@ -12,10 +12,10 @@ def findBottom(bitmap)
 end
 
 def pbAutoPositionAll
-  t = Time.now.to_i
+  t = System.uptime
   GameData::Species.each do |sp|
-    if Time.now.to_i - t >= 5
-      t = Time.now.to_i
+    if System.uptime - t >= 5
+      t += 5
       Graphics.update
     end
     metrics = GameData::SpeciesMetrics.get_species_form(sp.species, sp.form)
@@ -67,7 +67,7 @@ class SpritePositioner
     @sprites["base_1"].y -= @sprites["base_1"].bitmap.height / 2 if @sprites["base_1"].bitmap
     @sprites["base_1"].z = 1
     @sprites["messageBox"] = IconSprite.new(0, Graphics.height - 96, @viewport)
-    @sprites["messageBox"].setBitmap("Graphics/Pictures/Battle/debug_message")
+    @sprites["messageBox"].setBitmap("Graphics/UI/Debug/battle_message")
     @sprites["messageBox"].z = 2
     @sprites["shadow_1"] = IconSprite.new(0, 0, @viewport)
     @sprites["shadow_1"].z = 3
@@ -213,6 +213,7 @@ class SpritePositioner
         break
       elsif Input.trigger?(Input::USE)
         pbPlayDecisionSE
+        @metricsChanged = true if metrics_data.shadow_size != oldval
         break
       end
     end
@@ -247,7 +248,7 @@ class SpritePositioner
     @sprites["info"].visible = true
     ret = false
     loop do
-      sprite.visible = (Graphics.frame_count % 16) < 12   # Flash the selected sprite
+      sprite.visible = ((System.uptime * 8).to_i % 4) < 3   # Flash the selected sprite
       Graphics.update
       Input.update
       self.update
@@ -339,7 +340,7 @@ class SpritePositioner
       pbFadeInAndShow(@sprites) { update }
       @starting = false
     end
-    cw = Window_CommandPokemonEx.newEmpty(0, 0, 260, 32 + (24 * 6), @viewport)
+    cw = Window_CommandPokemonEx.newEmpty(0, 0, 260, 176, @viewport)
     cw.rowHeight = 24
     pbSetSmallFont(cw.contents)
     cw.x = Graphics.width - cw.width

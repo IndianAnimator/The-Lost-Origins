@@ -1,443 +1,83 @@
-Tileset Credits
-
-1950s House
-1. Ekat
-
-All Cliffs
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-
-Basic Interior Collection
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Beach Houses
-1. Ekat
-2. Heartlessdragoon
-
-Brick Café
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Brick City
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Alistar 
-5. Slimshady 
-
-Brick House Indoors
-1. Ekat
-2. Heartlessdragoon
-
-Brick House Tiles
-1. Ekat
-2. Heartlessdragoon
-
-Cable Car
-1. Ekat
-2. Heartlessdragoon
-
-Cable Cacti
-1. Ekat
-2. Heartlessdragoon
-
-Cattle Car
-1. Ekat
-2. Heartlessdragoon
-3. Redblueyellow
-
-Clouds
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Silverdeoxys563 
-
-Cold Storage Interior
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Coral Tiles
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Deep Sea
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Dragonspiral Stuff
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Dreamyard
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Ekat's Mega Gen 3 Set
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Fall Café
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Alistar 
-
-Fall Harvest 
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Fall Ruins
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Future Vurdanturf Town
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Alistar 
-5. Idillio 
-
-Gamecorner Heist
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-4. Aveontrainer
-5. HeroAlistar
-6. Redblueyellow
-7. SteamyJ
-8. Anonaplacca
-9. Pokémon Rejuvenation
-10. Puggsoy
-
-Garden House Sheet
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Garden Objects
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Gatehouse Interior
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Gen 3 Snow
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-General Pink Buildings
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-General Store
-1. Ekat
-2. Heartlessdragoon
-
-Grocery Tiles 
-1. Ekat
-2. Heartlessdragoon
-
-Haunted Woods (Both Pallets)
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Zein 
-
-Idilio - Full City Sheet (Note, this was made on commission. But, everything in his project, Odisea, is public. I was encouraged to post the set.)
-1. Ekat
-2. Heartlessdragoon
-3. Idilio
-
-Idilio - Interior Sheet Formatted (Note, this was made on commission. But, everything in his project, Odisea, is public. I was encouraged to post the set.)
-1. Ekat
-2. Heartlessdragoon
-3. Idilio 
-
-Ivy Woods
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Zein 
-
-Jonquil Town
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Mega Outdoor Tileset
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-
-More Ruins Tiles
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Mt. Moon Village
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-New Pokémon Mart
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Nosepass Spring
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-5. Dragoon
-
-Nuphar City
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar
-5. Zein 
-6. War8 
-
-Outdoor Collection Big Trees
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-
-Outdoor Collection Pine Trees
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-
-Park Tileset
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Patio Objects
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Pointy Buildings
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Pokémon Center - Fancy
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Pokémon Center - Pink Lemonade
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Pokémon Center - Summer Blues
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Pokémon Center - Winter
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. dragoon 
-
-Pokémon Center and Mart Buildings
-1. Ekat
-2. Vurtax
-
-Pond and Bridge Formatted
-1. Ekat
-2. Heartlessdragoon
-
-Rejuv Route 2
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. HeroAlistar 
-5. Shyinn 
-
-Revised Apathy Houses
-1. Ekat
-2. Heartlessdragoon 
-
-Route 224
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. Zein
-
-Ship Interior
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-
-Silph City
-1. Ekat
-2. Heartless Dragoon
-3. Morlockhater
-4. Nemu
-5. Ross Hawkins
-6. Pokemon Dawn
-7. Slimshady
-8. Thedeadheroalistar
-9. The-Red-Ex
-10. Vurtax
-11. Zein
-
-Sinnoh Tile Dump
-1. Ekat
-2. Heartlessdragoon
-
-Snowpoint Temple
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Speakeasy
-1. Aveontrainer
-2. Ekat
-3. Heartlessdragoon
-4. Pokémon Dawn
-5. Puggsoy
-6. Redblueyellow
-7. Vurtax
-
-Summer Blues
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. HeroAlistar
-
-Swamp Tiles
-1. Ekat
-2. Heartlessdragoon
-
-Tall Grass
-1. Ekat
-2. Vurtax 
-3. Heartlessdragoon 
-4. thedeadheroalistar 
-
-Test Gate
-1. Aveontrainer
-2. Ekat
-3. Heartlessdragoon
-
-Viridian Mansion
-1. Ekat
-2. Heartlessdragoon
-3. Vurtax
-
-Volcano Set
-1. Ekat
-2. Heartlessdragoon
-3. Fabnt
-
-Wild West
-1. Ekat
-2. Heartlessdragoon
-
-Wine Cellar
-1. Aveontrainer
-2. Ekat
-3. Heartlessdragoon
-
-Yellow Garden
-1. Aveontrainer
-2. Ekat
-3. Heartlessdragoon
-
-Nightshade Resource Pack
-1.AJ Nitro
-2.Alistar
-3.Aveontrainer
-4.Bacon
-5.Dasani
-6.Dawn Bronze
-7.Heartless Dragoon
-8.Labs
-9.Lennybitao
-10.Pokémon Dawn
-11.Pokémon Reborn Team
-12.Pokémon Rejuvenation Team
-13.Pugsoy
-14.Redblueyellow
-15.Remy
-16.RocketSeviperShadow
-17.Seiyouh
-18.Shyinn
-19.The Purple Stuff
-20.The Red-Ex
-21.Vurtax
-22.sXDinky
-
-Generation 8 project
-Battler Sprites:
-Gen 1-5 Pokemon Sprites - veekun
-Gen 6 Pokemon Sprites - All Contributors To Smogon X/Y Sprite Project
-Gen 7 Pokemon Sprites - All Contributors To Smogon Sun/Moon Sprite Project
-Gen 8 Pokemon Sprites - All Contributors To Smogon Sword/Shield Sprite Project
-Overworld Sprites
-Gen 6+ Berry Tree Overworlds - Anarlaurendil
-Gen 6 Pokemon Overworlds - princess-pheonix, LunarDusk, Wolfang62, TintjeMadelintje101, piphybuilder88
-Gen 7 Pokemon Overworlds - Larry Turbo, princess-pheonix
-Gen 8 Pokemon Overworlds - SageDeoxys, Wolfang62, LarryTurbo, tammyclaydon
-Gen 1-5 Pokemon Overworlds - MissingLukey, help-14, Kymoyonian, cSc-A7X, 2and2makes5, Pokegirl4ever, Fernandojl, Silver-Skies, TyranitarDark, Getsuei-H, Kid1513, Milomilotic11, Kyt666, kdiamo11, Chocosrawlooid, Syledude, Gallanty, Gizamimi-Pichu, 2and2makes5, Zyon17,LarryTurbo, spritesstealer, LarryTurbo
-Icon Sprites
-Gen 1-6 Pokemon Icon Sprites - Alaguesia
-Gen 7 Pokemon Icon Sprites - Marin, MapleBranchWing, Contributors to the DS Styled Gen 7+ Repository
-Gen 8 Icon Sprites - Larry Turbo, Leparagon
-Cry Credits:
-Gen 1-6 Pokemon Cries - Rhyden
-Gen 7 Pokemon Cries - Marin, Rhyden
-Gen 8 Pokemon Cries - Zeak6464
-Script Credits:
-Golisopod User, Luka S.J.
-Compilation of Resources:
-Golisopod User, UberDunsparce
-
-DEV TEAM:
-IndianAnimator: Lead dev, Spriter, Mapper, Scripter
-eriedaberrie: Scripter
-GoldenDragonLeaf: Spriter, Story Writer, Shiny Maker, (pain in the ass)
-Argy: Story Writer
-Ari: Mapper, Eventer
-
-CONTRIBUTERS:
-StickyThread: Concept Artist
-888ppg: Concept Artist, Shiny Maker
-Tejas: Concept Artist
-Tree: Musician
-Devil: Master of Balance
-Riezl: Master of Balance
-Soda: Shiny maker, (unofficial leaks cuz he shares too many servers with me >:\ )
-Haku: Ideas
-Arc: Ideas
-
-Thank you to my server for moral support and for memeing about the name
-
+Script Gen 9 and Adapting PLA for v20:
+-Caruban
+-Lucidious89
+-Eskiss (Legend Plate script based on)
+
+PBS for Gen 9:
+-Caruban
+-Lucidious89
+-PorousMist (Updated the abilities, items, and moves description)
+-DJChaos (TM Items)
+-Futuresushi (Shortened abilities and moves description)
+
+Pokemon Gen 9 Battler Sprites:
+KingOfThe-X-Roads, Mak, Caruban, jinxed, leParagon, Sopita_Yorita, Azria, Mashirosakura,
+JordanosArt, Abnayami, OldSoulja, Katten, Divaruta 666, Clara, Skyflyer, AshnixsLaw, ace_stryfe
+
+Pokemon Gen 9 icons:
+ezerart, JordanosArt
+
+Pokemon Gen 9 Followers:
+Azria, DarkusShadow, EduarPokeN, Carmanekko, StarWolff, Caruban
+
+Pokemon PLA and Gen 9 Footprints :
+Caruban
+
+Pokemon Gen 9 Cries:
+Edited from Lightblade's Absol Gen 9 Cries compilation video
+https://www.youtube.com/watch?v=KV6k3G62oT0
+Edited from HeroLinik's Pokemon Scarlet and Violet - Walking Wake and Iron Leaves Cries video
+https://www.youtube.com/watch?v=weH2W3mQ35Y
+Edited from HeroLinik's Pokemon Scarlet and Violet - All Teal Mask Cries video
+https://www.youtube.com/watch?v=pQr9z4ryE40
+
+Gen 9 item icons:
+-lichenprincess (Tera Orb, Bamboos, Tera Shards, Mirror Herb, Loaded Dice, Leader Crest, and Kubfu Scrolls, Booster Energy, Gimmighoul coin, TM Material, Kofu's Wallet, Sandwich, Herba Mysticas)
+-Caruban (Punching Glove, Auspicious Armor, Malicious Armor, Ability Shield, Clear Amulet, Covert Cloak, Scarlet&Violet Book, Mochis, Teacups, Ogerpon Masks)
+-jinxed (Syrupy Apple and Fairy Feather)
+
+Original Pokémon: Legends Arceus Expansion Script :
+-StCooler (Original script for Gen 8 Project in v18 and Status sprites)
+-PorousMist and curryofthepast (Adapting the script for v19.1 use)
+
+PLA item icons :
+AztecCroc, 3DJackArt, Caruban, lichenprincess
+
+Pokemon cries ripped:
+-Morningdew
+
+Pokeballs battle animation and summary icon:
+-Caruban
+-WolfPP (Beast ball battle animation)
+
+PLA Pokémon icons:
+LuigiTKO
+
+PLA Followers:
+Boonzeet, DarkusShadow, princess-phoenix, Ezeart, WolfPP
+
+PLA Sprites from Smogon Gen8 Sprite Project :
+(https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/)
+Blaquaza, KingOfThe-X-Roads, KattenK, Travis, G.E.Z., SpheX, Hematite, SelenaArmorclaw
+
+
+Vanilla Style Version
+Pokémon sprites:
+KingOfThe-X-Roads, Mak, Caruban, jinxed, leParagon, Sopita_Yorita, Azria, Mashirosakura, JordanosArt, Scept, NanaelJustice, SoyChim, KRLW890, AnonAlpaca, PokeJminer, Red7246, Carmanekko, Eduar, Lykeron, GriloKapu10, Mesayas, Erkey830, QDylm, PorousMist, OldSoulja, AlexandreV2.0, Z-nogyroP, lennybitao, Ruben1986, GRAFAIAIMX
+Blaquaza, KattenK, Travis, G.E.Z., SpheX, Hematite
+
+Gen 9 Icons:
+Vent, Katten, leParagon, Cesare_CBass, AlexandreV2.0, Carmanekko, GRAFAIAIMX
+also thanks to Axel Loquendo, CarmaNekko, Divaruta 666, Okyo, JLauz735, and ClaraDragon for
+Iconos 9na Gen gba completos (https://whackahack.com/foro/threads/iconos-9na-gen-gba-completos-act-04-03-2023.67908/)
+
+PLA Icons:
+LuigiTKO, Pikafan2000, Cesare_CBass, Vent, Cesare_Cbass, MultiDiegoDani, leParagon, JWNutz
+and thanks for 
+Pokémon Icons Act 2.9 - Teracristalizando
+(https://whackahack.com/foro/threads/pokemon-icons-act-2-9-teracristalizando-07-08-2022.63896/)
+
+Full Sprites Credit List:
+https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY/edit?usp=sharing
+
+And let me know if there is someone that I forget to mentions here.

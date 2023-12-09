@@ -43,70 +43,75 @@ class Scene_Credits
   TEXT_BASE_COLOR        = Color.new(255, 255, 255, 255)
   TEXT_SHADOW_COLOR      = Color.new(0, 0, 0, 100)
 
-  # This next piece of code is the credits.
-  # Start Editing
-  CREDIT = <<~_END_
+  def add_names_to_credits(credits, names, with_final_new_line = true)
+    if names.length >= 5
+      i = 0
+      loop do
+        credits.push(names[i] + "<s>" + (names[i + 1] || ""))
+        i += 2
+        break if i >= names.length
+      end
+    else
+      names.each { |name| credits.push(name) }
+    end
+    credits.push("") if with_final_new_line
+  end
 
-    Your credits go here.
-
-    Your credits go here.
-
-    Your credits go here.
-
-    Your credits go here.
-
-    Your credits go here.
-
-    Text Skip by Amthyst and Kurotsune
-
-    {INSERTS_PLUGIN_CREDITS_DO_NOT_REMOVE}
-
-    "Pokémon Essentials" was created by:
-    Flameguru
-    Poccil (Peter O.)
-    Maruno
-
-    With contributions from:
-    AvatarMonkeyKirby<s>Marin
-    Boushy<s>MiDas Mike
-    Brother1440<s>Near Fantastica
-    FL.<s>PinkMan
-    Genzai Kawakami<s>Popper
-    Golisopod User<s>Rataime
-    help-14<s>Savordez
-    IceGod64<s>SoundSpawn
-    Jacob O. Wobbrock<s>the__end
-    KitsuneKouta<s>Venom12
-    Lisa Anthony<s>Wachunga
-    Luka S.J.<s>
-    and everyone else who helped out
-
-    "mkxp-z" by:
-    Roza
-    Based on "mkxp" by Ancurio et al.
-
-    "RPG Maker XP" by:
-    Enterbrain
-
-    Pokémon is owned by:
-    The Pokémon Company
-    Nintendo
-    Affiliated with Game Freak
-
-
-
-    This is a non-profit fan-made game.
-    No copyright infringements intended.
-    Please support the official games!
-
-_END_
-# Stop Editing
+  def get_text
+    ret = Settings.game_credits || []
+    # Add plugin credits
+    if PluginManager.plugins.length > 0
+      ret.push("", "", "")
+      PluginManager.plugins.each do |plugin|
+        pcred = PluginManager.credits(plugin)
+        ret.push(_INTL("\"{1}\" v.{2} by:", plugin, PluginManager.version(plugin)))
+        add_names_to_credits(ret, pcred)
+      end
+    end
+    # Add Essentials credits
+    ret.push("", "", "")
+    ret.push(_INTL("\"Pokémon Essentials\" was created by:"))
+    add_names_to_credits(ret, [
+      "Poccil (Peter O.)",
+      "Maruno",
+      _INTL("Inspired by work by Flameguru")
+    ])
+    ret.push(_INTL("With contributions from:"))
+    add_names_to_credits(ret, [
+      "AvatarMonkeyKirby", "Boushy", "Brother1440", "FL.", "Genzai Kawakami",
+      "Golisopod User", "help-14", "IceGod64", "Jacob O. Wobbrock", "KitsuneKouta",
+      "Lisa Anthony", "Luka S.J.", "Marin", "MiDas Mike", "Near Fantastica",
+      "PinkMan", "Popper", "Rataime", "Savordez", "SoundSpawn",
+      "the__end", "Venom12", "Wachunga"
+    ], false)
+    ret.push(_INTL("and everyone else who helped out"))
+    ret.push("")
+    ret.push(_INTL("\"mkxp-z\" by:"))
+    add_names_to_credits(ret, [
+      "Anon",
+      _INTL("Based on \"mkxp\" by Ancurio et al.")
+    ])
+    ret.push(_INTL("\"RPG Maker XP\" by:"))
+    add_names_to_credits(ret, ["Enterbrain"])
+    ret.push(_INTL("Pokémon is owned by:"))
+    add_names_to_credits(ret, [
+      "The Pokémon Company",
+      "Nintendo",
+      _INTL("Affiliated with Game Freak")
+    ])
+    ret.push("", "")
+    ret.push(_INTL("This is a non-profit fan-made game."),
+             _INTL("No copyright infringements intended."),
+             _INTL("Please support the official games!"))
+    return ret
+  end
 
   def main
+    @quit = false
     #-------------------------------
     # Animated Background Setup
     #-------------------------------
-    @counter = 0.0   # Counts time elapsed since the background image changed
+    @timer_start = System.uptime   # Time when the credits started
     @bg_index = 0
     @bitmap_height = Graphics.height   # For a single credits text bitmap
     @trim = Graphics.height / 10
@@ -115,24 +120,7 @@ _END_
     #-------------------------------
     # Credits text Setup
     #-------------------------------
-    plugin_credits = ""
-    PluginManager.plugins.each do |plugin|
-      pcred = PluginManager.credits(plugin)
-      plugin_credits << "\"#{plugin}\" v.#{PluginManager.version(plugin)} by:\n"
-      if pcred.size >= 5
-        plugin_credits << (pcred[0] + "\n")
-        i = 1
-        until i >= pcred.size
-          plugin_credits << (pcred[i] + "<s>" + (pcred[i + 1] || "") + "\n")
-          i += 2
-        end
-      else
-        pcred.each { |name| plugin_credits << (name + "\n") }
-      end
-      plugin_credits << "\n"
-    end
-    CREDIT.gsub!(/\{INSERTS_PLUGIN_CREDITS_DO_NOT_REMOVE\}/, plugin_credits)
-    credit_lines = CREDIT.split(/\n/)
+    credit_lines = get_text
     #-------------------------------
     # Make background and text sprites
     #-------------------------------
@@ -152,29 +140,31 @@ _END_
       lines_per_bitmap.times do |j|
         line = credit_lines[(i * lines_per_bitmap) + j]
         next if !line
+        line += " " if line.end_with?("<s>")
         line = line.split("<s>")
         xpos = 0
         align = 1   # Centre align
         linewidth = Graphics.width
         line.length.times do |k|
+          text = line[k].strip
           if line.length > 1
             xpos = (k == 0) ? 0 : 20 + (Graphics.width / 2)
             align = (k == 0) ? 2 : 0   # Right align : left align
             linewidth = (Graphics.width / 2) - 20
           end
           credit_bitmap.font.color = TEXT_SHADOW_COLOR
-          credit_bitmap.draw_text(xpos, (j * 32) + 12, linewidth, 32, line[k], align)
+          credit_bitmap.draw_text(xpos, (j * 32) + 12, linewidth, 32, text, align)
           credit_bitmap.font.color = TEXT_OUTLINE_COLOR
-          credit_bitmap.draw_text(xpos + 2, (j * 32) + 2, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos,     (j * 32) + 2, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos - 2, (j * 32) + 2, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos + 2, (j * 32) + 4, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos - 2, (j * 32) + 4, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos + 2, (j * 32) + 6, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos,     (j * 32) + 6, linewidth, 32, line[k], align)
-          credit_bitmap.draw_text(xpos - 2, (j * 32) + 6, linewidth, 32, line[k], align)
+          credit_bitmap.draw_text(xpos + 2, (j * 32) + 2, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos,     (j * 32) + 2, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos - 2, (j * 32) + 2, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos + 2, (j * 32) + 4, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos - 2, (j * 32) + 4, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos + 2, (j * 32) + 6, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos,     (j * 32) + 6, linewidth, 32, text, align)
+          credit_bitmap.draw_text(xpos - 2, (j * 32) + 6, linewidth, 32, text, align)
           credit_bitmap.font.color = TEXT_BASE_COLOR
-          credit_bitmap.draw_text(xpos, (j * 32) + 4, linewidth, 32, line[k], align)
+          credit_bitmap.draw_text(xpos, (j * 32) + 4, linewidth, 32, text, align)
         end
       end
       credit_sprite = Sprite.new(text_viewport)
@@ -198,55 +188,46 @@ _END_
       Graphics.update
       Input.update
       update
-      break if $scene != self
+      break if @quit
     end
-    pbBGMFade(2.0)
     $game_temp.background_bitmap = Graphics.snap_to_bitmap
+    pbBGMFade(2.0)
     Graphics.freeze
-    viewport.color = Color.new(0, 0, 0, 255)   # Ensure screen is black
+    viewport.color = Color.black   # Ensure screen is black
+    text_viewport.color = Color.black   # Ensure screen is black
     Graphics.transition(8, "fadetoblack")
     $game_temp.background_bitmap.dispose
     @background_sprite.dispose
     @credit_sprites.each { |s| s&.dispose }
-    text_viewport.dispose
     viewport.dispose
+    text_viewport.dispose
     $PokemonGlobal.creditsPlayed = true
     pbBGMPlay(previousBGM)
+    $scene = ($game_map) ? Scene_Map.new : nil
   end
 
   # Check if the credits should be cancelled
   def cancel?
-    if Input.trigger?(Input::USE) && $PokemonGlobal.creditsPlayed
-      $scene = Scene_Map.new
-      pbBGMFade(1.0)
-      return true
-    end
-    return false
+    @quit = true if Input.trigger?(Input::USE) && $PokemonGlobal.creditsPlayed
+    return @quit
   end
 
   # Checks if credits bitmap has reached its ending point
   def last?
-    if @realOY > @total_height + @trim
-      $scene = ($game_map) ? Scene_Map.new : nil
-      pbBGMFade(2.0)
-      return true
-    end
-    return false
+    @quit = true if @realOY > @total_height + @trim
+    return @quit
   end
 
   def update
-    delta = Graphics.delta_s
-    @counter += delta
     # Go to next slide
-    if @counter >= SECONDS_PER_BACKGROUND
-      @counter -= SECONDS_PER_BACKGROUND
-      @bg_index += 1
-      @bg_index = 0 if @bg_index >= BACKGROUNDS_LIST.length
+    new_bg_index = ((System.uptime - @timer_start) / SECONDS_PER_BACKGROUND) % BACKGROUNDS_LIST.length
+    if @bg_index != new_bg_index
+      @bg_index = new_bg_index
       @background_sprite.setBitmap("Graphics/Titles/" + BACKGROUNDS_LIST[@bg_index])
     end
     return if cancel?
     return if last?
-    @realOY += SCROLL_SPEED * delta
+    @realOY = (SCROLL_SPEED * (System.uptime - @timer_start)) - Graphics.height + @trim
     @credit_sprites.each_with_index { |s, i| s.oy = @realOY - (@bitmap_height * i) }
   end
 end

@@ -2,6 +2,7 @@
 # The Bag object, which actually contains all the items.
 #===============================================================================
 class PokemonBag
+  attr_reader   :pockets
   attr_accessor :last_viewed_pocket
   attr_accessor :last_pocket_selections
   attr_reader   :registered_items
@@ -16,15 +17,15 @@ class PokemonBag
   end
 
   def initialize
-    @pockets              = []
+    @pockets = []
     (0..PokemonBag.pocket_count).each { |i| @pockets[i] = [] }
     reset_last_selections
-    @registered_items     = []
+    @registered_items = []
     @ready_menu_selection = [0, 0, 1]   # Used by the Ready Menu to remember cursor positions
   end
 
   def reset_last_selections
-    @last_viewed_pocket     = 1
+    @last_viewed_pocket = 1
     @last_pocket_selections ||= []
     (0..PokemonBag.pocket_count).each { |i| @last_pocket_selections[i] = 0 }
   end
@@ -34,19 +35,13 @@ class PokemonBag
     (PokemonBag.pocket_count + 1).times { |i| @last_pocket_selections[i] = 0 }
   end
 
-  def pockets
-    rearrange
-    return @pockets
-  end
-
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   # Gets the index of the current selected item in the pocket
   def last_viewed_index(pocket)
     if pocket <= 0 || pocket > PokemonBag.pocket_count
       raise ArgumentError.new(_INTL("Invalid pocket: {1}", pocket.inspect))
     end
-    rearrange
     return [@last_pocket_selections[pocket], @pockets[pocket].length].min || 0
   end
 
@@ -55,11 +50,10 @@ class PokemonBag
     if pocket <= 0 || pocket > PokemonBag.pocket_count
       raise ArgumentError.new(_INTL("Invalid pocket: {1}", pocket.inspect))
     end
-    rearrange
     @last_pocket_selections[pocket] = value if value <= @pockets[pocket].length
   end
 
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   def quantity(item)
     item_data = GameData::Item.try_get(item)
@@ -139,7 +133,7 @@ class PokemonBag
     return ret
   end
 
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   # Returns whether item has been registered for quick access in the Ready Menu.
   def registered?(item)
@@ -161,39 +155,14 @@ class PokemonBag
     @registered_items.delete(item_data.id) if item_data
   end
 
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   private
 
   def max_pocket_size(pocket)
     return Settings::BAG_MAX_POCKET_SIZE[pocket - 1] || -1
   end
-
-  def rearrange
-    return if @pockets.length == PokemonBag.pocket_count + 1
-    @last_viewed_pocket = 1
-    new_pockets = []
-    @last_pocket_selections = []
-    (PokemonBag.pocket_count + 1).times do |i|
-      new_pockets[i] = []
-      @last_pocket_selections[i] = 0
-    end
-    @pockets.each do |pocket|
-      next if !pocket
-      pocket.each do |item|
-        item_pocket = GameData::Item.get(item[0]).pocket
-        new_pockets[item_pocket].push(item)
-      end
-    end
-    new_pockets.each_with_index do |pocket, i|
-      next if i == 0 || !Settings::BAG_POCKET_AUTO_SORT[i - 1]
-      pocket.sort! { |a, b| GameData::Item.keys.index(a[0]) <=> GameData::Item.keys.index(b[0]) }
-    end
-    @pockets = new_pockets
-  end
 end
-
-
 
 #===============================================================================
 # The PC item storage object, which actually contains all the items
@@ -259,8 +228,6 @@ class PCItemStorage
     return ItemStorageHelper.remove(@items, item, qty)
   end
 end
-
-
 
 #===============================================================================
 # Implements methods that act on arrays of items.  Each element in an item
@@ -331,101 +298,4 @@ module ItemStorageHelper
     items.compact!
     return ret
   end
-end
-
-
-
-#===============================================================================
-# Deprecated methods
-#===============================================================================
-class PokemonBag
-  # @deprecated This method is slated to be removed in v21.
-  def pbQuantity(item)
-    Deprecation.warn_method("pbQuantity", "v21", "$bag.quantity(item)")
-    return quantity(item)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbHasItem?(item)
-    Deprecation.warn_method("pbHasItem?", "v21", "$bag.has?(item)")
-    return has?(item)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbCanStore?(item, quantity = 1)
-    Deprecation.warn_method("pbCanStore?", "v21", "$bag.can_add?(item, quantity)")
-    return can_add?(item, quantity)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbStoreItem(item, quantity = 1)
-    Deprecation.warn_method("pbStoreItem", "v21", "$bag.add(item, quantity)")
-    return add(item, quantity)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbStoreAllOrNone(item, quantity = 1)
-    Deprecation.warn_method("pbStoreAllOrNone", "v21", "$bag.add_all(item, quantity)")
-    return add_all(item, quantity)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbChangeItem(old_item, new_item)
-    Deprecation.warn_method("pbChangeItem", "v21", "$bag.replace_item(old_item, new_item)")
-    return replace_item(old_item, new_item)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbDeleteItem(item, quantity = 1)
-    Deprecation.warn_method("pbDeleteItem", "v21", "$bag.remove(item, quantity)")
-    return remove(item, quantity)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbIsRegistered?(item)
-    Deprecation.warn_method("pbIsRegistered?", "v21", "$bag.registered?(item)")
-    return registered?(item)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbRegisterItem(item)
-    Deprecation.warn_method("pbRegisterItem", "v21", "$bag.register(item)")
-    register(item)
-  end
-
-  # @deprecated This method is slated to be removed in v21.
-  def pbUnregisterItem(item)
-    Deprecation.warn_method("pbUnregisterItem", "v21", "$bag.unregister(item)")
-    unregister(item)
-  end
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbQuantity(item)
-  Deprecation.warn_method("pbQuantity", "v21", "$bag.quantity(item)")
-  return $bag.quantity(item)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbHasItem?(item)
-  Deprecation.warn_method("pbHasItem?", "v21", "$bag.has?(item)")
-  return $bag.has?(item)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbCanStore?(item, quantity = 1)
-  Deprecation.warn_method("pbCanStore?", "v21", "$bag.can_add?(item, quantity)")
-  return $bag.can_add?(item, quantity)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbStoreItem(item, quantity = 1)
-  Deprecation.warn_method("pbStoreItem", "v21", "$bag.add(item, quantity)")
-  return $bag.add(item, quantity)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbStoreAllOrNone(item, quantity = 1)
-  Deprecation.warn_method("pbStoreAllOrNone", "v21", "$bag.add_all(item, quantity)")
-  return $bag.add_all(item, quantity)
 end

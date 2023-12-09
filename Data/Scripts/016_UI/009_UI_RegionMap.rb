@@ -12,7 +12,7 @@ class MapBottomSprite < Sprite
     @mapname     = ""
     @maplocation = ""
     @mapdetails  = ""
-    self.bitmap = BitmapWrapper.new(Graphics.width, Graphics.height)
+    self.bitmap = Bitmap.new(Graphics.width, Graphics.height)
     pbSetSystemFont(self.bitmap)
     refresh
   end
@@ -39,9 +39,9 @@ class MapBottomSprite < Sprite
   def refresh
     bitmap.clear
     textpos = [
-      [@mapname,                     18,   4, 0, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR],
-      [@maplocation,                 18, 360, 0, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR],
-      [@mapdetails, Graphics.width - 16, 360, 1, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR]
+      [@mapname,                     18,   4, :left, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR],
+      [@maplocation,                 18, 360, :left, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR],
+      [@mapdetails, Graphics.width - 16, 360, :right, TEXT_MAIN_COLOR, TEXT_SHADOW_COLOR]
     ]
     pbDrawTextPositions(bitmap, textpos)
   end
@@ -72,27 +72,26 @@ class PokemonRegionMap_Scene
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
     @sprites = {}
-    @map_data = pbLoadTownMapData
     @fly_map = fly_map
     @mode    = fly_map ? 1 : 0
     map_metadata = $game_map.metadata
     playerpos = (map_metadata) ? map_metadata.town_map_position : nil
     if !playerpos
       mapindex = 0
-      @map     = @map_data[0]
+      @map     = GameData::TownMap.get(0)
       @map_x   = LEFT
       @map_y   = TOP
-    elsif @region >= 0 && @region != playerpos[0] && @map_data[@region]
+    elsif @region >= 0 && @region != playerpos[0] && GameData::TownMap.exists?(@region)
       mapindex = @region
-      @map     = @map_data[@region]
+      @map     = GameData::TownMap.get(@region)
       @map_x   = LEFT
       @map_y   = TOP
     else
       mapindex = playerpos[0]
-      @map     = @map_data[playerpos[0]]
-      @map_x    = playerpos[1]
-      @map_y    = playerpos[2]
-      mapsize = map_metadata.town_map_size
+      @map     = GameData::TownMap.get(playerpos[0])
+      @map_x   = playerpos[1]
+      @map_y   = playerpos[2]
+      mapsize  = map_metadata.town_map_size
       if mapsize && mapsize[0] && mapsize[0] > 0
         sqwidth  = mapsize[0]
         sqheight = (mapsize[1].length.to_f / mapsize[0]).ceil
@@ -104,9 +103,9 @@ class PokemonRegionMap_Scene
       pbMessage(_INTL("The map data cannot be found."))
       return false
     end
-    addBackgroundOrColoredPlane(@sprites, "background", "mapbg", Color.new(0, 0, 0), @viewport)
+    addBackgroundOrColoredPlane(@sprites, "background", "Town Map/bg", Color.black, @viewport)
     @sprites["map"] = IconSprite.new(0, 0, @viewport)
-    @sprites["map"].setBitmap("Graphics/Pictures/#{@map[1]}")
+    @sprites["map"].setBitmap("Graphics/UI/Town Map/#{@map.filename}")
     @sprites["map"].x += (Graphics.width - @sprites["map"].bitmap.width) / 2
     @sprites["map"].y += (Graphics.height - @sprites["map"].bitmap.height) / 2
     Settings::REGION_MAP_EXTRAS.each do |graphic|
@@ -118,11 +117,11 @@ class PokemonRegionMap_Scene
       end
       pbDrawImagePositions(
         @sprites["map2"].bitmap,
-        [["Graphics/Pictures/#{graphic[4]}", graphic[2] * SQUARE_WIDTH, graphic[3] * SQUARE_HEIGHT]]
+        [["Graphics/UI/Town Map/#{graphic[4]}", graphic[2] * SQUARE_WIDTH, graphic[3] * SQUARE_HEIGHT]]
       )
     end
     @sprites["mapbottom"] = MapBottomSprite.new(@viewport)
-    @sprites["mapbottom"].mapname     = pbGetMessage(MessageTypes::RegionNames, mapindex)
+    @sprites["mapbottom"].mapname     = @map.name
     @sprites["mapbottom"].maplocation = pbGetMapLocation(@map_x, @map_y)
     @sprites["mapbottom"].mapdetails  = pbGetMapDetails(@map_x, @map_y)
     if playerpos && mapindex == playerpos[0]
@@ -136,7 +135,7 @@ class PokemonRegionMap_Scene
       (TOP..BOTTOM).each do |j|
         healspot = pbGetHealingSpot(i, j)
         next if !healspot || !$PokemonGlobal.visitedMaps[healspot[0]]
-        @sprites["point#{k}"] = AnimatedSprite.create("Graphics/Pictures/mapFly", 2, 16)
+        @sprites["point#{k}"] = AnimatedSprite.create("Graphics/UI/Town Map/icon_fly", 2, 16)
         @sprites["point#{k}"].viewport = @viewport
         @sprites["point#{k}"].x        = point_x_to_screen_x(i)
         @sprites["point#{k}"].y        = point_y_to_screen_y(j)
@@ -145,7 +144,7 @@ class PokemonRegionMap_Scene
         k += 1
       end
     end
-    @sprites["cursor"] = AnimatedSprite.create("Graphics/Pictures/mapCursor", 2, 5)
+    @sprites["cursor"] = AnimatedSprite.create("Graphics/UI/Town Map/cursor", 2, 5)
     @sprites["cursor"].viewport = @viewport
     @sprites["cursor"].x        = point_x_to_screen_x(@map_x)
     @sprites["cursor"].y        = point_y_to_screen_y(@map_y)
@@ -177,66 +176,53 @@ class PokemonRegionMap_Scene
   end
 
   def pbSaveMapData
-    File.open("PBS/town_map.txt", "wb") { |f|
-      Compiler.add_PBS_header_to_file(f)
-      @map_data.length.times do |i|
-        map = @map_data[i]
-        next if !map
-        f.write("\#-------------------------------\r\n")
-        f.write(sprintf("[%d]\r\n", i))
-        f.write(sprintf("Name = %s\r\n", Compiler.csvQuote(map[0])))
-        f.write(sprintf("Filename = %s\r\n", Compiler.csvQuote(map[1])))
-        map[2].each do |loc|
-          f.write("Point = ")
-          Compiler.pbWriteCsvRecord(loc, f, [nil, "uussUUUU"])
-          f.write("\r\n")
-        end
-      end
-    }
+    GameData::TownMap.save
+    Compiler.write_town_map
   end
 
   def pbGetMapLocation(x, y)
-    return "" if !@map[2]
-    @map[2].each do |point|
+    return "" if !@map.point
+    @map.point.each do |point|
       next if point[0] != x || point[1] != y
       return "" if point[7] && (@wallmap || point[7] <= 0 || !$game_switches[point[7]])
-      name = pbGetMessageFromHash(MessageTypes::PlaceNames, point[2])
+      name = pbGetMessageFromHash(MessageTypes::REGION_LOCATION_NAMES, point[2])
       return (@editor) ? point[2] : name
     end
     return ""
   end
 
   def pbChangeMapLocation(x, y)
-    return "" if !@editor || !@map[2]
-    map = @map[2].select { |loc| loc[0] == x && loc[1] == y }[0]
-    currentobj  = map
-    currentname = (map) ? map[2] || "" : ""
+    return "" if !@editor || !@map.point
+    point = @map.point.select { |loc| loc[0] == x && loc[1] == y }[0]
+    currentobj  = point
+    currentname = (point) ? point[2] : ""
     currentname = pbMessageFreeText(_INTL("Set the name for this point."), currentname, false, 250) { pbUpdate }
     if currentname
       if currentobj
         currentobj[2] = currentname
       else
         newobj = [x, y, currentname, ""]
-        @map[2].push(newobj)
+        @map.point.push(newobj)
       end
       @changed = true
     end
   end
 
-  def pbGetMapDetails(x, y)   # From Wichu, with my help
-    return "" if !@map[2]
-    @map[2].each do |point|
+  def pbGetMapDetails(x, y)
+    return "" if !@map.point
+    @map.point.each do |point|
       next if point[0] != x || point[1] != y
       return "" if point[7] && (@wallmap || point[7] <= 0 || !$game_switches[point[7]])
-      mapdesc = pbGetMessageFromHash(MessageTypes::PlaceDescriptions, point[3])
+      return "" if !point[3]
+      mapdesc = pbGetMessageFromHash(MessageTypes::REGION_LOCATION_DESCRIPTIONS, point[3])
       return (@editor) ? point[3] : mapdesc
     end
     return ""
   end
 
   def pbGetHealingSpot(x, y)
-    return nil if !@map[2]
-    @map[2].each do |point|
+    return nil if !@map.point
+    @map.point.each do |point|
       next if point[0] != x || point[1] != y
       return nil if point[7] && (@wallmap || point[7] <= 0 || !$game_switches[point[7]])
       return (point[4] && point[5] && point[6]) ? [point[4], point[5], point[6]] : nil
@@ -250,7 +236,7 @@ class PokemonRegionMap_Scene
     text = (@mode == 0) ? _INTL("ACTION: Fly") : _INTL("ACTION: Cancel Fly")
     pbDrawTextPositions(
       @sprites["help"].bitmap,
-      [[text, Graphics.width - 16, 4, 1, Color.new(248, 248, 248), Color.new(0, 0, 0)]]
+      [[text, Graphics.width - 16, 4, :right, Color.new(248, 248, 248), Color.black]]
     )
     @sprites.each do |key, sprite|
       next if !key.include?("point")
@@ -264,17 +250,21 @@ class PokemonRegionMap_Scene
     y_offset = 0
     new_x    = 0
     new_y    = 0
-    dist_per_frame = 8 * 20 / Graphics.frame_rate
+    timer_start = System.uptime
     loop do
       Graphics.update
       Input.update
       pbUpdate
       if x_offset != 0 || y_offset != 0
-        x_offset += (x_offset > 0) ? -dist_per_frame : (x_offset < 0) ? dist_per_frame : 0
-        y_offset += (y_offset > 0) ? -dist_per_frame : (y_offset < 0) ? dist_per_frame : 0
-        @sprites["cursor"].x = new_x - x_offset
-        @sprites["cursor"].y = new_y - y_offset
-        next
+        if x_offset != 0
+          @sprites["cursor"].x = lerp(new_x - x_offset, new_x, 0.1, timer_start, System.uptime)
+          x_offset = 0 if @sprites["cursor"].x == new_x
+        end
+        if y_offset != 0
+          @sprites["cursor"].y = lerp(new_y - y_offset, new_y, 0.1, timer_start, System.uptime)
+          y_offset = 0 if @sprites["cursor"].y == new_y
+        end
+        next if x_offset != 0 || y_offset != 0
       end
       ox = 0
       oy = 0
@@ -297,6 +287,7 @@ class PokemonRegionMap_Scene
         y_offset = oy * SQUARE_HEIGHT
         new_x = @sprites["cursor"].x + x_offset
         new_y = @sprites["cursor"].y + y_offset
+        timer_start = System.uptime
       end
       @sprites["mapbottom"].maplocation = pbGetMapLocation(@map_x, @map_y)
       @sprites["mapbottom"].mapdetails  = pbGetMapDetails(@map_x, @map_y)
@@ -317,7 +308,8 @@ class PokemonRegionMap_Scene
         end
       elsif Input.trigger?(Input::USE) && @editor   # Intentionally after other USE input check
         pbChangeMapLocation(@map_x, @map_y)
-      elsif Input.trigger?(Input::ACTION) && !@wallmap && !@fly_map && pbCanFly?
+      elsif Input.trigger?(Input::ACTION) && Settings::CAN_FLY_FROM_TOWN_MAP &&
+            !@wallmap && !@fly_map && pbCanFly?
         pbPlayDecisionSE
         @mode = (@mode == 1) ? 0 : 1
         refresh_fly_screen
@@ -355,10 +347,10 @@ end
 #
 #===============================================================================
 def pbShowMap(region = -1, wallmap = true)
-  pbFadeOutIn {
+  pbFadeOutIn do
     scene = PokemonRegionMap_Scene.new(region, wallmap)
     screen = PokemonRegionMapScreen.new(scene)
     ret = screen.pbStartScreen
     $game_temp.fly_destination = ret if ret && !wallmap
-  }
+  end
 end

@@ -22,7 +22,7 @@ module Graphics
       duration = 0
       filename = ""
     end
-    duration *= Graphics.frame_rate / 20   # For default fade-in animation
+    duration *= Graphics.frame_rate / 20   # For default fade-in animation, must be in frames
     begin
       transition_KGC_SpecialTransition(duration, filename, vague)
     rescue Exception
@@ -114,7 +114,7 @@ module Transitions
       end
       @duration = self.class::DURATION || duration
       @parameters = args
-      @timer = 0.0
+      @timer_start = System.uptime
       @overworld_bitmap = $game_temp.background_bitmap
       initialize_bitmaps
       return if disposed?
@@ -138,6 +138,10 @@ module Transitions
       return s
     end
 
+    def timer
+      return System.uptime - @timer_start
+    end
+
     def dispose
       return if disposed?
       dispose_all
@@ -153,8 +157,7 @@ module Transitions
 
     def update
       return if disposed?
-      @timer += Graphics.delta_s
-      if @timer >= @duration
+      if timer >= @duration
         dispose
         return
       end
@@ -201,7 +204,7 @@ module Transitions
     end
 
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       @sprites.each_with_index do |sprite, i|
         sprite.y = @start_y[i] + (Graphics.height * @timings[i] * proportion * proportion)
         sprite.opacity = 255 * (1 - proportion)
@@ -232,7 +235,7 @@ module Transitions
     end
 
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       @sprites.each_with_index do |sprite, i|
         sprite.zoom_x = (1 - proportion).to_f
         sprite.zoom_y = sprite.zoom_x
@@ -256,7 +259,7 @@ module Transitions
       @overworld_sprite.visible = false
       # Black background
       @black_sprite = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
-      @black_sprite.bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
+      @black_sprite.bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.black)
       # Overworld sprites
       sprite_width = @overworld_bitmap.width / NUM_SPRITES_X
       sprite_height = @overworld_bitmap.height / NUM_SPRITES_Y
@@ -298,13 +301,15 @@ module Transitions
     end
 
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       @sprites.each_with_index do |sprite, i|
         sprite.x = @start_positions[i][0] + (@move_vectors[i][0] * proportion)
         sprite.y = @start_positions[i][1] + (@move_vectors[i][1] * proportion)
         sprite.opacity = 384 * (1 - proportion)
       end
     end
+
+    #---------------------------------------------------------------------------
 
     private
 
@@ -351,7 +356,7 @@ module Transitions
 
     def update_anim
       @sprites.each_with_index do |sprite, i|
-        next if @timings[i] < 0 || @timer < @timings[i]
+        next if @timings[i] < 0 || timer < @timings[i]
         sprite.visible = false
         @timings[i] = -1
       end
@@ -370,7 +375,7 @@ module Transitions
     end
 
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       @overworld_sprite.zoom_x = 1 + (7 * proportion)
       @overworld_sprite.zoom_y = @overworld_sprite.zoom_x
       @overworld_sprite.opacity = 255 * (1 - proportion)
@@ -382,7 +387,7 @@ module Transitions
   #=============================================================================
   class ScrollScreen < Transition_Base
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       if (@parameters[0] % 3) != 2
         @overworld_sprite.x = [1, -1, 0][@parameters[0] % 3] * Graphics.width * proportion
       end
@@ -413,7 +418,7 @@ module Transitions
     end
 
     def update_anim
-      proportion = @timer / @duration
+      proportion = timer / @duration
       inv_proportion = 1 / (1 + (proportion * (MAX_PIXELLATION_FACTOR - 1)))
       new_size_rect = Rect.new(0, 0, @overworld_bitmap.width * inv_proportion,
                                @overworld_bitmap.height * inv_proportion)
@@ -423,8 +428,8 @@ module Transitions
       # Take shrunken area from buffer_temp and stretch it into buffer
       @overworld_bitmap.stretch_blt(Rect.new(0, 0, @overworld_bitmap.width, @overworld_bitmap.height),
                                     @buffer_temp, new_size_rect)
-      if @timer >= @start_black_fade
-        @overworld_sprite.opacity = 255 * (1 - ((@timer - @start_black_fade) / (@duration - @start_black_fade)))
+      if timer >= @start_black_fade
+        @overworld_sprite.opacity = 255 * (1 - ((timer - @start_black_fade) / (@duration - @start_black_fade)))
       end
     end
   end
@@ -434,7 +439,7 @@ module Transitions
   #=============================================================================
   class FadeToBlack < Transition_Base
     def update_anim
-      @overworld_sprite.opacity = 255 * (1 - (@timer / @duration))
+      @overworld_sprite.opacity = 255 * (1 - (timer / @duration))
     end
   end
 
@@ -443,7 +448,7 @@ module Transitions
   #=============================================================================
   class FadeFromBlack < Transition_Base
     def update_anim
-      @overworld_sprite.opacity = 255 * @timer / @duration
+      @overworld_sprite.opacity = 255 * timer / @duration
     end
   end
 
@@ -502,9 +507,9 @@ module Transitions
 
     def update_anim
       @sprites.each_with_index do |sprite, i|
-        next if @timings[i] < 0 || @timer < @timings[i]
+        next if @timings[i] < 0 || timer < @timings[i]
         sprite.visible = true
-        sprite.zoom_x = @zoom_x_target * (@timer - @timings[i]) / TIME_TO_ZOOM
+        sprite.zoom_x = @zoom_x_target * (timer - @timings[i]) / TIME_TO_ZOOM
         if sprite.zoom_x >= @zoom_x_target
           sprite.zoom_x = @zoom_x_target
           @timings[i] = -1
@@ -571,9 +576,9 @@ module Transitions
 
     def update_anim
       @sprites.each_with_index do |sprite, i|
-        next if @timings[i] < 0 || @timer < @timings[i]
+        next if @timings[i] < 0 || timer < @timings[i]
         sprite.visible = true
-        size = (@timer - @timings[i]) / TIME_TO_ZOOM
+        size = (timer - @timings[i]) / TIME_TO_ZOOM
         sprite.zoom_x = @zoom_x_target * size
         sprite.zoom_y = @zoom_y_target * size
         next if size < 1.0
@@ -642,22 +647,22 @@ module Transitions
 
     def update_anim
       # Make overworld wave strips oscillate
-      amplitude = MAX_WAVE_AMPLITUDE * [@timer / 0.1, 1].min   # Build up to max in 0.1 seconds
+      amplitude = MAX_WAVE_AMPLITUDE * [timer / 0.1, 1].min   # Build up to max in 0.1 seconds
       @sprites.each_with_index do |sprite, i|
-        sprite.x = amplitude * Math.sin((@timer * WAVE_SPEED) + (i * WAVE_SPACING))
+        sprite.x = amplitude * Math.sin((timer * WAVE_SPEED) + (i * WAVE_SPACING))
       end
       # Move bubbles sprite up and oscillate side to side
       @bubbles_sprite.x = (Graphics.width - @bubble_bitmap.width) / 2
-      @bubbles_sprite.x += MAX_BUBBLE_AMPLITUDE * Math.sin(@timer * BUBBLES_WAVE_SPEED)
-      @bubbles_sprite.y = Graphics.height * (1 - (@timer * 1.2))
+      @bubbles_sprite.x += MAX_BUBBLE_AMPLITUDE * Math.sin(timer * BUBBLES_WAVE_SPEED)
+      @bubbles_sprite.y = Graphics.height * (1 - (timer * 1.2))
       # Move splash sprite up
-      if @timer >= @splash_rising_start
-        proportion = (@timer - @splash_rising_start) / (@duration - @splash_rising_start)
+      if timer >= @splash_rising_start
+        proportion = (timer - @splash_rising_start) / (@duration - @splash_rising_start)
         @splash_sprite.y = Graphics.height * (1 - (proportion * 2))
       end
       # Move black sprite up
-      if @timer >= @black_rising_start
-        proportion = (@timer - @black_rising_start) / (@duration - @black_rising_start)
+      if timer >= @black_rising_start
+        proportion = (timer - @black_rising_start) / (@duration - @black_rising_start)
         @black_sprite.y = Graphics.height * (1 - proportion)
       end
     end
@@ -716,16 +721,16 @@ module Transitions
     end
 
     def update_anim
-      if @timer <= @ball_roll_end
+      if timer <= @ball_roll_end
         # Roll ball sprites across screen
-        proportion = @timer / @ball_roll_end
+        proportion = timer / @ball_roll_end
         total_distance = Graphics.width + @ball_bitmap.width
         @ball_sprites.each_with_index do |sprite, i|
           sprite.x = @ball_start_x[i] + (((2 * i) - 1) * (total_distance * proportion))
           sprite.angle = ((2 * i) - 1) * 360 * proportion * 2
         end
       else
-        proportion = (@timer - @ball_roll_end) / (@duration - @ball_roll_end)
+        proportion = (timer - @ball_roll_end) / (@duration - @ball_roll_end)
         # Hide ball sprites
         if @ball_sprites[0].visible
           @ball_sprites.each { |s| s.visible = false }
@@ -802,13 +807,13 @@ module Transitions
     end
 
     def update_anim
-      if @timer < @ball_spin_end
+      if timer < @ball_spin_end
         # Ball spin
-        proportion = @timer / @ball_spin_end
+        proportion = timer / @ball_spin_end
         @ball_sprites[0].zoom_x = proportion
         @ball_sprites[0].zoom_y = proportion
         @ball_sprites[0].angle = 360 * (1 - proportion)
-      elsif @timer < @slide_start
+      elsif timer < @slide_start
         # Fix zoom/angle of ball sprites
         if @ball_sprites[0].src_rect.height == @ball_bitmap.height
           @ball_sprites.each_with_index do |sprite, i|
@@ -821,7 +826,7 @@ module Transitions
         end
       else
         # Split overworld/ball apart, move blackness in following them
-        proportion = (@timer - @slide_start) / (@duration - @slide_start)
+        proportion = (timer - @slide_start) / (@duration - @slide_start)
         @overworld_sprites.each_with_index do |sprite, i|
           sprite.x = (0.5 + (((i * 2) - 1) * proportion * proportion)) * Graphics.width
           sprite.zoom_x = 1.0 + (proportion * proportion)   # Ends at 2x zoom
@@ -904,9 +909,9 @@ module Transitions
     end
 
     def update_anim
-      if @timer < @black_appear_start
+      if timer < @black_appear_start
         # Balls drop down screen while spinning
-        proportion = @timer / @black_appear_start
+        proportion = timer / @black_appear_start
         @ball_sprites.each_with_index do |sprite, i|
           sprite.y = -@ball_bitmap.height - BALL_START_Y_OFFSETS[i]
           sprite.y += (Graphics.height + BALL_START_Y_OFFSETS.max + (@ball_bitmap.height * 2)) * proportion
@@ -918,12 +923,12 @@ module Transitions
         end
         # Black squares appear
         @timings.each_with_index do |timing, i|
-          next if timing < 0 || @timer < timing
+          next if timing < 0 || timer < timing
           @sprites[i].visible = true
           @timings[i] = -1
         end
         # Zoom in overworld sprite
-        proportion = (@timer - @black_appear_start) / (@duration - @black_appear_start)
+        proportion = (timer - @black_appear_start) / (@duration - @black_appear_start)
         @overworld_sprite.zoom_x = 1.0 + (proportion * proportion)   # Ends at 2x zoom
         @overworld_sprite.zoom_y = @overworld_sprite.zoom_x
       end
@@ -977,9 +982,9 @@ module Transitions
     end
 
     def update_anim
-      if @timer <= @ball_appear_end
+      if timer <= @ball_appear_end
         # Make ball drop down and zoom in
-        proportion = @timer / @ball_appear_end
+        proportion = timer / @ball_appear_end
         @ball_sprite.y = (-@ball_bitmap.height / 2) + ((Graphics.height + (@ball_bitmap.height * 3)) * proportion * proportion)
         @ball_sprite.angle = -1.5 * 360 * proportion
         @ball_sprite.zoom_x = 3 * proportion * proportion
@@ -987,7 +992,7 @@ module Transitions
       else
         @ball_sprite.visible = false
         # Black curve and blackness descends
-        proportion = (@timer - @ball_appear_end) / (@duration - @ball_appear_end)
+        proportion = (timer - @ball_appear_end) / (@duration - @ball_appear_end)
         @sprites.each do |sprite|
           sprite.y = -@curve_bitmap.height + ((Graphics.height + @curve_bitmap.height) * proportion)
         end
@@ -1063,13 +1068,13 @@ module Transitions
 
     def update_anim
       # Make overworld wave strips oscillate
-      amplitude = MAX_WAVE_AMPLITUDE * [@timer / 0.1, 1].min   # Build up to max in 0.1 seconds
+      amplitude = MAX_WAVE_AMPLITUDE * [timer / 0.1, 1].min   # Build up to max in 0.1 seconds
       @sprites.each_with_index do |sprite, i|
-        sprite.x = (1 - ((i % 2) * 2)) * amplitude * Math.sin((@timer * WAVE_SPEED) + (i * WAVE_SPACING))
+        sprite.x = (1 - ((i % 2) * 2)) * amplitude * Math.sin((timer * WAVE_SPEED) + (i * WAVE_SPACING))
       end
       # Move balls and trailing blackness up
-      if @timer >= @ball_rising_start
-        proportion = (@timer - @ball_rising_start) / (@duration - @ball_rising_start)
+      if timer >= @ball_rising_start
+        proportion = (timer - @ball_rising_start) / (@duration - @ball_rising_start)
         @ball_sprites.each_with_index do |sprite, i|
           sprite.y = (BALL_OFFSETS[i] * Graphics.height) - (Graphics.height * 3.5 * proportion)
           sprite.angle = [-1, -1, 1][i] * 360 * 2 * proportion
@@ -1134,22 +1139,22 @@ module Transitions
 
     def update_anim
       # Make overworld wave strips oscillate
-      amplitude = MAX_WAVE_AMPLITUDE * [@timer / 0.1, 1].min   # Build up to max in 0.1 seconds
+      amplitude = MAX_WAVE_AMPLITUDE * [timer / 0.1, 1].min   # Build up to max in 0.1 seconds
       @sprites.each_with_index do |sprite, i|
-        sprite.x = (1 - ((i % 2) * 2)) * amplitude * Math.sin((@timer * WAVE_SPEED) + (i * WAVE_SPACING))
+        sprite.x = (1 - ((i % 2) * 2)) * amplitude * Math.sin((timer * WAVE_SPEED) + (i * WAVE_SPACING))
       end
-      if @timer <= @ball_appear_end
+      if timer <= @ball_appear_end
         # Fade in ball while spinning
-        proportion = @timer / @ball_appear_end
+        proportion = timer / @ball_appear_end
         @ball_sprite.opacity = 255 * proportion
         @ball_sprite.angle = -360 * proportion
-      elsif @timer <= @black_appear_start
+      elsif timer <= @black_appear_start
         # Fix opacity/angle of ball sprite
         @ball_sprite.opacity = 255
         @ball_sprite.angle = 0
       else
         # Spread blackness from centre
-        proportion = (@timer - @black_appear_start) / (@duration - @black_appear_start)
+        proportion = (timer - @black_appear_start) / (@duration - @black_appear_start)
         @black_sprite.zoom_x = proportion
         @black_sprite.zoom_y = proportion * 2
       end
@@ -1208,9 +1213,9 @@ module Transitions
     end
 
     def update_anim
-      if @timer <= @ball_appear_end
+      if timer <= @ball_appear_end
         # Balls fly out from centre of screen
-        proportion = @timer / @ball_appear_end
+        proportion = timer / @ball_appear_end
         ball_travel_x = (Graphics.width + (@ball_bitmap.width * 2)) / 2
         ball_travel_y = (Graphics.height + (@ball_bitmap.height * 2)) / 2
         @ball_sprites.each_with_index do |sprite, i|
@@ -1219,7 +1224,7 @@ module Transitions
         end
       else
         # Black wedges expand to fill screen
-        proportion = (@timer - @ball_appear_end) / (@duration - @ball_appear_end)
+        proportion = (timer - @ball_appear_end) / (@duration - @ball_appear_end)
         @sprites.each_with_index do |sprite, i|
           sprite.visible = true
           sprite.zoom_x = proportion if i.even?
@@ -1292,7 +1297,7 @@ module Transitions
       @foe_sprite = new_sprite(Graphics.width + @foe_bitmap.width, @sprites[0].y + @sprites[0].height - 12,
                                @foe_bitmap, @foe_bitmap.width / 2, @foe_bitmap.height)
       @foe_sprite.z     = 7
-      @foe_sprite.color = Color.new(0, 0, 0)
+      @foe_sprite.color = Color.black
       # Sprite with foe's name written in it
       @text_sprite = BitmapSprite.new(Graphics.width, @bar_bitmap.height, @viewport)
       @text_sprite.y       = BAR_Y
@@ -1300,7 +1305,7 @@ module Transitions
       @text_sprite.visible = false
       pbSetSystemFont(@text_sprite.bitmap)
       pbDrawTextPositions(@text_sprite.bitmap,
-                          [[$game_temp.transition_animation_data[1], 244, 86, 0,
+                          [[$game_temp.transition_animation_data[1], 244, 86, :left,
                             Color.new(248, 248, 248), Color.new(72, 80, 80)]])
       # Foreground black
       @black_sprite = new_sprite(0, 0, @black_bitmap)
@@ -1347,27 +1352,29 @@ module Transitions
 
     def update_anim
       # Bar scrolling
-      @bar_x -= Graphics.delta_s * BAR_SCROLL_SPEED
-      @bar_x += @bar_bitmap.width if @bar_x <= -@bar_bitmap.width
+      @bar_x = -timer * BAR_SCROLL_SPEED
+      while @bar_x <= -@bar_bitmap.width
+        @bar_x += @bar_bitmap.width
+      end
       @sprites.each_with_index { |spr, i| spr.x = @bar_x + (i * @bar_bitmap.width) }
       # Vibrate VS sprite
-      vs_phase = (@timer * 30).to_i % 3
+      vs_phase = (timer * 30).to_i % 3
       @vs_main_sprite.x = @vs_x + [0, 4, 0][vs_phase]
       @vs_main_sprite.y = @vs_y + [0, 0, -4][vs_phase]
-      if @timer >= @fade_to_black_start
+      if timer >= @fade_to_black_start
         # Fade to black
         @black_sprite.visible = true
-        proportion = (@timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
+        proportion = (timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
         @flash_viewport.color.alpha = 255 * (1 - proportion)
-      elsif @timer >= @fade_to_white_start
+      elsif timer >= @fade_to_white_start
         # Slowly fade to white
-        proportion = (@timer - @fade_to_white_start) / (@fade_to_white_end - @fade_to_white_start)
+        proportion = (timer - @fade_to_white_start) / (@fade_to_white_end - @fade_to_white_start)
         @flash_viewport.color.alpha = 255 * proportion
-      elsif @timer >= @flash_start + @flash_duration
+      elsif timer >= @flash_start + @flash_duration
         @flash_viewport.color.alpha = 0
-      elsif @timer >= @flash_start
+      elsif timer >= @flash_start
         # Flash the screen white
-        proportion = (@timer - @flash_start) / @flash_duration
+        proportion = (timer - @flash_start) / @flash_duration
         if proportion >= 0.5
           @flash_viewport.color.alpha = 320 * 2 * (1 - proportion)
           @rear_black_sprite.visible = true
@@ -1376,44 +1383,44 @@ module Transitions
         else
           @flash_viewport.color.alpha = 320 * 2 * proportion
         end
-      elsif @timer >= @foe_appear_end
+      elsif timer >= @foe_appear_end
         @foe_sprite.x = FOE_SPRITE_X
-      elsif @timer >= @foe_appear_start
+      elsif timer >= @foe_appear_start
         # Foe sprite appears
-        proportion = (@timer - @foe_appear_start) / (@foe_appear_end - @foe_appear_start)
+        proportion = (timer - @foe_appear_start) / (@foe_appear_end - @foe_appear_start)
         start_x = Graphics.width + (@foe_bitmap.width / 2)
-        @foe_sprite.x = start_x + (FOE_SPRITE_X_LIMIT - start_x) * proportion
-      elsif @timer >= @vs_appear_final
+        @foe_sprite.x = start_x + ((FOE_SPRITE_X_LIMIT - start_x) * proportion)
+      elsif timer >= @vs_appear_final
         @vs_1_sprite.visible = false
-      elsif @timer >= @vs_appear_start_2
+      elsif timer >= @vs_appear_start_2
         # Temp VS sprites enlarge and shrink again
         if @vs_2_sprite.visible
-          @vs_2_sprite.zoom_x = 1.6 - 0.8 * (@timer - @vs_appear_start_2) / @vs_shrink_time
+          @vs_2_sprite.zoom_x = 1.6 - (0.8 * (timer - @vs_appear_start_2) / @vs_shrink_time)
           @vs_2_sprite.zoom_y = @vs_2_sprite.zoom_x
           if @vs_2_sprite.zoom_x <= 1.2
             @vs_2_sprite.visible = false
             @vs_main_sprite.visible = true
           end
         end
-        @vs_1_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start_2) / @vs_shrink_time
+        @vs_1_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start_2) / @vs_shrink_time)
         @vs_1_sprite.zoom_y = @vs_1_sprite.zoom_x
-      elsif @timer >= @vs_appear_start
+      elsif timer >= @vs_appear_start
         # Temp VS sprites appear and start shrinking
         @vs_2_sprite.visible = true
-        @vs_2_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start) / @vs_shrink_time
+        @vs_2_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start) / @vs_shrink_time)
         @vs_2_sprite.zoom_y = @vs_2_sprite.zoom_x
         if @vs_1_sprite.visible || @vs_2_sprite.zoom_x <= 1.6   # Halfway between 2.0 and 1.2
           @vs_1_sprite.visible = true
-          @vs_1_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start - (@vs_shrink_time / 2)) / @vs_shrink_time
+          @vs_1_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start - (@vs_shrink_time / 2)) / @vs_shrink_time)
           @vs_1_sprite.zoom_y = @vs_1_sprite.zoom_x
         end
-      elsif @timer >= @bar_appear_end
+      elsif timer >= @bar_appear_end
         @bar_mask_sprite.visible = false
       else
-        start_x = Graphics.width * (1 - (@timer / @bar_appear_end))
+        start_x = Graphics.width * (1 - (timer / @bar_appear_end))
         color = Color.new(0, 0, 0, 0)   # Transparent
         (@sprites[0].height / 2).times do |i|
-          x = start_x - BAR_MASK[i % BAR_MASK.length] * 4
+          x = start_x - (BAR_MASK[i % BAR_MASK.length] * 4)
           @bar_mask_sprite.bitmap.fill_rect(x, BAR_Y + (i * 2), @bar_mask_sprite.width - x, 2, color)
         end
       end
@@ -1481,13 +1488,13 @@ module Transitions
                                   @player_bar_sprite.y + BAR_HEIGHT - TRAINER_Y_OFFSET,
                                   @player_bitmap, @player_bitmap.width / 2, @player_bitmap.height)
       @player_sprite.z     = 7
-      @player_sprite.color = Color.new(0, 0, 0)
+      @player_sprite.color = Color.black
       # Foe sprite
       @foe_sprite = new_sprite(@foe_bar_sprite.x + (@bar_bitmap.width / 2) - TRAINER_X_OFFSET,
                                @foe_bar_sprite.y + @foe_bitmap.height - TRAINER_Y_OFFSET,
                                @foe_bitmap, @foe_bitmap.width / 2, @foe_bitmap.height)
       @foe_sprite.z     = 7
-      @foe_sprite.color = Color.new(0, 0, 0)
+      @foe_sprite.color = Color.black
       # Sprite with foe's name written in it
       @text_sprite = BitmapSprite.new(@bar_bitmap.width / 2, BAR_HEIGHT, @viewport)
       @text_sprite.x = @foe_bar_start_x
@@ -1495,7 +1502,7 @@ module Transitions
       @text_sprite.z = 8
       pbSetSystemFont(@text_sprite.bitmap)
       pbDrawTextPositions(@text_sprite.bitmap,
-                          [[$game_temp.transition_animation_data[1], 160, 86, 0,
+                          [[$game_temp.transition_animation_data[1], 160, 86, :left,
                             Color.new(248, 248, 248), Color.new(72, 80, 80)]])
       # VS logo
       @vs_main_sprite = new_sprite(Graphics.width / 2, Graphics.height / 2, @vs_1_bitmap,
@@ -1562,64 +1569,64 @@ module Transitions
 
     def update_anim
       # Bars/trainer sprites slide in
-      if @timer > @bar_appear_end
+      if timer > @bar_appear_end
         @player_bar_sprite.x = @player_bar_x
         @player_sprite.x = @player_bar_sprite.x + TRAINER_X_OFFSET
         @foe_bar_sprite.x = @foe_bar_x
         @foe_sprite.x = @foe_bar_sprite.x + (@bar_bitmap.width / 2) - TRAINER_X_OFFSET
         @text_sprite.x = @foe_bar_sprite.x
-      elsif @timer > @bar_appear_start
+      elsif timer > @bar_appear_start
         # Bars/trainer sprites slide in
-        proportion = (@timer - @bar_appear_start) / (@bar_appear_end - @bar_appear_start)
+        proportion = (timer - @bar_appear_start) / (@bar_appear_end - @bar_appear_start)
         sqrt_proportion = Math.sqrt(proportion)
-        @player_bar_sprite.x = @player_bar_start_x + (@player_bar_x + BAR_OVERSHOOT - @player_bar_start_x) * sqrt_proportion
+        @player_bar_sprite.x = @player_bar_start_x + ((@player_bar_x + BAR_OVERSHOOT - @player_bar_start_x) * sqrt_proportion)
         @player_sprite.x = @player_bar_sprite.x + TRAINER_X_OFFSET
-        @foe_bar_sprite.x = @foe_bar_start_x + (@foe_bar_x - BAR_OVERSHOOT - @foe_bar_start_x) * sqrt_proportion
+        @foe_bar_sprite.x = @foe_bar_start_x + ((@foe_bar_x - BAR_OVERSHOOT - @foe_bar_start_x) * sqrt_proportion)
         @foe_sprite.x = @foe_bar_sprite.x + (@bar_bitmap.width / 2) - TRAINER_X_OFFSET
         @text_sprite.x = @foe_bar_sprite.x
       end
       # Animate bars
-      if @timer >= @flash_start + 0.33 * @flash_duration
-        bar_phase = (@timer * 30).to_i % @num_bar_frames
+      if timer >= @flash_start + (0.33 * @flash_duration)
+        bar_phase = (timer * 30).to_i % @num_bar_frames
         @player_bar_sprite.src_rect.y = bar_phase * BAR_HEIGHT
         @foe_bar_sprite.src_rect.y = bar_phase * BAR_HEIGHT
       end
       # Vibrate VS sprite
-      vs_phase = (@timer * 30).to_i % 3
+      vs_phase = (timer * 30).to_i % 3
       @vs_main_sprite.x = (Graphics.width / 2) + [0, 4, 0][vs_phase]
       @vs_main_sprite.y = (Graphics.height / 2) + [0, 0, -4][vs_phase]
       # VS sprites appearing
-      if @timer >= @vs_appear_final
+      if timer >= @vs_appear_final
         @vs_1_sprite.visible = false
-      elsif @timer >= @vs_appear_start_2
+      elsif timer >= @vs_appear_start_2
         # Temp VS sprites enlarge and shrink again
         if @vs_2_sprite.visible
-          @vs_2_sprite.zoom_x = 1.6 - 0.8 * (@timer - @vs_appear_start_2) / @vs_shrink_time
+          @vs_2_sprite.zoom_x = 1.6 - (0.8 * (timer - @vs_appear_start_2) / @vs_shrink_time)
           @vs_2_sprite.zoom_y = @vs_2_sprite.zoom_x
           if @vs_2_sprite.zoom_x <= 1.2
             @vs_2_sprite.visible = false
             @vs_main_sprite.visible = true
           end
         end
-        @vs_1_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start_2) / @vs_shrink_time
+        @vs_1_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start_2) / @vs_shrink_time)
         @vs_1_sprite.zoom_y = @vs_1_sprite.zoom_x
-      elsif @timer >= @vs_appear_start
+      elsif timer >= @vs_appear_start
         # Temp VS sprites appear and start shrinking
         @vs_2_sprite.visible = true
-        @vs_2_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start) / @vs_shrink_time
+        @vs_2_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start) / @vs_shrink_time)
         @vs_2_sprite.zoom_y = @vs_2_sprite.zoom_x
         if @vs_1_sprite.visible || @vs_2_sprite.zoom_x <= 1.6   # Halfway between 2.0 and 1.2
           @vs_1_sprite.visible = true
-          @vs_1_sprite.zoom_x = 2.0 - 0.8 * (@timer - @vs_appear_start - (@vs_shrink_time / 2)) / @vs_shrink_time
+          @vs_1_sprite.zoom_x = 2.0 - (0.8 * (timer - @vs_appear_start - (@vs_shrink_time / 2)) / @vs_shrink_time)
           @vs_1_sprite.zoom_y = @vs_1_sprite.zoom_x
         end
       end
       # Flash white (two flashes)
-      if @timer >= @flash_start + @flash_duration
+      if timer >= @flash_start + @flash_duration
         @flash_viewport.color.alpha = 0
-      elsif @timer >= @flash_start
+      elsif timer >= @flash_start
         # Flash the screen white (coming from white lasts twice as long as going to white)
-        proportion = (@timer - @flash_start) / @flash_duration
+        proportion = (timer - @flash_start) / @flash_duration
         if proportion >= 0.33   # Coming from white
           @flash_viewport.color.alpha = 320 * 3 * (1 - proportion) / 2
           @player_sprite.color.alpha = 0
@@ -1627,11 +1634,11 @@ module Transitions
         else   # Going to white
           @flash_viewport.color.alpha = 320 * 3 * proportion
         end
-      elsif @timer >= @flash_1_start + @flash_1_duration
+      elsif timer >= @flash_1_start + @flash_1_duration
         @flash_viewport.color.alpha = 0
-      elsif @timer >= @flash_1_start
+      elsif timer >= @flash_1_start
         # Flash the screen white
-        proportion = (@timer - @flash_1_start) / @flash_1_duration
+        proportion = (timer - @flash_1_start) / @flash_1_duration
         if proportion >= 0.5   # Coming from white
           @flash_viewport.color.alpha = 320 * 2 * (1 - proportion)
           @rear_black_sprite.visible = true
@@ -1640,24 +1647,24 @@ module Transitions
         end
       end
       # Fade to white at end
-      if @timer >= @fade_to_black_start
+      if timer >= @fade_to_black_start
         # Fade to black
         @black_sprite.visible = true
-        proportion = (@timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
+        proportion = (timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
         @flash_viewport.color.alpha = 255 * (1 - proportion)
-      elsif @timer >= @fade_to_white_start
+      elsif timer >= @fade_to_white_start
         @text_sprite.visible = false
         # Slowly fade to white
-        proportion = (@timer - @fade_to_white_start) / (@fade_to_white_end - @fade_to_white_start)
+        proportion = (timer - @fade_to_white_start) / (@fade_to_white_end - @fade_to_white_start)
         @flash_viewport.color.alpha = 255 * proportion
         # Move bars and trainer sprites off-screen
         dist = BAR_Y_INDENT + BAR_HEIGHT
-        @player_bar_sprite.x = @player_bar_x - dist * proportion
-        @player_bar_sprite.y = @player_bar_y - dist * proportion
+        @player_bar_sprite.x = @player_bar_x - (dist * proportion)
+        @player_bar_sprite.y = @player_bar_y - (dist * proportion)
         @player_sprite.x = @player_bar_sprite.x + TRAINER_X_OFFSET
         @player_sprite.y = @player_bar_sprite.y + BAR_HEIGHT - TRAINER_Y_OFFSET
-        @foe_bar_sprite.x = @foe_bar_x + dist * proportion
-        @foe_bar_sprite.y = @foe_bar_y + dist * proportion
+        @foe_bar_sprite.x = @foe_bar_x + (dist * proportion)
+        @foe_bar_sprite.y = @foe_bar_y + (dist * proportion)
         @foe_sprite.x = @foe_bar_sprite.x + (@bar_bitmap.width / 2) - TRAINER_X_OFFSET
         @foe_sprite.y = @foe_bar_sprite.y + @foe_bitmap.height - TRAINER_Y_OFFSET
       end
@@ -1722,17 +1729,17 @@ module Transitions
     end
 
     def update_anim
-      if @timer <= @rocket_appear_end
+      if timer <= @rocket_appear_end
         # Rocket logos fly in from edges of screen
-        proportion = @timer / @rocket_appear_end
+        proportion = timer / @rocket_appear_end
         @rocket_sprites.each_with_index do |sprite, i|
           next if !sprite.visible
           start_time = i * @rocket_appear_delay
           next if proportion < start_time
           single_proportion = (proportion - start_time) / @rocket_appear_time
           sqrt_single_proportion = Math.sqrt(single_proportion)
-          sprite.x = (ROCKET_X[i] + (0.5 - ROCKET_X[i]) * sqrt_single_proportion) * Graphics.width
-          sprite.y = (ROCKET_Y[i] + (0.5 - ROCKET_Y[i]) * sqrt_single_proportion) * Graphics.height
+          sprite.x = (ROCKET_X[i] + ((0.5 - ROCKET_X[i]) * sqrt_single_proportion)) * Graphics.width
+          sprite.y = (ROCKET_Y[i] + ((0.5 - ROCKET_Y[i]) * sqrt_single_proportion)) * Graphics.height
           sprite.zoom_x = 2.5 * (1 - single_proportion)
           sprite.zoom_y = sprite.zoom_x
           sprite.angle = sprite.zoom_x * ROCKET_ANGLE[i] * 360
@@ -1741,7 +1748,7 @@ module Transitions
       else
         @rocket_sprites.last.visible = false
         # Black wedges expand to fill screen
-        proportion = (@timer - @rocket_appear_end) / (@duration - @rocket_appear_end)
+        proportion = (timer - @rocket_appear_end) / (@duration - @rocket_appear_end)
         @sprites.each_with_index do |sprite, i|
           sprite.visible = true
           sprite.zoom_x = proportion if i.even?
@@ -1802,7 +1809,7 @@ module Transitions
       @text_sprite.visible = false
       pbSetSystemFont(@text_sprite.bitmap)
       pbDrawTextPositions(@text_sprite.bitmap,
-                          [[$game_temp.transition_animation_data[1], 272, 8, 0,
+                          [[$game_temp.transition_animation_data[1], 272, 8, :left,
                             Color.new(248, 248, 248), Color.new(72, 80, 80)]])
       # Foreground black
       @black_sprite = new_sprite(0, 0, @black_bitmap)
@@ -1846,64 +1853,66 @@ module Transitions
     def update_anim
       # Strobes scrolling
       if @sprites[0].visible
-        @strobes_x -= Graphics.delta_s * STROBE_SCROLL_SPEED
-        @strobes_x += @strobes_bitmap.width if @strobes_x <= -@strobes_bitmap.width
+        @strobes_x = -timer * STROBE_SCROLL_SPEED
+        while @strobes_x <= -@strobes_bitmap.width
+          @strobes_x += @strobes_bitmap.width
+        end
         @sprites.each_with_index { |spr, i| spr.x = @strobes_x + (i * @strobes_bitmap.width) }
       end
-      if @timer >= @fade_to_black_start
+      if timer >= @fade_to_black_start
         # Fade to black
-        proportion = (@timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
+        proportion = (timer - @fade_to_black_start) / (@duration - @fade_to_black_start)
         @flash_viewport.color.alpha = 255 * (1 - proportion)
-      elsif @timer >= @fade_to_white_end
+      elsif timer >= @fade_to_white_end
         @flash_viewport.color.alpha = 255   # Ensure screen is white
         @black_sprite.visible = true   # Make black overlay visible
-      elsif @timer >= @foe_disappear_end
+      elsif timer >= @foe_disappear_end
         @foe_sprite.visible = false   # Ensure foe sprite has vanished
         @text_sprite.visible = false   # Ensure name sprite has vanished
         # Slowly fade to white
-        proportion = (@timer - @foe_disappear_end) / (@fade_to_white_end - @foe_disappear_end)
+        proportion = (timer - @foe_disappear_end) / (@fade_to_white_end - @foe_disappear_end)
         @flash_viewport.color.alpha = 255 * proportion
-      elsif @timer >= @foe_disappear_start
+      elsif timer >= @foe_disappear_start
         # Slide foe sprite/name off-screen
-        proportion = (@timer - @foe_disappear_start) / (@foe_disappear_end - @foe_disappear_start)
+        proportion = (timer - @foe_disappear_start) / (@foe_disappear_end - @foe_disappear_start)
         start_x = Graphics.width / 2
-        @foe_sprite.x = start_x - (@foe_bitmap.width + start_x) * proportion * proportion
-        @text_sprite.x = @foe_sprite.x - Graphics.width / 2
-      elsif @timer >= @flash_end
+        @foe_sprite.x = start_x - ((@foe_bitmap.width + start_x) * proportion * proportion)
+        @text_sprite.x = @foe_sprite.x - (Graphics.width / 2)
+      elsif timer >= @flash_end
         @flash_viewport.color.alpha = 0   # Ensure flash has ended
-      elsif @timer >= @bg_2_appear_end
+      elsif timer >= @bg_2_appear_end
         @bg_2_sprite.opacity = 255   # Ensure BG 2 sprite is fully opaque
         @foe_sprite.x = Graphics.width / 2   # Ensure foe sprite is in the right place
         @text_sprite.x = 0   # Ensure name sprite is in the right place
         # Flash screen
-        proportion = (@timer - @bg_2_appear_end) / (@flash_end - @bg_2_appear_end)
+        proportion = (timer - @bg_2_appear_end) / (@flash_end - @bg_2_appear_end)
         @flash_viewport.color.alpha = 320 * (1 - proportion)
-      elsif @timer >= @bg_2_appear_start
+      elsif timer >= @bg_2_appear_start
         # BG 2 sprite appears
-        proportion = (@timer - @bg_2_appear_start) / (@bg_2_appear_end - @bg_2_appear_start)
+        proportion = (timer - @bg_2_appear_start) / (@bg_2_appear_end - @bg_2_appear_start)
         @bg_2_sprite.opacity = 255 * proportion
         # Foe sprite/name appear
         start_x = Graphics.width + (@foe_bitmap.width / 2)
-        @foe_sprite.x = start_x + ((Graphics.width / 2) - start_x) * Math.sqrt(proportion)
-        @text_sprite.x = @foe_sprite.x - Graphics.width / 2
+        @foe_sprite.x = start_x + (((Graphics.width / 2) - start_x) * Math.sqrt(proportion))
+        @text_sprite.x = @foe_sprite.x - (Graphics.width / 2)
         @text_sprite.visible = true
-      elsif @timer >= @bg_1_appear_end
+      elsif timer >= @bg_1_appear_end
         @bg_1_sprite.oy = Graphics.height / 2
         @bg_1_sprite.src_rect.y = 0
         @bg_1_sprite.src_rect.height = @bg_1_bitmap.height
         @sprites.each { |sprite| sprite.visible = false }   # Hide strobes
-      elsif @timer >= @bg_1_appear_start
+      elsif timer >= @bg_1_appear_start
         @flash_viewport.color.alpha = 0   # Ensure flash has ended
         # BG 1 sprite appears
-        proportion = (@timer - @bg_1_appear_start) / (@bg_1_appear_end - @bg_1_appear_start)
+        proportion = (timer - @bg_1_appear_start) / (@bg_1_appear_end - @bg_1_appear_start)
         half_height = ((proportion * @bg_1_bitmap.height) / 2).to_i
         @bg_1_sprite.src_rect.height = half_height * 2
         @bg_1_sprite.src_rect.y = (@bg_1_bitmap.height / 2) - half_height
         @bg_1_sprite.oy = half_height
-      elsif @timer >= @strobe_appear_end
+      elsif timer >= @strobe_appear_end
         @sprites.each { |sprite| sprite.opacity = 255 }   # Ensure strobes are fully opaque
         # Flash the screen white
-        proportion = (@timer - @strobe_appear_end) / (@bg_1_appear_start - @strobe_appear_end)
+        proportion = (timer - @strobe_appear_end) / (@bg_1_appear_start - @strobe_appear_end)
         if proportion >= 0.5
           @flash_viewport.color.alpha = 320 * 2 * (1 - proportion)
         else
@@ -1912,7 +1921,7 @@ module Transitions
       else
         # Strobes fade in
         @sprites.each do |sprite|
-          sprite.opacity = 255 * (@timer / @strobe_appear_end)
+          sprite.opacity = 255 * (timer / @strobe_appear_end)
         end
       end
     end

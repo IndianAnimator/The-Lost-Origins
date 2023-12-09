@@ -18,6 +18,7 @@ module GameData
     attr_reader :bridge
     attr_reader :shows_reflections
     attr_reader :must_walk
+    attr_reader :must_walk_or_run
     attr_reader :ignore_passability
 
     DATA = {}
@@ -57,8 +58,11 @@ module GameData
       @bridge                 = hash[:bridge]                 || false
       @shows_reflections      = hash[:shows_reflections]      || false
       @must_walk              = hash[:must_walk]              || false
+      @must_walk_or_run       = hash[:must_walk_or_run]       || false
       @ignore_passability     = hash[:ignore_passability]     || false
     end
+
+    alias name real_name
 
     def can_surf_freely
       return @can_surf && !@waterfall && !@waterfall_crest
@@ -161,7 +165,7 @@ GameData::TerrainTag.register({
   :id_number              => 12,
   :battle_environment     => :Ice,
   :ice                    => true,
-  :must_walk              => true
+  :must_walk_or_run       => true
 })
 
 GameData::TerrainTag.register({

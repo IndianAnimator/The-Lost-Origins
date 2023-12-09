@@ -1,128 +1,80 @@
 #===============================================================================
-# Text colours
+# Text colors
 #===============================================================================
+# Unused
 def ctag(color)
-  ret = (color.red.to_i << 24)
-  ret |= ((color.green.to_i) << 16)
-  ret |= ((color.blue.to_i) << 8)
-  ret |= ((color.alpha.to_i))
-  return sprintf("<c=%08X>", ret)
+  return sprintf("<c=%s>", color.to_rgb32(true))
 end
 
+# Unused
 def shadowctag(base, shadow)
-  return sprintf("<c2=%s%s>", colorToRgb16(base), colorToRgb16(shadow))
+  return sprintf("<c2=%s%s>", base.to_rgb15, shadow.to_rgb15)
 end
 
+# base and shadow are either instances of class Color, or are arrays containing
+# 3 or 4 integers which are RGB(A) values.
 def shadowc3tag(base, shadow)
-  return sprintf("<c3=%s,%s>", colorToRgb32(base), colorToRgb32(shadow))
+  if base.is_a?(Color)
+    base_text = base.to_rgb32
+  else
+    base_text = sprintf("%02X%02X%02X", base[0], base[1], base[2])
+    base_text += sprintf("%02X", base[3]) if base[3]
+  end
+  if shadow.is_a?(Color)
+    shadow_text = shadow.to_rgb32
+  else
+    shadow_text = sprintf("%02X%02X%02X", shadow[0], shadow[1], shadow[2])
+    shadow_text += sprintf("%02X", shadow[3]) if shadow[3]
+  end
+  return sprintf("<c3=%s,%s>", base_text, shadow_text)
 end
 
+# Unused
 def shadowctagFromColor(color)
-  return shadowc3tag(color, getContrastColor(color))
+  return shadowc3tag(color, color.get_contrast_color)
 end
 
+# Unused
 def shadowctagFromRgb(param)
-  return shadowctagFromColor(rgbToColor(param))
+  return shadowctagFromColor(Color.new_from_rgb(param))
 end
 
+# @deprecated This method is slated to be removed in v22.
 def colorToRgb32(color)
-  return "" if !color
-  if color.alpha.to_i == 255
-    return sprintf("%02X%02X%02X", color.red.to_i, color.green.to_i, color.blue.to_i)
-  else
-    return sprintf("%02X%02X%02X%02X",
-                   color.red.to_i, color.green.to_i, color.blue.to_i, color.alpha.to_i)
-  end
+  Deprecation.warn_method("colorToRgb32", "v22", "color.to_rgb32")
+  return color.to_rgb32
 end
 
+# @deprecated This method is slated to be removed in v22.
 def colorToRgb16(color)
-  ret = (color.red.to_i >> 3)
-  ret |= ((color.green.to_i >> 3) << 5)
-  ret |= ((color.blue.to_i >> 3) << 10)
-  return sprintf("%04X", ret)
+  Deprecation.warn_method("colorToRgb16", "v22", "color.to_rgb15")
+  return color.to_rgb15
 end
 
+# @deprecated This method is slated to be removed in v22.
 def rgbToColor(param)
-  return Font.default_color if !param
-  baseint = param.to_i(16)
-  case param.length
-  when 8 # 32-bit hex
-    return Color.new(
-      (baseint >> 24) & 0xFF,
-      (baseint >> 16) & 0xFF,
-      (baseint >> 8) & 0xFF,
-      (baseint) & 0xFF
-    )
-  when 6 # 24-bit hex
-    return Color.new(
-      (baseint >> 16) & 0xFF,
-      (baseint >> 8) & 0xFF,
-      (baseint) & 0xFF
-    )
-  when 4 # 16-bit hex
-    return Color.new(
-      ((baseint) & 0x1F) << 3,
-      ((baseint >> 5) & 0x1F) << 3,
-      ((baseint >> 10) & 0x1F) << 3
-    )
-  when 1 # Color number
-    i = param.to_i
-    return Font.default_color if i >= 8
-    return [
-      Color.new(255, 255, 255, 255),
-      Color.new(128, 128, 255, 255),
-      Color.new(255, 128, 128, 255),
-      Color.new(128, 255, 128, 255),
-      Color.new(128, 255, 255, 255),
-      Color.new(255, 128, 255, 255),
-      Color.new(255, 255, 128, 255),
-      Color.new(192, 192, 192, 255)
-    ][i]
-  else
-    return Font.default_color
-  end
+  Deprecation.warn_method("rgbToColor", "v22", "Color.new_from_rgb(param)")
+  return Color.new_from_rgb(param)
 end
 
-def Rgb16ToColor(param)
-  baseint = param.to_i(16)
-  return Color.new(
-    ((baseint) & 0x1F) << 3,
-    ((baseint >> 5) & 0x1F) << 3,
-    ((baseint >> 10) & 0x1F) << 3
-  )
+# @deprecated This method is slated to be removed in v22.
+def rgb15ToColor(param)
+  Deprecation.warn_method("rgb15ToColor", "v22", "Color.new_from_rgb(param)")
+  return Color.new_from_rgb(param)
 end
 
+# @deprecated This method is slated to be removed in v22.
 def getContrastColor(color)
-  raise "No color given" if !color
-  r = color.red
-  g = color.green
-  b = color.blue
-  yuv = [
-    (r * 0.299) + (g * 0.587) + (b * 0.114),
-    (r * -0.1687) + (g * -0.3313) + (b *  0.500) + 0.5,
-    (r * 0.500) + (g * -0.4187) + (b * -0.0813) + 0.5
-  ]
-  if yuv[0] < 127.5
-    yuv[0] += (255 - yuv[0]) / 2
-  else
-    yuv[0] = yuv[0] / 2
-  end
-  return Color.new(
-    yuv[0] + (1.4075 * (yuv[2] - 0.5)),
-    yuv[0] - (0.3455 * (yuv[1] - 0.5)) - (0.7169 * (yuv[2] - 0.5)),
-    yuv[0] + (1.7790 * (yuv[1] - 0.5)),
-    color.alpha
-  )
+  Deprecation.warn_method("getContrastColor", "v22", "color.get_contrast_color")
+  return color.get_contrast_color
 end
-
-
 
 #===============================================================================
 # Format text
 #===============================================================================
 FORMATREGEXP = /<(\/?)(c|c2|c3|o|fn|br|fs|i|b|r|pg|pog|u|s|icon|img|ac|ar|al|outln|outln2)(\s*\=\s*([^>]*))?>/i
 
-def fmtescape(text)
+def fmtEscape(text)
   if text[/[&<>]/]
     text2 = text.gsub(/&/, "&amp;")
     text2.gsub!(/</, "&lt;")
@@ -132,13 +84,20 @@ def fmtescape(text)
   return text
 end
 
+# Modifies text; does not return a modified copy of it.
+def fmtReplaceEscapes(text)
+  text.gsub!(/&lt;/, "<")
+  text.gsub!(/&gt;/, ">")
+  text.gsub!(/&apos;/, "'")
+  text.gsub!(/&quot;/, "\"")
+  text.gsub!(/&amp;/, "&")
+  text.gsub!(/&m;/, "♂")
+  text.gsub!(/&f;/, "♀")
+end
+
 def toUnformattedText(text)
   text2 = text.gsub(FORMATREGEXP, "")
-  text2.gsub!(/&lt;/, "<")
-  text2.gsub!(/&gt;/, ">")
-  text2.gsub!(/&apos;/, "'")
-  text2.gsub!(/&quot;/, "\"")
-  text2.gsub!(/&amp;/, "&")
+  fmtReplaceEscapes(text2)
   return text2
 end
 
@@ -151,8 +110,8 @@ def itemIconTag(item)
   if item.respond_to?("icon_name")
     return sprintf("<icon=%s>", item.icon_name)
   else
-    ix = item.icon_index % 16 * 24
-    iy = item.icon_index / 16 * 24
+    ix = (item.icon_index % 16) * 24
+    iy = (item.icon_index / 16) * 24
     return sprintf("<img=Graphics/System/Iconset|%d|%d|24|24>", ix, iy)
   end
 end
@@ -160,9 +119,7 @@ end
 def getFormattedTextForDims(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight,
                             newlineBreaks = true, explicitBreaksOnly = false)
   text2 = text.gsub(/<(\/?)(c|c2|c3|o|u|s)(\s*\=\s*([^>]*))?>/i, "")
-  if newlineBreaks
-    text2.gsub!(/<(\/?)(br)(\s*\=\s*([^>]*))?>/i, "\n")
-  end
+  text2.gsub!(/<(\/?)(br)(\s*\=\s*([^>]*))?>/i, "\n") if newlineBreaks
   return getFormattedText(bitmap, xDst, yDst, widthDst, heightDst,
                           text2, lineheight, newlineBreaks,
                           explicitBreaksOnly, true)
@@ -309,76 +266,82 @@ def getLastColors(colorstack, opacitystack, defaultcolors)
   return colors
 end
 
-
-
 #===============================================================================
 # Formats a string of text and returns an array containing a list of formatted
 # characters.
+#
+# Parameters:
+#   bitmap:         Source bitmap. Will be used to determine the default font of
+#                   the text.
+#   xDst:           X coordinate of the text's top left corner.
+#   yDst:           Y coordinate of the text's top left corner.
+#   widthDst:       Width of the text. Used to determine line breaks.
+#   heightDst:      Height of the text. If -1, there is no height restriction.
+#                   If 1 or greater, any characters exceeding the height are
+#                   removed from the returned list.
+#   newLineBreaks:  If true, newline characters will be treated as line breaks.
+#                   The default is true.
+#
+# Return Values:
+#   A list of formatted characters. Returns an empty array if _bitmap_ is nil
+#   or disposed, or if _widthDst_ is 0 or less or _heightDst_ is 0.
+#
+# Formatting Specification:
+# This function uses the following syntax when formatting the text.
+#
+#   <b> ... </b>       - Formats the text in bold.
+#   <i> ... </i>       - Formats the text in italics.
+#   <u> ... </u>       - Underlines the text.
+#   <s> ... </s>       - Draws a strikeout line over the text.
+#   <al> ... </al>     - Left-aligns the text. Causes line breaks before and
+#                        after the text.
+#   <r>                - Right-aligns the text until the next line break.
+#   <ar> ... </ar>     - Right-aligns the text. Causes line breaks before and
+#                        after the text.
+#   <ac> ... </ac>     - Centers the text. Causes line breaks before and after
+#                        the text.
+#   <br>               - Causes a line break.
+#   <c=X> ... </c>     - Color specification. A total of four formats are
+#                        supported: RRGGBBAA, RRGGBB, 16-bit RGB, and
+#                        Window_Base color numbers.
+#   <c2=X> ... </c2>   - Color specification where the first half is the base
+#                        color and the second half is the shadow color. 16-bit
+#                        RGB is supported.
+#
+# Added 2009-10-20
+#
+#   <c3=B,S> ... </c3> - Color specification where B is the base color and S is
+#                        the shadow color. B and/or S can be omitted. A total of
+#                        four formats are supported: RRGGBBAA, RRGGBB, 16-bit
+#                        RGB, and Window_Base color numbers.
+#
+# Added 2009-9-12
+#
+#   <o=X>              - Displays the text in the given opacity (0-255)
+#
+# Added 2009-10-19
+#
+#   <outln>            - Displays the text in outline format.
+#
+# Added 2010-05-12
+#
+#   <outln2>           - Displays the text in outline format (outlines more
+#                        exaggerated.
+#   <fn=X> ... </fn>   - Formats the text in the specified font, or Arial if the
+#                        font doesn't exist.
+#   <fs=X> ... </fs>   - Changes the font size to X.
+#   <icon=X>           - Displays the icon X (in Graphics/Icons/).
+#
+# In addition, the syntax supports the following:
+#   &apos; - Converted to "'".
+#   &lt;   - Converted to "<".
+#   &gt;   - Converted to ">".
+#   &amp;  - Converted to "&".
+#   &quot; - Converted to double quotation mark.
+#
+# To draw the characters, pass the returned array to the
+# _drawFormattedChars_ function.
 #===============================================================================
-=begin
-Parameters:
-bitmap:         Source bitmap.  Will be used to determine the default font of
-                the text.
-xDst:           X coordinate of the text's top left corner.
-yDst:           Y coordinate of the text's top left corner.
-widthDst:       Width of the text.  Used to determine line breaks.
-heightDst:      Height of the text.  If -1, there is no height restriction.  If
-                1 or greater, any characters exceeding the height are removed
-                from the returned list.
-newLineBreaks:  If true, newline characters will be treated as line breaks. The
-                default is true.
-
-Return Values:
-A list of formatted characters.  Returns an empty array if _bitmap_ is nil
-or disposed, or if _widthDst_ is 0 or less or _heightDst_ is 0.
-
-Formatting Specification:
-This function uses the following syntax when formatting the text.
-<b> ... </b>       - Formats the text in bold.
-<i> ... </i>       - Formats the text in italics.
-<u> ... </u>       - Underlines the text.
-<s> ... </s>       - Draws a strikeout line over the text.
-<al> ... </al>     - Left-aligns the text.  Causes line breaks before and after
-                     the text.
-<r>                - Right-aligns the text until the next line break.
-<ar> ... </ar>     - Right-aligns the text.  Causes line breaks before and after
-                     the text.
-<ac> ... </ac>     - Centers the text.  Causes line breaks before and after the
-                     text.
-<br>               - Causes a line break.
-<c=X> ... </c>     - Color specification.  A total of four formats are supported:
-                     RRGGBBAA, RRGGBB, 16-bit RGB, and Window_Base color numbers.
-<c2=X> ... </c2>   - Color specification where the first half is the base color
-                     and the second half is the shadow color.  16-bit RGB is
-                     supported.
-Added 2009-10-20
-<c3=B,S> ... </c3> - Color specification where B is the base color and S is the
-                     shadow color.  B and/or S can be omitted.  A total of four
-                     formats are supported:
-                     RRGGBBAA, RRGGBB, 16-bit RGB, and Window_Base color numbers.
-Added 2009-9-12
-<o=X>              - Displays the text in the given opacity (0-255)
-Added 2009-10-19
-<outln>            - Displays the text in outline format.
-Added 2010-05-12
-<outln2>           - Displays the text in outline format (outlines more
-                     exaggerated.
-<fn=X> ... </fn>   - Formats the text in the specified font, or Arial if the
-                     font doesn't exist.
-<fs=X> ... </fs>   - Changes the font size to X.
-<icon=X>           - Displays the icon X (in Graphics/Icons/).
-
-In addition, the syntax supports the following:
-&apos; - Converted to "'".
-&lt;   - Converted to "<".
-&gt;   - Converted to ">".
-&amp;  - Converted to "&".
-&quot; - Converted to double quotation mark.
-
-To draw the characters, pass the returned array to the
-_drawFormattedChars_ function.
-=end
-
 def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight = 32,
                      newlineBreaks = true, explicitBreaksOnly = false,
                      collapseAlignments = false)
@@ -420,13 +383,7 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
 #    realtextStart = oldtext[0, oldtext.length - realtext.length]
 #  end
   textchunks.push(text)
-  textchunks.each do |chunk|
-    chunk.gsub!(/&lt;/, "<")
-    chunk.gsub!(/&gt;/, ">")
-    chunk.gsub!(/&apos;/, "'")
-    chunk.gsub!(/&quot;/, "\"")
-    chunk.gsub!(/&amp;/, "&")
-  end
+  textchunks.each { |chunk| fmtReplaceEscapes(chunk) }
   textlen = 0
   controls.each_with_index do |control, i|
     textlen += textchunks[i].scan(/./m).length
@@ -472,127 +429,124 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
     graphicHeight = nil
     graphicRect = nil
     controls.length.times do |i|
-      if controls[i] && controls[i][2] == position
-        control = controls[i][0]
-        param = controls[i][1]
-        endtag = controls[i][3]
-        case control
-        when "c"
-          if endtag
-            colorstack.pop
-          else
-            color = rgbToColor(param)
-            colorstack.push([color, nil])
-          end
-        when "c2"
-          if endtag
-            colorstack.pop
-          else
-            base = Rgb16ToColor(param[0, 4])
-            shadow = Rgb16ToColor(param[4, 4])
-            colorstack.push([base, shadow])
-          end
-        when "c3"
-          if endtag
-            colorstack.pop
-          else
-            param = param.split(",")
-            # get pure colors unaffected by opacity
-            oldColors = getLastParam(colorstack, defaultcolors)
-            base = (param[0] && param[0] != "") ? rgbToColor(param[0]) : oldColors[0]
-            shadow = (param[1] && param[1] != "") ? rgbToColor(param[1]) : oldColors[1]
-            colorstack.push([base, shadow])
-          end
-        when "o"
-          if endtag
-            opacitystack.pop
-          else
-            opacitystack.push(param.sub(/\s+$/, "").to_i)
-          end
-        when "b"
-          boldcount += (endtag ? -1 : 1)
-        when "i"
-          italiccount += (endtag ? -1 : 1)
-        when "u"
-          underlinecount += (endtag ? -1 : 1)
-        when "s"
-          strikecount += (endtag ? -1 : 1)
-        when "outln"
-          outlinecount += (endtag ? -1 : 1)
-        when "outln2"
-          outline2count += (endtag ? -1 : 1)
-        when "fs" # Font size
-          if endtag
-            fontsizestack.pop
-          else
-            fontsizestack.push(param.sub(/\s+$/, "").to_i)
-          end
-          fontsize = getLastParam(fontsizestack, defaultfontsize)
-          bitmap.font.size = fontsize
-        when "fn" # Font name
-          if endtag
-            fontnamestack.pop
-          else
-            fontname = param.sub(/\s+$/, "")
-            fontnamestack.push(Font.exist?(fontname) ? fontname : "Arial")
-          end
-          fontname = getLastParam(fontnamestack, defaultfontname)
-          bitmap.font.name = fontname
-        when "ar" # Right align
-          if endtag
-            alignstack.pop
-          else
-            alignstack.push(1)
-          end
-          nextline = 1 if x > 0 && nextline == 0
-        when "al" # Left align
-          if endtag
-            alignstack.pop
-          else
-            alignstack.push(0)
-          end
-          nextline = 1 if x > 0 && nextline == 0
-        when "ac" # Center align
-          if endtag
-            alignstack.pop
-          else
-            alignstack.push(2)
-          end
-          nextline = 1 if x > 0 && nextline == 0
-        when "icon" # Icon
-          if !endtag
-            param = param.sub(/\s+$/, "")
-            graphic = "Graphics/Icons/#{param}"
-            controls[i] = nil
-            break
-          end
-        when "img" # Icon
-          if !endtag
-            param = param.sub(/\s+$/, "")
-            param = param.split("|")
-            graphic = param[0]
-            if param.length > 1
-              graphicX = param[1].to_i
-              graphicY = param[2].to_i
-              graphicWidth = param[3].to_i
-              graphicHeight = param[4].to_i
-            end
-            controls[i] = nil
-            break
-          end
-        when "br" # Line break
-          if !endtag
-            nextline += 1
-          end
-        when "r" # Right align this line
-          if !endtag
-            x = 0
-            rightalign = 1
-            lastword = [characters.length, x]
-          end
+      next if !controls[i] || controls[i][2] != position
+      control = controls[i][0]
+      param = controls[i][1]
+      endtag = controls[i][3]
+      case control
+      when "c"
+        if endtag
+          colorstack.pop
+        else
+          color = Color.new_from_rgb(param)
+          colorstack.push([color, nil])
         end
-        controls[i] = nil
+      when "c2"
+        if endtag
+          colorstack.pop
+        else
+          base = Color.new_from_rgb(param[0, 4])
+          shadow = Color.new_from_rgb(param[4, 4])
+          colorstack.push([base, shadow])
+        end
+      when "c3"
+        if endtag
+          colorstack.pop
+        else
+          param = param.split(",")
+          # get pure colors unaffected by opacity
+          oldColors = getLastParam(colorstack, defaultcolors)
+          base = (param[0] && param[0] != "") ? Color.new_from_rgb(param[0]) : oldColors[0]
+          shadow = (param[1] && param[1] != "") ? Color.new_from_rgb(param[1]) : oldColors[1]
+          colorstack.push([base, shadow])
+        end
+      when "o"
+        if endtag
+          opacitystack.pop
+        else
+          opacitystack.push(param.sub(/\s+$/, "").to_i)
+        end
+      when "b"
+        boldcount += (endtag ? -1 : 1)
+      when "i"
+        italiccount += (endtag ? -1 : 1)
+      when "u"
+        underlinecount += (endtag ? -1 : 1)
+      when "s"
+        strikecount += (endtag ? -1 : 1)
+      when "outln"
+        outlinecount += (endtag ? -1 : 1)
+      when "outln2"
+        outline2count += (endtag ? -1 : 1)
+      when "fs"   # Font size
+        if endtag
+          fontsizestack.pop
+        else
+          fontsizestack.push(param.sub(/\s+$/, "").to_i)
+        end
+        fontsize = getLastParam(fontsizestack, defaultfontsize)
+        bitmap.font.size = fontsize
+      when "fn"   # Font name
+        if endtag
+          fontnamestack.pop
+        else
+          fontname = param.sub(/\s+$/, "")
+          fontnamestack.push(Font.exist?(fontname) ? fontname : "Arial")
+        end
+        fontname = getLastParam(fontnamestack, defaultfontname)
+        bitmap.font.name = fontname
+      when "ar"   # Right align
+        if endtag
+          alignstack.pop
+        else
+          alignstack.push(1)
+        end
+        nextline = 1 if x > 0 && nextline == 0
+      when "al"   # Left align
+        if endtag
+          alignstack.pop
+        else
+          alignstack.push(0)
+        end
+        nextline = 1 if x > 0 && nextline == 0
+      when "ac"   # Center align
+        if endtag
+          alignstack.pop
+        else
+          alignstack.push(2)
+        end
+        nextline = 1 if x > 0 && nextline == 0
+      when "icon"   # Icon
+        if !endtag
+          param = param.sub(/\s+$/, "")
+          graphic = "Graphics/Icons/#{param}"
+          controls[i] = nil
+          break
+        end
+      when "img"   # Icon
+        if !endtag
+          param = param.sub(/\s+$/, "")
+          param = param.split("|")
+          graphic = param[0]
+          if param.length > 1
+            graphicX = param[1].to_i
+            graphicY = param[2].to_i
+            graphicWidth = param[3].to_i
+            graphicHeight = param[4].to_i
+          end
+          controls[i] = nil
+          break
+        end
+      when "br"   # Line break
+        nextline += 1 if !endtag
+      when "r"   # Right align this line
+        if !endtag
+          x = 0
+          rightalign = 1
+          lastword = [characters.length, x]
+        end
       end
+      controls[i] = nil
     end
     bitmap.font.bold = (boldcount > 0)
     bitmap.font.italic = (italiccount > 0)
@@ -705,49 +659,47 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
   end
   # This code looks at whether the text occupies exactly two lines when
   # displayed. If it does, it balances the length of each line.
-=begin
-  # Count total number of lines
-  numlines = (x==0 && y>0) ? y : y+1
-  if numlines==2 && realtext && !realtext[/\n/] && realtext.length>=50
-    # Set half to middle of text (known to contain no formatting)
-    half = realtext.length/2
-    leftSearch  = 0
-    rightSearch = 0
-    # Search left for a space
-    i = half
-    while i>=0
-      break if realtext[i,1][/\s/]||isWaitChar(realtext[i,1])   # found a space
-      leftSearch += 1
-      i -= 1
-    end
-    # Search right for a space
-    i = half
-    while i<realtext.length
-      break if realtext[i,1][/\s/]||isWaitChar(realtext[i,1])   # found a space
-      rightSearch += 1
-      i += 1
-    end
-    # Move half left or right whichever is closer
-    trialHalf = half+((rightSearch<leftSearch) ? rightSearch : -leftSearch)
-    if trialHalf!=0 && trialHalf!=realtext.length
-      # Insert newline and re-call this function (force newlineBreaksOnly)
-      newText = realtext.clone
-      if isWaitChar(newText[trialHalf,1])
-        # insert after wait character
-        newText.insert(trialHalf+1,"\n")
-      else
-        # remove spaces after newline
-        newText.insert(trialHalf,"\n")
-        newText.gsub!(/\n\s+/,"\n")
-      end
-      bitmap.font = oldfont
-      dummybitmap.dispose if dummybitmap
-      return getFormattedText(dummybitmap ? nil : bitmap,xDst,yDst,
-         widthDst,heightDst,realtextStart+newText,
-         lineheight,true,explicitBreaksOnly)
-    end
-  end
-=end
+#  # Count total number of lines
+#  numlines = (x==0 && y>0) ? y : y+1
+#  if numlines==2 && realtext && !realtext[/\n/] && realtext.length>=50
+#    # Set half to middle of text (known to contain no formatting)
+#    half = realtext.length/2
+#    leftSearch  = 0
+#    rightSearch = 0
+#    # Search left for a space
+#    i = half
+#    while i>=0
+#      break if realtext[i,1][/\s/]||isWaitChar(realtext[i,1])   # found a space
+#      leftSearch += 1
+#      i -= 1
+#    end
+#    # Search right for a space
+#    i = half
+#    while i<realtext.length
+#      break if realtext[i,1][/\s/]||isWaitChar(realtext[i,1])   # found a space
+#      rightSearch += 1
+#      i += 1
+#    end
+#    # Move half left or right whichever is closer
+#    trialHalf = half+((rightSearch<leftSearch) ? rightSearch : -leftSearch)
+#    if trialHalf!=0 && trialHalf!=realtext.length
+#      # Insert newline and re-call this function (force newlineBreaksOnly)
+#      newText = realtext.clone
+#      if isWaitChar(newText[trialHalf,1])
+#        # insert after wait character
+#        newText.insert(trialHalf+1,"\n")
+#      else
+#        # remove spaces after newline
+#        newText.insert(trialHalf,"\n")
+#        newText.gsub!(/\n\s+/,"\n")
+#      end
+#      bitmap.font = oldfont
+#      dummybitmap.dispose if dummybitmap
+#      return getFormattedText(dummybitmap ? nil : bitmap,xDst,yDst,
+#         widthDst,heightDst,realtextStart+newText,
+#         lineheight,true,explicitBreaksOnly)
+#    end
+#  end
   if havenl
     # Eliminate spaces before newlines and pause character
     firstspace = -1
@@ -762,9 +714,7 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
         end
         firstspace = -1
       elsif characters[i][0][/[ \r\t]/]
-        if firstspace < 0
-          firstspace = i
-        end
+        firstspace = i if firstspace < 0
       else
         firstspace = -1
       end
@@ -805,9 +755,7 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
     totalLineWidths = []
     widthblocks.each do |block|
       y = block[4]
-      if !totalLineWidths[y]
-        totalLineWidths[y] = 0
-      end
+      totalLineWidths[y] = 0 if !totalLineWidths[y]
       if totalLineWidths[y] != 0
         # padding in case more than one line has different alignments
         totalLineWidths[y] += 16
@@ -834,8 +782,6 @@ def getFormattedText(bitmap, xDst, yDst, widthDst, heightDst, text, lineheight =
   dummybitmap&.dispose
   return characters
 end
-
-
 
 #===============================================================================
 # Draw text and images on a bitmap
@@ -873,23 +819,22 @@ def getLineBrokenText(bitmap, value, width, dims)
     words = [ccheck]
     words.length.times do |i|
       word = words[i]
-      if word && word != ""
-        textSize = bitmap.text_size(word)
-        textwidth = textSize.width
-        if x > 0 && x + textwidth >= width - 2
-          # Zero-length word break
-          ret.push(["", x, y, 0, textheight, line, position, column, 0])
-          x = 0
-          column = 0
-          y += (textheight == 0) ? bitmap.text_size("X").height : textheight
-          line += 1
-          textheight = 0
-        end
-        textheight = [textheight, textSize.height].max
-        ret.push([word, x, y, textwidth, textheight, line, position, column, length])
-        x += textwidth
-        dims[0] = x if dims && dims[0] < x
+      next if nil_or_empty?(word)
+      textSize = bitmap.text_size(word)
+      textwidth = textSize.width
+      if x > 0 && x + textwidth >= width - 2
+        # Zero-length word break
+        ret.push(["", x, y, 0, textheight, line, position, column, 0])
+        x = 0
+        column = 0
+        y += (textheight == 0) ? bitmap.text_size("X").height : textheight
+        line += 1
+        textheight = 0
       end
+      textheight = [textheight, textSize.height].max
+      ret.push([word, x, y, textwidth, textheight, line, position, column, length])
+      x += textwidth
+      dims[0] = x if dims && dims[0] < x
     end
     position += length
     column += length
@@ -921,7 +866,7 @@ def getLineBrokenChunks(bitmap, value, width, dims, plain = false)
     end
     textcols = []
     if ccheck[/</] && !plain
-      ccheck.scan(re) { textcols.push(rgbToColor($1)) }
+      ccheck.scan(re) { textcols.push(Color.new_from_rgb($1)) }
       words = ccheck.split(reNoMatch) # must have no matches because split can include match
     else
       words = [ccheck]
@@ -942,9 +887,7 @@ def getLineBrokenChunks(bitmap, value, width, dims, plain = false)
         x += textwidth
         dims[0] = x if dims && dims[0] < x
       end
-      if textcols[i]
-        color = textcols[i]
-      end
+      color = textcols[i] if textcols[i]
     end
   end
   dims[1] = y + 32 if dims
@@ -968,16 +911,15 @@ def renderLineBrokenChunksWithShadow(bitmap, xDst, yDst, normtext, maxheight, ba
     width = text[3]
     textx = text[1] + xDst
     texty = text[2] + yDst
-    if maxheight == 0 || text[2] < maxheight
-      height = text[4]
-      text = text[0]
-      bitmap.font.color = shadowColor
-      bitmap.draw_text(textx + 2, texty, width + 2, height, text)
-      bitmap.draw_text(textx, texty + 2, width + 2, height, text)
-      bitmap.draw_text(textx + 2, texty + 2, width + 2, height, text)
-      bitmap.font.color = baseColor
-      bitmap.draw_text(textx, texty, width + 2, height, text)
-    end
+    next if maxheight != 0 && text[2] >= maxheight
+    height = text[4]
+    text = text[0]
+    bitmap.font.color = shadowColor
+    bitmap.draw_text(textx + 2, texty, width + 2, height, text)
+    bitmap.draw_text(textx, texty + 2, width + 2, height, text)
+    bitmap.draw_text(textx + 2, texty + 2, width + 2, height, text)
+    bitmap.font.color = baseColor
+    bitmap.draw_text(textx, texty, width + 2, height, text)
   end
 end
 
@@ -996,58 +938,65 @@ def drawBitmapBuffer(chars)
 end
 
 def drawSingleFormattedChar(bitmap, ch)
-  if ch[5] # If a graphic
+  if ch[5]   # If a graphic
     graphic = Bitmap.new(ch[0])
     graphicRect = ch[15]
     bitmap.blt(ch[1], ch[2], graphic, graphicRect, ch[8].alpha)
     graphic.dispose
+    return
+  end
+  bitmap.font.size = ch[13] if bitmap.font.size != ch[13]
+  if ch[9]   # shadow
+    if ch[10]   # underline
+      bitmap.fill_rect(ch[1], ch[2] + ch[4] - [(ch[4] - bitmap.font.size) / 2, 0].max - 2, ch[3], 4, ch[9])
+    end
+    if ch[11]   # strikeout
+      bitmap.fill_rect(ch[1], ch[2] + 2 + (ch[4] / 2), ch[3], 4, ch[9])
+    end
+  end
+  if ch[0] == "\n" || ch[0] == "\r" || ch[0] == " " || isWaitChar(ch[0])
+    bitmap.font.color = ch[8] if bitmap.font.color != ch[8]
   else
-    bitmap.font.size = ch[13] if bitmap.font.size != ch[13]
-    if ch[0] != "\n" && ch[0] != "\r" && ch[0] != " " && !isWaitChar(ch[0])
-      bitmap.font.bold = ch[6] if bitmap.font.bold != ch[6]
-      bitmap.font.italic = ch[7] if bitmap.font.italic != ch[7]
-      bitmap.font.name = ch[12] if bitmap.font.name != ch[12]
-      offset = 0
-      if ch[9] # shadow
-        bitmap.font.color = ch[9]
-        if (ch[16] & 1) != 0 # outline
-          offset = 1
-          bitmap.draw_text(ch[1], ch[2], ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1], ch[2] + 1, ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 1, ch[2], ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 1, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2] + 1, ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
-        elsif (ch[16] & 2) != 0 # outline 2
-          offset = 2
-          bitmap.draw_text(ch[1], ch[2], ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1], ch[2] + 4, ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2] + 4, ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 4, ch[2], ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 4, ch[2] + 2, ch[3] + 4, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 4, ch[2] + 4, ch[3] + 4, ch[4], ch[0])
-        else
-          bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 2, ch[4], ch[0])
-          bitmap.draw_text(ch[1] + 2, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
-        end
+    bitmap.font.bold = ch[6] if bitmap.font.bold != ch[6]
+    bitmap.font.italic = ch[7] if bitmap.font.italic != ch[7]
+    bitmap.font.name = ch[12] if bitmap.font.name != ch[12]
+    offset = 0
+    if ch[9]   # shadow
+      bitmap.font.color = ch[9]
+      if (ch[16] & 1) != 0   # outline
+        offset = 1
+        bitmap.draw_text(ch[1], ch[2], ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1], ch[2] + 1, ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 1, ch[2], ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 1, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2] + 1, ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
+      elsif (ch[16] & 2) != 0   # outline 2
+        offset = 2
+        bitmap.draw_text(ch[1], ch[2], ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1], ch[2] + 4, ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2] + 4, ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 4, ch[2], ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 4, ch[2] + 2, ch[3] + 4, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 4, ch[2] + 4, ch[3] + 4, ch[4], ch[0])
+      else
+        bitmap.draw_text(ch[1] + 2, ch[2], ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1], ch[2] + 2, ch[3] + 2, ch[4], ch[0])
+        bitmap.draw_text(ch[1] + 2, ch[2] + 2, ch[3] + 2, ch[4], ch[0])
       end
-      bitmap.font.color = ch[8] if bitmap.font.color != ch[8]
-      bitmap.draw_text(ch[1] + offset, ch[2] + offset, ch[3], ch[4], ch[0])
-    elsif bitmap.font.color != ch[8]
-      bitmap.font.color = ch[8]
     end
-    if ch[10] # underline
-      bitmap.fill_rect(ch[1], ch[2] + ch[4] - 4 - [(ch[4] - bitmap.font.size) / 2, 0].max - 2,
-                       ch[3] - 2, 2, ch[8])
-    end
-    if ch[11] # strikeout
-      bitmap.fill_rect(ch[1], ch[2] + (ch[4] / 2) - 4, ch[3] - 2, 2, ch[8])
-    end
+    bitmap.font.color = ch[8] if bitmap.font.color != ch[8]
+    bitmap.draw_text(ch[1] + offset, ch[2] + offset, ch[3], ch[4], ch[0])
+  end
+  if ch[10]   # underline
+    bitmap.fill_rect(ch[1], ch[2] + ch[4] - [(ch[4] - bitmap.font.size) / 2, 0].max - 2, ch[3] - 2, 2, ch[8])
+  end
+  if ch[11]   # strikeout
+    bitmap.fill_rect(ch[1], ch[2] + 2 + (ch[4] / 2), ch[3] - 2, 2, ch[8])
   end
 end
 
@@ -1086,7 +1035,7 @@ end
 def drawFormattedTextEx(bitmap, x, y, width, text, baseColor = nil, shadowColor = nil, lineheight = 32)
   base = baseColor ? baseColor.clone : Color.new(96, 96, 96)
   shadow = shadowColor ? shadowColor.clone : Color.new(208, 208, 200)
-  text = "<c2=" + colorToRgb16(base) + colorToRgb16(shadow) + ">" + text
+  text = shadowc3tag(base, shadow) + text
   chars = getFormattedText(bitmap, x, y, width, -1, text, lineheight)
   drawFormattedChars(bitmap, chars)
 end
@@ -1095,6 +1044,16 @@ end
 def pbDrawShadow(bitmap, x, y, width, height, string)
   return if !bitmap || !string
   pbDrawShadowText(bitmap, x, y, width, height, string, nil, bitmap.font.color)
+end
+
+def pbDrawPlainText(bitmap, x, y, width, height, string, baseColor, align = 0)
+  return if !bitmap || !string
+  width = (width < 0) ? bitmap.text_size(string).width + 1 : width
+  height = (height < 0) ? bitmap.text_size(string).height + 1 : height
+  if baseColor && baseColor.alpha > 0
+    bitmap.font.color = baseColor
+    bitmap.draw_text(x, y, width, height, string, align)
+  end
 end
 
 def pbDrawShadowText(bitmap, x, y, width, height, string, baseColor, shadowColor = nil, align = 0)
@@ -1139,31 +1098,34 @@ end
 #  0 - Text to draw
 #  1 - X coordinate
 #  2 - Y coordinate
-#  3 - If true or 1, the text is right aligned. If 2, the text is centered.
-#      Otherwise, the text is left aligned.
+#  3 - Text alignment. Is one of :left (or false or 0), :right (or true or 1) or
+#      :center (or 2). If anything else, the text is left aligned.
 #  4 - Base color
-#  5 - Shadow color
-#  6 - If true or 1, the text has an outline. Otherwise, the text has a shadow.
+#  5 - Shadow color. If nil, there is no shadow.
+#  6 - If :outline (or true or 1), the text has a full outline. If :none (or the
+#      shadow color is nil), there is no shadow. Otherwise, the text has a shadow.
 def pbDrawTextPositions(bitmap, textpos)
   textpos.each do |i|
     textsize = bitmap.text_size(i[0])
     x = i[1]
     y = i[2]
     case i[3]
-    when true, 1   # right align
+    when :right, true, 1   # right align
       x -= textsize.width
-    when 2 # centered
+    when :center, 2   # centered
       x -= (textsize.width / 2)
     end
-    if i[6] == true || i[6] == 1   # outline text
+    i[6] = :none if !i[5]   # No shadow color given, draw plain text
+    case i[6]
+    when :outline, true, 1   # outline text
       pbDrawOutlineText(bitmap, x, y, textsize.width, textsize.height, i[0], i[4], i[5])
+    when :none
+      pbDrawPlainText(bitmap, x, y, textsize.width, textsize.height, i[0], i[4])
     else
       pbDrawShadowText(bitmap, x, y, textsize.width, textsize.height, i[0], i[4], i[5])
     end
   end
 end
-
-
 
 #===============================================================================
 # Draw images on a bitmap

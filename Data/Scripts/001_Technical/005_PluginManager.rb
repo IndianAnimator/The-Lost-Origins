@@ -106,9 +106,8 @@
 module PluginManager
   # Holds all registered plugin data.
   @@Plugins = {}
-  #-----------------------------------------------------------------------------
+
   # Registers a plugin and tests its dependencies and incompatibilities.
-  #-----------------------------------------------------------------------------
   def self.register(options)
     name         = nil
     version      = nil
@@ -137,9 +136,7 @@ module PluginManager
         end
         name = value
       when :version   # Plugin version
-        if nil_or_empty?(value)
-          self.error("Plugin version must be a string.")
-        end
+        self.error("Plugin version must be a string.") if nil_or_empty?(value)
         version = value
       when :essentials
         essentials = value
@@ -251,8 +248,7 @@ module PluginManager
         incompats = [incompats] if !incompats.is_a?(Array)
         incompats.each do |incompat|
           if self.installed?(incompat)
-            self.error("Plugin '#{name}' is incompatible with '#{incompat}'. " +
-                       "They cannot both be used at the same time.")
+            self.error("Plugin '#{name}' is incompatible with '#{incompat}'. They cannot both be used at the same time.")
           end
         end
       when :credits # Plugin credits
@@ -274,28 +270,26 @@ module PluginManager
     end
     @@Plugins.each_value do |plugin|
       if plugin[:incompatibilities]&.include?(name)
-        self.error("Plugin '#{plugin[:name]}' is incompatible with '#{name}'. " +
-                   "They cannot both be used at the same time.")
+        self.error("Plugin '#{plugin[:name]}' is incompatible with '#{name}'. They cannot both be used at the same time.")
       end
     end
     # Add plugin to class variable
     @@Plugins[name] = {
-      :name => name,
-      :version => version,
-      :essentials => essentials,
-      :link => link,
-      :dependencies => dependencies,
+      :name              => name,
+      :version           => version,
+      :essentials        => essentials,
+      :link              => link,
+      :dependencies      => dependencies,
       :incompatibilities => incompats,
-      :credits => credits
+      :credits           => credits
     }
   end
-  #-----------------------------------------------------------------------------
+
   # Throws a pure error message without stack trace or any other useless info.
-  #-----------------------------------------------------------------------------
   def self.error(msg)
     Graphics.update
     t = Thread.new do
-      Console.echo_error "Plugin Error:\r\n#{msg}"
+      Console.echo_error("Plugin Error:\r\n#{msg}")
       print("Plugin Error:\r\n#{msg}")
       Thread.exit
     end
@@ -304,11 +298,10 @@ module PluginManager
     end
     Kernel.exit! true
   end
-  #-----------------------------------------------------------------------------
+
   # Returns true if the specified plugin is installed.
   # If the version is specified, this version is taken into account.
   # If mustequal is true, the version must be a match with the specified version.
-  #-----------------------------------------------------------------------------
   def self.installed?(plugin_name, plugin_version = nil, mustequal = false)
     plugin = @@Plugins[plugin_name]
     return false if plugin.nil?
@@ -317,41 +310,36 @@ module PluginManager
     return true if !mustequal && comparison >= 0
     return true if mustequal && comparison == 0
   end
-  #-----------------------------------------------------------------------------
+
   # Returns the string names of all installed plugins.
-  #-----------------------------------------------------------------------------
   def self.plugins
     return @@Plugins.keys
   end
-  #-----------------------------------------------------------------------------
+
   # Returns the installed version of the specified plugin.
-  #-----------------------------------------------------------------------------
   def self.version(plugin_name)
     return if !installed?(plugin_name)
     return @@Plugins[plugin_name][:version]
   end
-  #-----------------------------------------------------------------------------
+
   # Returns the link of the specified plugin.
-  #-----------------------------------------------------------------------------
   def self.link(plugin_name)
     return if !installed?(plugin_name)
     return @@Plugins[plugin_name][:link]
   end
-  #-----------------------------------------------------------------------------
+
   # Returns the credits of the specified plugin.
-  #-----------------------------------------------------------------------------
   def self.credits(plugin_name)
     return if !installed?(plugin_name)
     return @@Plugins[plugin_name][:credits]
   end
-  #-----------------------------------------------------------------------------
+
   # Compares two versions given in string form. v1 should be the plugin version
   # you actually have, and v2 should be the minimum/desired plugin version.
   # Return values:
   #     1 if v1 is higher than v2
   #     0 if v1 is equal to v2
   #     -1 if v1 is lower than v2
-  #-----------------------------------------------------------------------------
   def self.compare_versions(v1, v2)
     d1 = v1.chars
     d1.insert(0, "0") if d1[0] == "."   # Turn ".123" into "0.123"
@@ -376,9 +364,8 @@ module PluginManager
     end
     return 0
   end
-  #-----------------------------------------------------------------------------
-  #  formats the error message
-  #-----------------------------------------------------------------------------
+
+  # Formats the error message
   def self.pluginErrorMsg(name, script)
     e = $!
     # begin message formatting
@@ -393,7 +380,6 @@ module PluginManager
     e.backtrace[0, 10].each { |i| message += "#{i}\r\n" }
     # output to log
     errorlog = "errorlog.txt"
-    errorlog = RTP.getSaveFileName("errorlog.txt") if (Object.const_defined?(:RTP) rescue false)
     File.open(errorlog, "ab") do |f|
       f.write("\r\n=================\r\n\r\n[#{Time.now}]\r\n")
       f.write(message)
@@ -406,8 +392,8 @@ module PluginManager
     # output message
     print("#{message}\r\nThis exception was logged in #{errorlogline}.\r\nHold Ctrl when closing this message to copy it to the clipboard.")
     # Give a ~500ms coyote time to start holding Control
-    t = System.delta
-    until (System.delta - t) >= 500_000
+    t = System.uptime
+    until System.uptime - t >= 0.5
       Input.update
       if Input.press?(Input::CTRL)
         Input.clipboard = message
@@ -415,17 +401,16 @@ module PluginManager
       end
     end
   end
-  #-----------------------------------------------------------------------------
+
   # Used to read the metadata file
-  #-----------------------------------------------------------------------------
   def self.readMeta(dir, file)
     filename = "#{dir}/#{file}"
     meta = {}
     # read file
-    Compiler.pbCompilerEachPreppedLine(filename) { |line, line_no|
+    Compiler.pbCompilerEachPreppedLine(filename) do |line, line_no|
       # split line up into property name and values
       if !line[/^\s*(\w+)\s*=\s*(.*)$/]
-        raise _INTL("Bad line syntax (expected syntax like XXX=YYY)\r\n{1}", FileLineData.linereport)
+        raise _INTL("Bad line syntax (expected syntax like XXX=YYY).") + "\n" + FileLineData.linereport
       end
       property = $~[1].upcase
       data = $~[2].split(",")
@@ -466,7 +451,7 @@ module PluginManager
       else
         meta[property.downcase.to_sym] = data[0]
       end
-    }
+    end
     # generate a list of all script files to be loaded, in the order they are to
     # be loaded (files listed in the meta file are loaded first)
     meta[:scripts] = [] if !meta[:scripts]
@@ -480,20 +465,18 @@ module PluginManager
     # return meta hash
     return meta
   end
-  #-----------------------------------------------------------------------------
+
   # Get a list of all the plugin directories to inspect
-  #-----------------------------------------------------------------------------
   def self.listAll
-    return [] if !$DEBUG || safeExists?("Game.rgssad") || !Dir.safe?("Plugins")
+    return [] if !$DEBUG || FileTest.exist?("Game.rgssad") || !Dir.safe?("Plugins")
     # get a list of all directories in the `Plugins/` folder
     dirs = []
     Dir.get("Plugins").each { |d| dirs.push(d) if Dir.safe?(d) }
     # return all plugins
     return dirs
   end
-  #-----------------------------------------------------------------------------
+
   # Catch any potential loop with dependencies and raise an error
-  #-----------------------------------------------------------------------------
   def self.validateDependencies(name, meta, og = nil)
     # exit if no registered dependency
     return nil if !meta[name] || !meta[name][:dependencies]
@@ -511,9 +494,8 @@ module PluginManager
     end
     return name
   end
-  #-----------------------------------------------------------------------------
+
   # Sort load order based on dependencies (this ends up in reverse order)
-  #-----------------------------------------------------------------------------
   def self.sortLoadOrder(order, plugins)
     # go through the load order
     order.each do |o|
@@ -540,9 +522,8 @@ module PluginManager
     end
     return order
   end
-  #-----------------------------------------------------------------------------
+
   # Get the order in which to load plugins
-  #-----------------------------------------------------------------------------
   def self.getPluginOrder
     plugins = {}
     order = []
@@ -550,7 +531,7 @@ module PluginManager
     # plugins.
     self.listAll.each do |dir|
       # skip if there is no meta file
-      next if !safeExists?(dir + "/meta.txt")
+      next if !FileTest.exist?(dir + "/meta.txt")
       ndx = order.length
       meta = self.readMeta(dir, "meta.txt")
       meta[:dir] = dir
@@ -568,13 +549,13 @@ module PluginManager
     # sort the load order
     return self.sortLoadOrder(order, plugins).reverse, plugins
   end
-  #-----------------------------------------------------------------------------
+
   # Check if plugins need compiling
-  #-----------------------------------------------------------------------------
   def self.needCompiling?(order, plugins)
     # fixed actions
-    return false if !$DEBUG || safeExists?("Game.rgssad")
-    return true if !safeExists?("Data/PluginScripts.rxdata")
+    return false if !$DEBUG || FileTest.exist?("Game.rgssad")
+    return true if $full_compile
+    return true if !FileTest.exist?("Data/PluginScripts.rxdata")
     Input.update
     return true if Input.press?(Input::SHIFT) || Input.press?(Input::CTRL)
     # analyze whether or not to push recompile
@@ -590,11 +571,10 @@ module PluginManager
     end
     return false
   end
-  #-----------------------------------------------------------------------------
+
   # Check if plugins need compiling
-  #-----------------------------------------------------------------------------
   def self.compilePlugins(order, plugins)
-    Console.echo_li "Compiling plugin scripts..."
+    Console.echo_li("Compiling plugin scripts...")
     scripts = []
     # go through the entire order one by one
     order.each do |o|
@@ -617,17 +597,19 @@ module PluginManager
     # collect garbage
     GC.start
     Console.echo_done(true)
-    echoln "" if scripts.length == 0
   end
-  #-----------------------------------------------------------------------------
+
   # Check if plugins need compiling
-  #-----------------------------------------------------------------------------
   def self.runPlugins
-    Console.echo_h1 "Checking plugins"
+    Console.echo_h1("Checking plugins")
     # get the order of plugins to interpret
     order, plugins = self.getPluginOrder
     # compile if necessary
-    self.compilePlugins(order, plugins) if self.needCompiling?(order, plugins)
+    if self.needCompiling?(order, plugins)
+      self.compilePlugins(order, plugins)
+    else
+      Console.echoln_li("Plugins were not compiled")
+    end
     # load plugins
     scripts = load_data("Data/PluginScripts.rxdata")
     echoed_plugins = []
@@ -635,7 +617,7 @@ module PluginManager
       # get the required data
       name, meta, script = plugin
       if !meta[:essentials] || !meta[:essentials].include?(Essentials::VERSION)
-        Console.echo_warn "Plugin '#{name}' may not be compatible with Essentials v#{Essentials::VERSION}. Trying to load anyway."
+        Console.echo_warn("Plugin '#{name}' may not be compatible with Essentials v#{Essentials::VERSION}. Trying to load anyway.")
       end
       # register plugin
       self.register(meta)
@@ -651,7 +633,7 @@ module PluginManager
         # try to run the code
         begin
           eval(code, TOPLEVEL_BINDING, fname)
-          Console.echoln_li "Loaded plugin: ==#{name}== (ver. #{meta[:version]})" if !echoed_plugins.include?(name)
+          Console.echoln_li("Loaded plugin: ==#{name}== (ver. #{meta[:version]})") if !echoed_plugins.include?(name)
           echoed_plugins.push(name)
         rescue Exception   # format error message to display
           self.pluginErrorMsg(name, sname)
@@ -660,20 +642,18 @@ module PluginManager
       end
     end
     if scripts.length > 0
-      echoln ""
-      Console.echo_h2("Successfully loaded #{scripts.length} plugin(s)", text: :green)
+      Console.echoln_li_done("Successfully loaded #{scripts.length} plugin(s)")
     else
-      Console.echo_h2("No plugins found", text: :green)
+      Console.echoln_li_done("No plugins found")
     end
   end
-  #-----------------------------------------------------------------------------
-  #  Get plugin dir from name based on meta entries
-  #-----------------------------------------------------------------------------
+
+  # Get plugin dir from name based on meta entries
   def self.findDirectory(name)
     # go through the plugins folder
     Dir.get("Plugins").each do |dir|
       next if !Dir.safe?(dir)
-      next if !safeExists?(dir + "/meta.txt")
+      next if !FileTest.exist?(dir + "/meta.txt")
       # read meta
       meta = self.readMeta(dir, "meta.txt")
       return dir if meta[:name] == name
@@ -681,5 +661,4 @@ module PluginManager
     # return nil if no plugin dir found
     return nil
   end
-  #-----------------------------------------------------------------------------
 end

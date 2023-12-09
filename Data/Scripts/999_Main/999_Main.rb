@@ -24,7 +24,13 @@ end
 
 def mainFunctionDebug
   begin
-    MessageTypes.loadMessageFile("Data/messages.dat") if safeExists?("Data/messages.dat")
+    MessageTypes.load_default_messages if FileTest.exist?("Data/messages_core.dat")
+    if $DEBUG && !FileTest.exist?("Game.rgssad") && Settings::PROMPT_TO_COMPILE
+      pbSetResizeFactor(1)   # Needed to make the message look good
+      if pbConfirmMessage("\\ts[]" + "Do you want to compile your data and plugins?")
+        $full_compile = true
+      end
+    end
     PluginManager.runPlugins
     Compiler.main
     Game.initialize

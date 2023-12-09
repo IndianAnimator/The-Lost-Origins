@@ -1,18 +1,19 @@
-################################################################################
+#===============================================================================
 # "Mining" mini-game
 # By Maruno
 #-------------------------------------------------------------------------------
 # Run with:      pbMiningGame
-################################################################################
+#===============================================================================
 class MiningGameCounter < BitmapSprite
   attr_accessor :hits
 
-  def initialize(x, y)
-    @viewport = Viewport.new(x, y, 416, 60)
-    @viewport.z = 99999
+  def initialize(x, y, viewport)
+    @viewport = viewport
+    @x = x
+    @y = y
     super(416, 60, @viewport)
     @hits = 0
-    @image = AnimatedBitmap.new("Graphics/Pictures/Mining/cracks")
+    @image = AnimatedBitmap.new("Graphics/UI/Mining/cracks")
     update
   end
 
@@ -32,14 +33,14 @@ class MiningGameCounter < BitmapSprite
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class MiningGameTile < BitmapSprite
   attr_reader :layer
 
-  def initialize(x, y)
-    @viewport = Viewport.new(x, y, 32, 32)
-    @viewport.z = 99999
+  def initialize(viewport)
+    @viewport = viewport
     super(32, 32, @viewport)
     r = rand(100)
     if r < 10
@@ -53,7 +54,7 @@ class MiningGameTile < BitmapSprite
     else
       @layer = 6   # 15%
     end
-    @image = AnimatedBitmap.new("Graphics/Pictures/Mining/tiles")
+    @image = AnimatedBitmap.new("Graphics/UI/Mining/tiles")
     update
   end
 
@@ -70,76 +71,79 @@ class MiningGameTile < BitmapSprite
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class MiningGameCursor < BitmapSprite
-  attr_accessor :mode
   attr_accessor :position
-  attr_accessor :hit
-  attr_accessor :counter
+  attr_accessor :mode
 
+  HIT_FRAME_DURATION = 0.05   # In seconds
   TOOL_POSITIONS = [[1, 0], [1, 1], [1, 1], [0, 0], [0, 0],
                     [0, 2], [0, 2], [0, 0], [0, 0], [0, 2], [0, 2]]   # Graphic, position
 
-  def initialize(position = 0, mode = 0)   # mode: 0=pick, 1=hammer
-    @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
-    @viewport.z = 99999
+  # mode: 0=pick, 1=hammer.
+  def initialize(position, mode, viewport)
+    @viewport = viewport
     super(Graphics.width, Graphics.height, @viewport)
     @position = position
     @mode     = mode
     @hit      = 0   # 0=regular, 1=hit item, 2=hit iron
-    @counter  = 0
-    @cursorbitmap = AnimatedBitmap.new("Graphics/Pictures/Mining/cursor")
-    @toolbitmap   = AnimatedBitmap.new("Graphics/Pictures/Mining/tools")
-    @hitsbitmap   = AnimatedBitmap.new("Graphics/Pictures/Mining/hits")
+    @cursorbitmap = AnimatedBitmap.new("Graphics/UI/Mining/cursor")
+    @toolbitmap   = AnimatedBitmap.new("Graphics/UI/Mining/tools")
+    @hitsbitmap   = AnimatedBitmap.new("Graphics/UI/Mining/hits")
     update
   end
 
-  def isAnimating?
-    return @counter > 0
+  def animate(hit)
+    @hit = hit
+    @hit_timer_start = System.uptime
   end
 
-  def animate(hit)
-    @counter = 22
-    @hit     = hit
+  def isAnimating?
+    return !@hit_timer_start.nil?
   end
 
   def update
     self.bitmap.clear
     x = 32 * (@position % MiningGameScene::BOARD_WIDTH)
     y = 32 * (@position / MiningGameScene::BOARD_WIDTH)
-    if @counter > 0
-      @counter -= 1
-      toolx = x
-      tooly = y
-      i = 10 - (@counter / 2).floor
-      case TOOL_POSITIONS[i][1]
-      when 1
-        toolx -= 8
-        tooly += 8
-      when 2
-        toolx += 6
-      end
-      self.bitmap.blt(toolx, tooly, @toolbitmap.bitmap,
-                      Rect.new(96 * TOOL_POSITIONS[i][0], 96 * @mode, 96, 96))
-      if i < 5 && i.even?
-        if @hit == 2
-          self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * 2, 0, 160, 160))
-        else
-          self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * @mode, 0, 160, 160))
+    if @hit_timer_start
+      hit_frame = ((System.uptime - @hit_timer_start) / HIT_FRAME_DURATION).to_i
+      @hit_timer_start = nil if hit_frame >= TOOL_POSITIONS.length
+      if @hit_timer_start
+        toolx = x
+        tooly = y
+        case TOOL_POSITIONS[hit_frame][1]
+        when 1
+          toolx -= 8
+          tooly += 8
+        when 2
+          toolx += 6
+        end
+        self.bitmap.blt(toolx, tooly, @toolbitmap.bitmap,
+                        Rect.new(96 * TOOL_POSITIONS[hit_frame][0], 96 * @mode, 96, 96))
+        if hit_frame < 5 && hit_frame.even?
+          if @hit == 2
+            self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * 2, 0, 160, 160))
+          else
+            self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * @mode, 0, 160, 160))
+          end
+        end
+        if @hit == 1 && hit_frame < 3
+          self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * hit_frame, 160, 160, 160))
         end
       end
-      if @hit == 1 && i < 3
-        self.bitmap.blt(x - 64, y, @hitsbitmap.bitmap, Rect.new(160 * i, 160, 160, 160))
-      end
-    else
+    end
+    if !@hit_timer_start
       self.bitmap.blt(x, y + 64, @cursorbitmap.bitmap, Rect.new(32 * @mode, 0, 32, 32))
     end
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class MiningGameScene
   BOARD_WIDTH  = 13
   BOARD_HEIGHT = 10
@@ -230,10 +234,11 @@ class MiningGameScene
     @sprites = {}
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
-    addBackgroundPlane(@sprites, "bg", "Mining/miningbg", @viewport)
+    addBackgroundPlane(@sprites, "bg", "Mining/bg", @viewport)
     @sprites["itemlayer"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
-    @itembitmap = AnimatedBitmap.new("Graphics/Pictures/Mining/items")
-    @ironbitmap = AnimatedBitmap.new("Graphics/Pictures/Mining/irons")
+    @sprites["itemlayer"].z = 10
+    @itembitmap = AnimatedBitmap.new("Graphics/UI/Mining/items")
+    @ironbitmap = AnimatedBitmap.new("Graphics/UI/Mining/irons")
     @items = []
     @itemswon = []
     @iron = []
@@ -241,14 +246,19 @@ class MiningGameScene
     pbDistributeIron
     BOARD_HEIGHT.times do |i|
       BOARD_WIDTH.times do |j|
-        @sprites["tile#{j + (i * BOARD_WIDTH)}"] = MiningGameTile.new(32 * j, 64 + (32 * i))
+        @sprites["tile#{j + (i * BOARD_WIDTH)}"] = MiningGameTile.new(@viewport)
+        @sprites["tile#{j + (i * BOARD_WIDTH)}"].x = 32 * j
+        @sprites["tile#{j + (i * BOARD_WIDTH)}"].y = 64 + (32 * i)
+        @sprites["tile#{j + (i * BOARD_WIDTH)}"].z = 20
       end
     end
-    @sprites["crack"] = MiningGameCounter.new(0, 4)
-    @sprites["cursor"] = MiningGameCursor.new(58, 0)   # central position, pick
+    @sprites["crack"] = MiningGameCounter.new(0, 4, @viewport)
+    @sprites["cursor"] = MiningGameCursor.new(58, 0, @viewport)   # central position, pick
+    @sprites["cursor"].z = 50
     @sprites["tool"] = IconSprite.new(434, 254, @viewport)
-    @sprites["tool"].setBitmap(sprintf("Graphics/Pictures/Mining/toolicons"))
+    @sprites["tool"].setBitmap("Graphics/UI/Mining/toolicons")
     @sprites["tool"].src_rect.set(0, 0, 68, 100)
+    @sprites["tool"].z = 100
     update
     pbFadeInAndShow(@sprites)
   end
@@ -486,23 +496,27 @@ class MiningGameScene
   def pbFlashItems(revealed)
     return if revealed.length <= 0
     revealeditems = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
-    halfFlashTime = Graphics.frame_rate / 8
-    alphaDiff = (255.0 / halfFlashTime).ceil
-    (1..halfFlashTime * 2).each do |i|
-      revealed.each do |index|
-        burieditem = @items[index]
-        revealeditems.bitmap.blt(32 * burieditem[1], 64 + (32 * burieditem[2]),
-                                 @itembitmap.bitmap,
-                                 Rect.new(32 * ITEMS[burieditem[0]][2], 32 * ITEMS[burieditem[0]][3],
-                                          32 * ITEMS[burieditem[0]][4], 32 * ITEMS[burieditem[0]][5]))
-        if i > halfFlashTime
-          revealeditems.color = Color.new(255, 255, 255, ((halfFlashTime * 2) - i) * alphaDiff)
-        else
-          revealeditems.color = Color.new(255, 255, 255, i * alphaDiff)
+    revealeditems.z = 15
+    revealeditems.color = Color.new(255, 255, 255, 0)
+    flash_duration = 0.25
+    2.times do |i|
+      alpha_start = (i == 0) ? 0 : 255
+      alpha_end = (i == 0) ? 255 : 0
+      timer_start = System.uptime
+      loop do
+        revealed.each do |index|
+          burieditem = @items[index]
+          revealeditems.bitmap.blt(32 * burieditem[1], 64 + (32 * burieditem[2]),
+                                   @itembitmap.bitmap,
+                                   Rect.new(32 * ITEMS[burieditem[0]][2], 32 * ITEMS[burieditem[0]][3],
+                                            32 * ITEMS[burieditem[0]][4], 32 * ITEMS[burieditem[0]][5]))
         end
+        flash_alpha = lerp(alpha_start, alpha_end, flash_duration / 2, timer_start, System.uptime)
+        revealeditems.color.alpha = flash_alpha
+        update
+        Graphics.update
+        break if flash_alpha == alpha_end
       end
-      update
-      Graphics.update
     end
     revealeditems.dispose
     revealed.each do |index|
@@ -524,15 +538,14 @@ class MiningGameScene
       if @sprites["crack"].hits >= 49
         @sprites["cursor"].visible = false
         pbSEPlay("Mining collapse")
-        collapseviewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
-        collapseviewport.z = 99999
-        @sprites["collapse"] = BitmapSprite.new(Graphics.width, Graphics.height, collapseviewport)
-        collapseTime = Graphics.frame_rate * 8 / 10
-        collapseFraction = (Graphics.height.to_f / collapseTime).ceil
-        (1..collapseTime).each do |i|
-          @sprites["collapse"].bitmap.fill_rect(0, collapseFraction * (i - 1),
-                                                Graphics.width, collapseFraction * i, Color.new(0, 0, 0))
+        @sprites["collapse"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
+        @sprites["collapse"].z = 999
+        timer_start = System.uptime
+        loop do
+          collapse_height = lerp(0, Graphics.height, 0.8, timer_start, System.uptime)
+          @sprites["collapse"].bitmap.fill_rect(0, 0, Graphics.width, collapse_height, Color.black)
           Graphics.update
+          break if collapse_height == Graphics.height
         end
         pbMessage(_INTL("The wall collapsed!"))
         break
@@ -544,7 +557,7 @@ class MiningGameScene
       end
       if foundall
         @sprites["cursor"].visible = false
-        pbWait(Graphics.frame_rate * 3 / 4)
+        pbWait(0.75)
         pbSEPlay("Mining found all")
         pbMessage(_INTL("Everything was dug up!"))
         break
@@ -589,8 +602,7 @@ class MiningGameScene
     if @itemswon.length > 0
       @itemswon.each do |i|
         if $bag.add(i)
-          pbMessage(_INTL("One {1} was obtained.\\se[Mining item get]\\wtnp[30]",
-                          GameData::Item.get(i).name))
+          pbMessage(_INTL("One {1} was obtained.", GameData::Item.get(i).name) + "\\se[Mining item get]\\wtnp[30]")
         else
           pbMessage(_INTL("One {1} was found, but you have no room for it.",
                           GameData::Item.get(i).name))
@@ -606,8 +618,9 @@ class MiningGameScene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class MiningGame
   def initialize(scene)
     @scene = scene
@@ -620,12 +633,13 @@ class MiningGame
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbMiningGame
-  pbFadeOutIn {
+  pbFadeOutIn do
     scene = MiningGameScene.new
     screen = MiningGame.new(scene)
     screen.pbStartScreen
-  }
+  end
 end

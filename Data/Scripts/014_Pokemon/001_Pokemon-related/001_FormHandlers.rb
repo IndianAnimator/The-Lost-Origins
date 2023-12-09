@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 module MultipleForms
   @@formSpecies = SpeciesHandlerHash.new
 
@@ -9,8 +12,8 @@ module MultipleForms
     @@formSpecies.add(sym, hash)
   end
 
-  def self.registerIf(cond, hash)
-    @@formSpecies.addIf(cond, hash)
+  def self.registerIf(sym, cond, hash)
+    @@formSpecies.addIf(sym, cond, hash)
   end
 
   def self.hasFunction?(pkmn, func)
@@ -32,8 +35,9 @@ module MultipleForms
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def drawSpot(bitmap, spotpattern, x, y, red, green, blue)
   height = spotpattern.length
   width  = spotpattern[0].length
@@ -41,8 +45,8 @@ def drawSpot(bitmap, spotpattern, x, y, red, green, blue)
     spot = spotpattern[yy]
     width.times do |xx|
       next if spot[xx] != 1
-      xOrg = (x + xx) << 1
-      yOrg = (y + yy) << 1
+      xOrg = (x + xx) * 2
+      yOrg = (y + yy) * 2
       color = bitmap.get_pixel(xOrg, yOrg)
       r = color.red + red
       g = color.green + green
@@ -59,6 +63,7 @@ def drawSpot(bitmap, spotpattern, x, y, red, green, blue)
 end
 
 def pbSpindaSpots(pkmn, bitmap)
+  # NOTE: These spots are doubled in size when drawing them.
   spot1 = [
     [0, 0, 1, 1, 1, 1, 0, 0],
     [0, 1, 1, 1, 1, 1, 1, 0],
@@ -119,6 +124,8 @@ def pbSpindaSpots(pkmn, bitmap)
   c = (id >> 8) & 15
   b = (id >> 4) & 15
   a = (id) & 15
+  # NOTE: The coordinates below (b + 33, a + 25 and so on) are doubled when
+  #       drawing the spot.
   if pkmn.shiny?
     drawSpot(bitmap, spot1, b + 33, a + 25, -75, -10, -150)
     drawSpot(bitmap, spot2, d + 21, c + 24, -75, -10, -150)
@@ -247,8 +254,8 @@ MultipleForms.register(:ROTOM, {
         # Replace the old move with the new move (keeps the same index)
         pkmn.moves[old_move_index].id = new_move_id
         new_move_name = pkmn.moves[old_move_index].name
-        pbMessage(_INTL("{1} forgot {2}...\1", pkmn.name, old_move_name))
-        pbMessage(_INTL("\\se[]{1} learned {2}!\\se[Pkmn move learnt]\1", pkmn.name, new_move_name))
+        pbMessage(_INTL("{1} forgot {2}...", pkmn.name, old_move_name) + "\1")
+        pbMessage("\\se[]" + _INTL("{1} learned {2}!", pkmn.name, new_move_name) + "\\se[Pkmn move learnt]")
       end
     elsif !new_move_id.nil?
       # Just learn the new move
@@ -260,10 +267,7 @@ MultipleForms.register(:ROTOM, {
 MultipleForms.register(:GIRATINA, {
   "getForm" => proc { |pkmn|
     next 1 if pkmn.hasItem?(:GRISEOUSORB)
-    if $game_map &&
-       GameData::MapMetadata.get($game_map.map_id)&.has_flag?("DistortionWorld")
-      next 1
-    end
+    next 1 if $game_map&.metadata&.has_flag?("DistortionWorld")
     next 0
   }
 })
@@ -724,7 +728,6 @@ MultipleForms.register(:CALYREX, {
   }
 })
 
-
 #===============================================================================
 # Regional forms
 # This code is for determining the form of a Pokémon in an egg created at the
@@ -787,15 +790,3 @@ MultipleForms.register(:KOFFING, {
 })
 
 MultipleForms.copy(:KOFFING, :MIMEJR)
-
-#===============================================================================
-# PTLO forms
-#===============================================================================
-
-MultipleForms.register(:SOLROCK, {
-  "getForm" => proc { |pkmn|
-    next if !$Trainer
-    next 1 if $Trainer.has_species?(:LUNATONE)
-    next 0
-  }
-})

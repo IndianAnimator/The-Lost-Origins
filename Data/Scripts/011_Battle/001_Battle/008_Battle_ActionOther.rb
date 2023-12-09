@@ -36,6 +36,9 @@ class Battle
   end
 
   def pbCall(idxBattler)
+    # Debug ending the battle
+    return if pbDebugRun != 0
+    # Call the battler
     battler = @battlers[idxBattler]
     trainerName = pbGetOwnerName(idxBattler)
     pbDisplay(_INTL("{1} called {2}!", trainerName, battler.pbThis(true)))
@@ -78,7 +81,9 @@ class Battle
         @mega_rings.each { |item| return GameData::Item.get(item).name if $bag.has?(item) }
       else
         trainer_items = pbGetOwnerItems(idxBattler)
-        @mega_rings.each { |item| return GameData::Item.get(item).name if trainer_items&.include?(item) }
+        if trainer_items
+          @mega_rings.each { |item| return GameData::Item.get(item).name if trainer_items.include?(item) }
+        end
       end
     end
     return _INTL("Mega Ring")
@@ -135,7 +140,6 @@ class Battle
     trainerName = pbGetOwnerName(idxBattler)
     old_ability = battler.ability_id
     # Break Illusion
-    Battle::AttributeEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)
     if battler.hasActiveAbility?(:ILLUSION)
       Battle::AbilityEffects.triggerOnBeingHit(battler.ability, nil, battler, nil, self)
     end

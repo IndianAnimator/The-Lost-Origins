@@ -121,6 +121,7 @@ class Interpreter
   def command_dummy
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * End Event
   #-----------------------------------------------------------------------------
@@ -132,6 +133,7 @@ class Interpreter
       $game_map.events[@event_id].unlock
     end
   end
+
   #-----------------------------------------------------------------------------
   # * Command Skip
   #-----------------------------------------------------------------------------
@@ -142,6 +144,7 @@ class Interpreter
       @index += 1
     end
   end
+
   #-----------------------------------------------------------------------------
   # * Command If
   #-----------------------------------------------------------------------------
@@ -152,6 +155,7 @@ class Interpreter
     end
     return command_skip
   end
+
   #-----------------------------------------------------------------------------
   # * Show Text
   #-----------------------------------------------------------------------------
@@ -203,6 +207,7 @@ class Interpreter
     @message_waiting = false
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Show Choices
   #-----------------------------------------------------------------------------
@@ -289,6 +294,7 @@ class Interpreter
     return if !condition || nil_or_empty?(new_name)
     @renamed_choices[number - 1] = new_name
   end
+
   #-----------------------------------------------------------------------------
   # * When [**]
   #-----------------------------------------------------------------------------
@@ -300,6 +306,7 @@ class Interpreter
     end
     return command_skip
   end
+
   #-----------------------------------------------------------------------------
   # * When Cancel
   #-----------------------------------------------------------------------------
@@ -311,6 +318,7 @@ class Interpreter
     end
     return command_skip
   end
+
   #-----------------------------------------------------------------------------
   # * Input Number
   #-----------------------------------------------------------------------------
@@ -325,6 +333,7 @@ class Interpreter
     @message_waiting = false
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Text Options
   #-----------------------------------------------------------------------------
@@ -334,26 +343,22 @@ class Interpreter
     $game_system.message_frame    = @parameters[1]
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Button Input Processing
   #-----------------------------------------------------------------------------
   def pbButtonInputProcessing(variable_number = 0, timeout_frames = 0)
     ret = 0
-    timer = timeout_frames * Graphics.frame_rate / 20
+    timer_start = System.uptime
     loop do
       Graphics.update
       Input.update
       pbUpdateSceneMap
       # Check for input and break if there is one
-      (1..18).each do |i|
-        ret = i if Input.trigger?(i)
-      end
+      (1..18).each { |i| ret = i if Input.trigger?(i) }
       break if ret != 0
-      # Count down the timer and break if it runs out
-      if timeout_frames > 0
-        timer -= 1
-        break if timer <= 0
-      end
+      # Break if the timer runs out
+      break if timeout_frames > 0 && System.uptime - timer_start >= timeout_frames / 20.0
     end
     Input.update
     if variable_number && variable_number > 0
@@ -371,13 +376,16 @@ class Interpreter
     @index += 1
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Wait
   #-----------------------------------------------------------------------------
   def command_106
-    @wait_count = @parameters[0] * Graphics.frame_rate / 20
+    @wait_count = @parameters[0] / 20.0
+    @wait_start = System.uptime
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Conditional Branch
   #-----------------------------------------------------------------------------
@@ -408,8 +416,8 @@ class Interpreter
         result = ($game_self_switches[key] == (@parameters[2] == 0))
       end
     when 3   # timer
-      if $game_system.timer_working
-        sec = $game_system.timer / Graphics.frame_rate
+      if $game_system.timer_start
+        sec = $game_system.timer
         result = (@parameters[2] == 0) ? (sec >= @parameters[1]) : (sec <= @parameters[1])
       end
 #    when 4, 5   # actor, enemy
@@ -433,6 +441,7 @@ class Interpreter
     end
     return command_skip
   end
+
   #-----------------------------------------------------------------------------
   # * Else
   #-----------------------------------------------------------------------------
@@ -443,12 +452,14 @@ class Interpreter
     end
     return command_skip
   end
+
   #-----------------------------------------------------------------------------
   # * Loop
   #-----------------------------------------------------------------------------
   def command_112
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Repeat Above
   #-----------------------------------------------------------------------------
@@ -459,6 +470,7 @@ class Interpreter
       return true if @list[@index].indent == indent
     end
   end
+
   #-----------------------------------------------------------------------------
   # * Break Loop
   #-----------------------------------------------------------------------------
@@ -475,6 +487,7 @@ class Interpreter
       end
     end
   end
+
   #-----------------------------------------------------------------------------
   # * Exit Event Processing
   #-----------------------------------------------------------------------------
@@ -482,6 +495,7 @@ class Interpreter
     command_end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Erase Event
   #-----------------------------------------------------------------------------
@@ -493,6 +507,7 @@ class Interpreter
     @index += 1
     return false
   end
+
   #-----------------------------------------------------------------------------
   # * Call Common Event
   #-----------------------------------------------------------------------------
@@ -504,12 +519,14 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Label
   #-----------------------------------------------------------------------------
   def command_118
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Jump to Label
   #-----------------------------------------------------------------------------
@@ -528,6 +545,7 @@ class Interpreter
       temp_index += 1
     end
   end
+
   #-----------------------------------------------------------------------------
   # * Control Switches
   #-----------------------------------------------------------------------------
@@ -542,6 +560,7 @@ class Interpreter
     $game_map.need_refresh = true if should_refresh
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Control Variables
   #-----------------------------------------------------------------------------
@@ -569,13 +588,13 @@ class Interpreter
       end
     when 7   # other
       case @parameters[4]
-      when 0 then value = $game_map.map_id                             # map ID
-      when 1 then value = $player.pokemon_party.length                 # party members
-      when 2 then value = $player.money                                # gold
-#      when 3   # steps
-      when 4 then value = Graphics.frame_count / Graphics.frame_rate   # play time
-      when 5 then value = $game_system.timer / Graphics.frame_rate     # timer
-      when 6 then value = $game_system.save_count                      # save count
+      when 0 then value = $game_map.map_id          # map ID
+      when 1 then value = $player.pokemon_count     # party members
+      when 2 then value = $player.money             # gold
+      when 3 then value = $stats.distance_moved     # steps
+      when 4 then value = $stats.play_time          # play time
+      when 5 then value = $game_system.timer        # timer
+      when 6 then value = $game_system.save_count   # save count
       end
     end
     # Apply value and operation to all specified game variables
@@ -606,6 +625,7 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Control Self Switch
   #-----------------------------------------------------------------------------
@@ -620,14 +640,16 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Control Timer
   #-----------------------------------------------------------------------------
   def command_124
-    $game_system.timer_working = (@parameters[0] == 0)
-    $game_system.timer = @parameters[1] * Graphics.frame_rate if @parameters[0] == 0
+    $game_system.timer_start = (@parameters[0] == 0) ? $stats.play_time : nil
+    $game_system.timer_duration = @parameters[1] if @parameters[0] == 0
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Gold
   #-----------------------------------------------------------------------------
@@ -642,6 +664,7 @@ class Interpreter
   def command_127; command_dummy; end   # Change Weapons
   def command_128; command_dummy; end   # Change Armor
   def command_129; command_dummy; end   # Change Party Member
+
   #-----------------------------------------------------------------------------
   # * Change Windowskin
   #-----------------------------------------------------------------------------
@@ -654,6 +677,7 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Battle BGM
   #-----------------------------------------------------------------------------
@@ -661,10 +685,12 @@ class Interpreter
     ($PokemonGlobal.nextBattleBGM = @parameters[0]) ? @parameters[0].clone : nil
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Battle End ME
   #-----------------------------------------------------------------------------
   def command_133; command_dummy; end
+
   #-----------------------------------------------------------------------------
   # * Change Save Access
   #-----------------------------------------------------------------------------
@@ -672,6 +698,7 @@ class Interpreter
     $game_system.save_disabled = (@parameters[0] == 0)
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Menu Access
   #-----------------------------------------------------------------------------
@@ -679,6 +706,7 @@ class Interpreter
     $game_system.menu_disabled = (@parameters[0] == 0)
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Encounter
   #-----------------------------------------------------------------------------
@@ -687,6 +715,7 @@ class Interpreter
     $game_player.make_encounter_count
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Transfer Player
   #-----------------------------------------------------------------------------
@@ -716,6 +745,7 @@ class Interpreter
     end
     return false
   end
+
   #-----------------------------------------------------------------------------
   # * Set Event Location
   #-----------------------------------------------------------------------------
@@ -747,6 +777,7 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Scroll Map
   #-----------------------------------------------------------------------------
@@ -756,6 +787,7 @@ class Interpreter
     $game_map.start_scroll(@parameters[0], @parameters[1], @parameters[2])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Map Settings
   #-----------------------------------------------------------------------------
@@ -778,20 +810,23 @@ class Interpreter
     end
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Fog Color Tone
   #-----------------------------------------------------------------------------
   def command_205
-    $game_map.start_fog_tone_change(@parameters[0], @parameters[1] * Graphics.frame_rate / 20)
+    $game_map.start_fog_tone_change(@parameters[0], @parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Fog Opacity
   #-----------------------------------------------------------------------------
   def command_206
-    $game_map.start_fog_opacity_change(@parameters[0], @parameters[1] * Graphics.frame_rate / 20)
+    $game_map.start_fog_opacity_change(@parameters[0], @parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Show Animation
   #-----------------------------------------------------------------------------
@@ -806,6 +841,7 @@ class Interpreter
     character.animation_id = @parameters[1]
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Transparent Flag
   #-----------------------------------------------------------------------------
@@ -813,6 +849,7 @@ class Interpreter
     $game_player.transparent = (@parameters[0] == 0)
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Set Move Route
   #-----------------------------------------------------------------------------
@@ -827,6 +864,7 @@ class Interpreter
     character.force_move_route(@parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Wait for Move's Completion
   #-----------------------------------------------------------------------------
@@ -834,6 +872,7 @@ class Interpreter
     @move_route_waiting = true if !$game_temp.in_battle
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Prepare for Transition
   #-----------------------------------------------------------------------------
@@ -842,6 +881,7 @@ class Interpreter
     Graphics.freeze
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Execute Transition
   #-----------------------------------------------------------------------------
@@ -852,27 +892,31 @@ class Interpreter
     @index += 1
     return false
   end
+
   #-----------------------------------------------------------------------------
   # * Change Screen Color Tone
   #-----------------------------------------------------------------------------
   def command_223
-    $game_screen.start_tone_change(@parameters[0], @parameters[1] * Graphics.frame_rate / 20)
+    $game_screen.start_tone_change(@parameters[0], @parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Screen Flash
   #-----------------------------------------------------------------------------
   def command_224
-    $game_screen.start_flash(@parameters[0], @parameters[1] * Graphics.frame_rate / 20)
+    $game_screen.start_flash(@parameters[0], @parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Screen Shake
   #-----------------------------------------------------------------------------
   def command_225
-    $game_screen.start_shake(@parameters[0], @parameters[1], @parameters[2] * Graphics.frame_rate / 20)
+    $game_screen.start_shake(@parameters[0], @parameters[1], @parameters[2])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Show Picture
   #-----------------------------------------------------------------------------
@@ -889,6 +933,7 @@ class Interpreter
                                        x, y, @parameters[6], @parameters[7], @parameters[8], @parameters[9])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Move Picture
   #-----------------------------------------------------------------------------
@@ -901,10 +946,12 @@ class Interpreter
       x = $game_variables[@parameters[4]]
       y = $game_variables[@parameters[5]]
     end
-    $game_screen.pictures[number].move(@parameters[1] * Graphics.frame_rate / 20,
-                                       @parameters[2], x, y, @parameters[6], @parameters[7], @parameters[8], @parameters[9])
+    $game_screen.pictures[number].move(@parameters[1], @parameters[2], x, y,
+                                       @parameters[6], @parameters[7],
+                                       @parameters[8], @parameters[9])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Rotate Picture
   #-----------------------------------------------------------------------------
@@ -913,15 +960,16 @@ class Interpreter
     $game_screen.pictures[number].rotate(@parameters[1])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Change Picture Color Tone
   #-----------------------------------------------------------------------------
   def command_234
     number = @parameters[0] + ($game_temp.in_battle ? 50 : 0)
-    $game_screen.pictures[number].start_tone_change(@parameters[1],
-                                                    @parameters[2] * Graphics.frame_rate / 20)
+    $game_screen.pictures[number].start_tone_change(@parameters[1], @parameters[2])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Erase Picture
   #-----------------------------------------------------------------------------
@@ -930,6 +978,7 @@ class Interpreter
     $game_screen.pictures[number].erase
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Set Weather Effects
   #-----------------------------------------------------------------------------
@@ -937,6 +986,7 @@ class Interpreter
     $game_screen.weather(@parameters[0], @parameters[1], @parameters[2])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Play BGM
   #-----------------------------------------------------------------------------
@@ -944,6 +994,7 @@ class Interpreter
     pbBGMPlay(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Fade Out BGM
   #-----------------------------------------------------------------------------
@@ -951,6 +1002,7 @@ class Interpreter
     pbBGMFade(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Play BGS
   #-----------------------------------------------------------------------------
@@ -958,6 +1010,7 @@ class Interpreter
     pbBGSPlay(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Fade Out BGS
   #-----------------------------------------------------------------------------
@@ -965,6 +1018,7 @@ class Interpreter
     pbBGSFade(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Memorize BGM/BGS
   #-----------------------------------------------------------------------------
@@ -973,6 +1027,7 @@ class Interpreter
     $game_system.bgs_memorize
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Restore BGM/BGS
   #-----------------------------------------------------------------------------
@@ -981,6 +1036,7 @@ class Interpreter
     $game_system.bgs_restore
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Play ME
   #-----------------------------------------------------------------------------
@@ -988,6 +1044,7 @@ class Interpreter
     pbMEPlay(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Play SE
   #-----------------------------------------------------------------------------
@@ -995,6 +1052,7 @@ class Interpreter
     pbSEPlay(@parameters[0])
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Stop SE
   #-----------------------------------------------------------------------------
@@ -1008,6 +1066,7 @@ class Interpreter
   def command_602; command_if(1); end   # If Escape
   def command_603; command_if(2); end   # If Lose
   def command_302; command_dummy; end   # Shop Processing
+
   #-----------------------------------------------------------------------------
   # * Name Input Processing
   #-----------------------------------------------------------------------------
@@ -1018,14 +1077,14 @@ class Interpreter
     end
     if $game_actors && $data_actors && $data_actors[@parameters[0]]
       $game_temp.battle_abort = true
-      pbFadeOutIn {
+      pbFadeOutIn do
         sscene = PokemonEntryScene.new
         sscreen = PokemonEntry.new(sscene)
         $game_actors[@parameters[0]].name = sscreen.pbStartScreen(
           _INTL("Enter {1}'s name.", $game_actors[@parameters[0]].name),
           1, @parameters[1], $game_actors[@parameters[0]].name
         )
-      }
+      end
     end
     return true
   end
@@ -1033,6 +1092,7 @@ class Interpreter
   def command_311; command_dummy; end   # Change HP
   def command_312; command_dummy; end   # Change SP
   def command_313; command_dummy; end   # Change State
+
   #-----------------------------------------------------------------------------
   # * Recover All
   #-----------------------------------------------------------------------------
@@ -1065,6 +1125,7 @@ class Interpreter
   def command_338; command_dummy; end   # Deal Damage
   def command_339; command_dummy; end   # Force Action
   def command_340; command_dummy; end   # Abort Battle
+
   #-----------------------------------------------------------------------------
   # * Call Menu Screen
   #-----------------------------------------------------------------------------
@@ -1073,6 +1134,7 @@ class Interpreter
     @index += 1
     return false
   end
+
   #-----------------------------------------------------------------------------
   # * Call Save Screen
   #-----------------------------------------------------------------------------
@@ -1082,6 +1144,7 @@ class Interpreter
     screen.pbSaveScreen
     return true
   end
+
   #-----------------------------------------------------------------------------
   # * Game Over
   #-----------------------------------------------------------------------------
@@ -1090,6 +1153,7 @@ class Interpreter
     pbBGSFade(1.0)
     pbFadeOutIn { pbStartOver(true) }
   end
+
   #-----------------------------------------------------------------------------
   # * Return to Title Screen
   #-----------------------------------------------------------------------------
@@ -1097,6 +1161,7 @@ class Interpreter
     $game_temp.title_screen_calling = true
     return false
   end
+
   #-----------------------------------------------------------------------------
   # * Script
   #-----------------------------------------------------------------------------

@@ -27,8 +27,8 @@ class Battle::Move
   #=============================================================================
   #
   #=============================================================================
-  # Whether the move is currently in the "charging" turn of a two turn attack.
-  # Is false if Power Herb or another effect lets a two turn move charge and
+  # Whether the move is currently in the "charging" turn of a two-turn move.
+  # Is false if Power Herb or another effect lets a two-turn move charge and
   # attack in the same turn.
   # user.effects[PBEffects::TwoTurnAttack] is set to the move's ID during the
   # charging turn, and is nil during the attack turn.
@@ -51,6 +51,9 @@ class Battle::Move
     end
     return 1
   end
+
+  # For two-turn moves when they charge and attack in the same turn.
+  def pbQuickChargingMove(user, targets); end
 
   #=============================================================================
   # Effect methods per hit
@@ -101,11 +104,11 @@ class Battle::Move
   def pbFailsAgainstTarget?(user, target, show_message); return false; end
 
   def pbMoveFailedLastInRound?(user, showMessage = true)
-    unmoved = @battle.allBattlers.any? { |b|
+    unmoved = @battle.allBattlers.any? do |b|
       next b.index != user.index &&
            [:UseMove, :Shift].include?(@battle.choices[b.index][0]) &&
            !b.movedThisRound?
-    }
+    end
     if !unmoved
       @battle.pbDisplay(_INTL("But it failed!")) if showMessage
       return true
@@ -140,14 +143,14 @@ class Battle::Move
     target.allAllies.each do |b|
       next if !b.hasActiveAbility?(:AROMAVEIL)
       if showMessage
-        @battle.pbShowAbilitySplash(target)
+        @battle.pbShowAbilitySplash(b)
         if Battle::Scene::USE_ABILITY_SPLASH
           @battle.pbDisplay(_INTL("{1} is unaffected!", target.pbThis))
         else
           @battle.pbDisplay(_INTL("{1} is unaffected because of {2}'s {3}!",
                                   target.pbThis, b.pbThis(true), b.abilityName))
         end
-        @battle.pbHideAbilitySplash(target)
+        @battle.pbHideAbilitySplash(b)
       end
       return true
     end
@@ -248,10 +251,9 @@ class Battle::Move
         oldHP = b.hp
         if b.damageState.substitute
           old_sub_hp = b.effects[PBEffects::Substitute] + b.damageState.hpLost
-          PBDebug.log("[Move damage] #{b.pbThis}'s substitute lost #{b.damageState.hpLost} HP (#{old_sub_hp}=>#{b.effects[PBEffects::Substitute]})")
+          PBDebug.log("[Substitute HP change] #{b.pbThis}'s substitute lost #{b.damageState.hpLost} HP (#{old_sub_hp} -> #{b.effects[PBEffects::Substitute]})")
         else
           oldHP += b.damageState.hpLost
-          PBDebug.log("[Move damage] #{b.pbThis} lost #{b.damageState.hpLost} HP (#{oldHP}=>#{b.hp})")
         end
         effectiveness = 0
         if Effectiveness.resistant?(b.damageState.typeMod)
@@ -272,6 +274,7 @@ class Battle::Move
   # Messages upon being hit
   #=============================================================================
   def pbEffectivenessMessage(user, target, numTargets = 1)
+    return if self.is_a?(Battle::Move::FixedDamageMove)
     return if target.damageState.disguise || target.damageState.iceFace
     if Effectiveness.super_effective?(target.damageState.typeMod)
       if numTargets > 1
@@ -370,20 +373,23 @@ class Battle::Move
     #       regardless of its calculated type. Hence the following two lines of
     #       code.
     moveType = nil
-    moveType = :NORMAL if @function == "TypeDependsOnUserIVs"   # Hidden Power
-    if physicalMove?(moveType)
-      target.effects[PBEffects::Counter]       = damage
-      target.effects[PBEffects::CounterTarget] = user.index
-    elsif specialMove?(moveType)
-      target.effects[PBEffects::MirrorCoat]       = damage
-      target.effects[PBEffects::MirrorCoatTarget] = user.index
+    moveType = :NORMAL if @function_code == "TypeDependsOnUserIVs"   # Hidden Power
+    if !target.damageState.substitute
+      if physicalMove?(moveType)
+        target.effects[PBEffects::Counter]       = damage
+        target.effects[PBEffects::CounterTarget] = user.index
+      elsif specialMove?(moveType)
+        target.effects[PBEffects::MirrorCoat]       = damage
+        target.effects[PBEffects::MirrorCoatTarget] = user.index
+      end
     end
     if target.effects[PBEffects::Bide] > 0
       target.effects[PBEffects::BideDamage] += damage
       target.effects[PBEffects::BideTarget] = user.index
     end
     target.damageState.fainted = true if target.fainted?
-    target.lastHPLost = damage                        # For Focus Punch
+    target.lastHPLost = damage
+    target.tookMoveDamageThisRound = true if damage > 0 && !target.damageState.substitute   # For Focus Punch
     target.tookDamageThisRound = true if damage > 0   # For Assurance
     target.lastAttacker.push(user.index)              # For Revenge
     if target.opposes?(user)

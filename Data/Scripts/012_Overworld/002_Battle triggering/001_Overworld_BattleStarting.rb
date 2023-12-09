@@ -8,8 +8,9 @@ class PokemonGlobalMetadata
   attr_accessor :nextBattleBack
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class Game_Temp
   attr_accessor :encounter_triggered
   attr_accessor :encounter_type
@@ -37,6 +38,8 @@ class Game_Temp
     when "canrun"                 then rules["canRun"]              = true
     when "cannotrun"              then rules["canRun"]              = false
     when "roamerflees"            then rules["roamerFlees"]         = true
+    when "canswitch"              then rules["canSwitch"]           = true
+    when "cannotswitch"           then rules["canSwitch"]           = false
     when "noexp"                  then rules["expGain"]             = false
     when "nomoney"                then rules["moneyGain"]           = false
     when "disablepokeballs"       then rules["disablePokeBalls"]    = true
@@ -61,8 +64,9 @@ class Game_Temp
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def setBattleRule(*args)
   r = nil
   args.each do |arg|
@@ -185,7 +189,8 @@ module BattleCreationHelperMethods
       ally = NPCTrainer.new($PokemonGlobal.partner[1], $PokemonGlobal.partner[0])
       ally.id    = $PokemonGlobal.partner[2]
       ally.party = $PokemonGlobal.partner[3]
-      ally_items[1] = ally.items.clone
+      data = GameData::Trainer.try_get($PokemonGlobal.partner[0], $PokemonGlobal.partner[1], $PokemonGlobal.partner[2])
+      ally_items[1] = data&.items.clone || []
       trainer_array.push(ally)
       pokemon_array = []
       $player.party.each { |pkmn| pokemon_array.push(pkmn) }
@@ -209,6 +214,8 @@ module BattleCreationHelperMethods
     battle.canLose = battleRules["canLose"] if !battleRules["canLose"].nil?
     # Whether the player can choose to run from the battle (default: true)
     battle.canRun = battleRules["canRun"] if !battleRules["canRun"].nil?
+    # Whether the player can manually choose to switch out Pokémon (default: true)
+    battle.canSwitch = battleRules["canSwitch"] if !battleRules["canSwitch"].nil?
     # Whether wild Pokémon always try to run from battle (default: nil)
     battle.rules["alwaysflee"] = battleRules["roamerFlees"]
     # Whether Pokémon gain Exp/EVs from defeating/catching a Pokémon (default: true)
@@ -227,12 +234,14 @@ module BattleCreationHelperMethods
     battle.showAnims = ($PokemonSystem.battlescene == 0)
     battle.showAnims = battleRules["battleAnims"] if !battleRules["battleAnims"].nil?
     # Terrain
-    if battleRules["defaultTerrain"].nil? && Settings::OVERWORLD_WEATHER_SETS_BATTLE_TERRAIN
-      case $game_screen.weather_type
-      when :Storm
-        battle.defaultTerrain = :Electric
-      when :Fog
-        battle.defaultTerrain = :Misty
+    if battleRules["defaultTerrain"].nil?
+      if Settings::OVERWORLD_WEATHER_SETS_BATTLE_TERRAIN
+        case $game_screen.weather_type
+        when :Storm
+          battle.defaultTerrain = :Electric
+        when :Fog
+          battle.defaultTerrain = :Misty
+        end
       end
     else
       battle.defaultTerrain = battleRules["defaultTerrain"]
@@ -310,7 +319,10 @@ module BattleCreationHelperMethods
     end
     if [2, 5].include?(outcome) && can_lose   # if loss or draw
       $player.party.each { |pkmn| pkmn.heal }
-      (Graphics.frame_rate / 4).times { Graphics.update }
+      timer_start = System.uptime
+      until System.uptime - timer_start >= 0.25
+        Graphics.update
+      end
     end
     EventHandlers.trigger(:on_end_battle, outcome, can_lose)
     $game_player.straighten
@@ -347,7 +359,7 @@ class WildBattle
     # roaming Pokémon, Safari battles, Bug Contest battles)
     if foe_party.length == 1 && can_override
       handled = [nil]
-      EventHandlers.trigger(:on_calling_wild_battle, foe_party[0].species, foe_party[0].level, handled)
+      EventHandlers.trigger(:on_calling_wild_battle, foe_party[0], handled)
       return handled[0] if !handled[0].nil?
     end
     # Perform the battle
@@ -386,12 +398,10 @@ class WildBattle
     $game_temp.clear_battle_rules
     # Perform the battle itself
     outcome = 0
-    pbBattleAnimation(pbGetWildBattleBGM(foe_party), (foe_party.length == 1) ? 0 : 2, foe_party) {
-      pbSceneStandby {
-        outcome = battle.pbStartBattle
-      }
+    pbBattleAnimation(pbGetWildBattleBGM(foe_party), (foe_party.length == 1) ? 0 : 2, foe_party) do
+      pbSceneStandby { outcome = battle.pbStartBattle }
       BattleCreationHelperMethods.after_battle(outcome, can_lose)
-    }
+    end
     Input.update
     # Save the result of the battle in a Game Variable (1 by default)
     BattleCreationHelperMethods.set_outcome(outcome, outcome_variable)
@@ -508,12 +518,10 @@ class TrainerBattle
     $game_temp.clear_battle_rules
     # Perform the battle itself
     outcome = 0
-    pbBattleAnimation(pbGetTrainerBattleBGM(foe_trainers), (battle.singleBattle?) ? 1 : 3, foe_trainers) {
-      pbSceneStandby {
-        outcome = battle.pbStartBattle
-      }
+    pbBattleAnimation(pbGetTrainerBattleBGM(foe_trainers), (battle.singleBattle?) ? 1 : 3, foe_trainers) do
+      pbSceneStandby { outcome = battle.pbStartBattle }
       BattleCreationHelperMethods.after_battle(outcome, can_lose)
-    }
+    end
     Input.update
     # Save the result of the battle in a Game Variable (1 by default)
     BattleCreationHelperMethods.set_outcome(outcome, outcome_variable, true)
@@ -738,104 +746,4 @@ def pbHoneyGather(pkmn)
   chance = 5 + (((pkmn.level - 1) / 10) * 5)
   return unless rand(100) < chance
   pkmn.item = :HONEY
-end
-
-#===============================================================================
-# Deprecated methods
-#===============================================================================
-# @deprecated This method is slated to be removed in v21.
-def pbNewBattleScene
-  Deprecation.warn_method("pbNewBattleScene", "v21", "BattleCreationHelperMethods.create_battle_scene")
-  return BattleCreationHelperMethods.create_battle_scene
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbPrepareBattle(battle)
-  Deprecation.warn_method("pbPrepareBattle", "v21", "BattleCreationHelperMethods.prepare_battle(battle)")
-  BattleCreationHelperMethods.prepare_battle(battle)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbWildBattleCore(*args)
-  Deprecation.warn_method("pbWildBattleCore", "v21", "WildBattle.start_core(species, level)")
-  return WildBattle.start_core(*args)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbWildBattle(species, level, outcomeVar = 1, canRun = true, canLose = false)
-  Deprecation.warn_method("pbWildBattle", "v21", "WildBattle.start(species, level)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("cannotRun") if !canRun
-  setBattleRule("canLose") if canLose
-  return WildBattle.start(species, level)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDoubleWildBattle(species1, level1, species2, level2,
-                       outcomeVar = 1, canRun = true, canLose = false)
-  Deprecation.warn_method("pbDoubleWildBattle", "v21", "WildBattle.start(pkmn1, pkmn2)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("cannotRun") if !canRun
-  setBattleRule("canLose") if canLose
-  setBattleRule("double")
-  return WildBattle.start(species1, level1, species2, level2)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbTripleWildBattle(species1, level1, species2, level2, species3, level3,
-                       outcomeVar = 1, canRun = true, canLose = false)
-  Deprecation.warn_method("pbTripleWildBattle", "v21", "WildBattle.start(pkmn1, pkmn2, pkmn3)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("cannotRun") if !canRun
-  setBattleRule("canLose") if canLose
-  setBattleRule("triple")
-  return WildBattle.start(species1, level1, species2, level2, species3, level3)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbTrainerBattleCore(*args)
-  Deprecation.warn_method("pbTrainerBattleCore", "v21", "TrainerBattle.start_core(trainer_type, trainer_name, trainer_version)")
-  return TrainerBattle.start_core(*args)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbTrainerBattle(trainerID, trainerName, endSpeech = nil,
-                    doubleBattle = false, trainerPartyID = 0, canLose = false, outcomeVar = 1)
-  Deprecation.warn_method("pbTrainerBattle", "v21", "TrainerBattle.start(trainer_type, trainer_name, trainer_version)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("canLose") if canLose
-  setBattleRule("double") if doubleBattle
-  return TrainerBattle.start(trainerID, trainerName, trainerPartyID)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDoubleTrainerBattle(trainerID1, trainerName1, trainerPartyID1, endSpeech1,
-                          trainerID2, trainerName2, trainerPartyID2 = 0, endSpeech2 = nil,
-                          canLose = false, outcomeVar = 1)
-  Deprecation.warn_method("pbDoubleTrainerBattle", "v21", "TrainerBattle.start(trainer1, trainer2)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("canLose") if canLose
-  setBattleRule("double")
-  return TrainerBattle.start(trainerID1, trainerName1, trainerPartyID1,
-                             trainerID2, trainerName2, trainerPartyID2)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbTripleTrainerBattle(trainerID1, trainerName1, trainerPartyID1, endSpeech1,
-                          trainerID2, trainerName2, trainerPartyID2, endSpeech2,
-                          trainerID3, trainerName3, trainerPartyID3 = 0, endSpeech3 = nil,
-                          canLose = false, outcomeVar = 1)
-  Deprecation.warn_method("pbTripleTrainerBattle", "v21", "TrainerBattle.start(trainer1, trainer2, trainer3)")
-  setBattleRule("outcomeVar", outcomeVar) if outcomeVar != 1
-  setBattleRule("canLose") if canLose
-  setBattleRule("triple")
-  return TrainerBattle.start(trainerID1, trainerName1, trainerPartyID1,
-                             trainerID2, trainerName2, trainerPartyID2,
-                             trainerID3, trainerName3, trainerPartyID3)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbAfterBattle(outcome, can_lose)
-  Deprecation.warn_method("pbAfterBattle", "v21", "BattleCreationHelperMethods.after_battle(outcome, can_lose)")
-  BattleCreationHelperMethods.after_battle(outcome, can_lose)
 end

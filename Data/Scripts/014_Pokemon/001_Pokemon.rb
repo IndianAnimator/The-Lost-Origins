@@ -316,15 +316,15 @@ class Pokemon
     return species_data.types.clone
   end
 
-  # @deprecated This method is slated to be removed in v21.
+  # @deprecated This method is slated to be removed in v22.
   def type1
-    Deprecation.warn_method("type1", "v21", "pkmn.types")
+    Deprecation.warn_method("type1", "v22", "pkmn.types")
     return types[0]
   end
 
-  # @deprecated This method is slated to be removed in v21.
+  # @deprecated This method is slated to be removed in v22.
   def type2
-    Deprecation.warn_method("type2", "v21", "pkmn.types")
+    Deprecation.warn_method("type2", "v22", "pkmn.types")
     return types[1] || types[0]
   end
 
@@ -542,9 +542,10 @@ class Pokemon
   # @return [Boolean] whether this Pokémon has a particular nature or a nature
   #   at all
   def hasNature?(check_nature = nil)
-    return !@nature_id.nil? if check_nature.nil?
+    return !@nature.nil? if check_nature.nil?
     return self.nature == check_nature
   end
+
   #=============================================================================
   # PTLO Attribute
   #=============================================================================
@@ -601,6 +602,7 @@ class Pokemon
     return !@attribute_id.nil? if check_attribute.nil?
     return self.attribute == check_attribute
   end
+
 
   #=============================================================================
   # Items
@@ -765,7 +767,11 @@ class Pokemon
   # @return [Boolean] whether the Pokémon is compatible with the given move
   def compatible_with_move?(move_id)
     move_data = GameData::Move.try_get(move_id)
-    return move_data && species_data.tutor_moves.include?(move_data.id)
+    return false if !move_data
+    return true if species_data.tutor_moves.include?(move_data.id)
+    return true if getMoveList.any? { |m| m[1] == move_data.id }
+    return true if species_data.get_egg_moves.include?(move_data.id)
+    return false
   end
 
   def can_relearn_move?
@@ -1016,7 +1022,7 @@ class Pokemon
       gain += 1 if @poke_ball == :LUXURYBALL
       gain = (gain * 1.5).floor if hasItem?(:SOOTHEBELL)
       if Settings::APPLY_HAPPINESS_SOFT_CAP && method != "evberry"
-        gain = gain.clamp(0, 179 - @happiness)
+        gain = (@happiness >= 179) ? 0 : gain.clamp(0, 179 - @happiness)
       end
     end
     @happiness = (@happiness + gain).clamp(0, 255)
@@ -1028,49 +1034,49 @@ class Pokemon
   # Checks whether this Pokemon can evolve because of levelling up.
   # @return [Symbol, nil] the ID of the species to evolve into
   def check_evolution_on_level_up
-    return check_evolution_internal { |pkmn, new_species, method, parameter|
+    return check_evolution_internal do |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_level_up(pkmn, parameter)
       next (success) ? new_species : nil
-    }
+    end
   end
 
   # Checks whether this Pokemon can evolve because of using an item on it.
   # @param item_used [Symbol, GameData::Item, nil] the item being used
   # @return [Symbol, nil] the ID of the species to evolve into
   def check_evolution_on_use_item(item_used)
-    return check_evolution_internal { |pkmn, new_species, method, parameter|
+    return check_evolution_internal do |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_use_item(pkmn, parameter, item_used)
       next (success) ? new_species : nil
-    }
+    end
   end
 
   # Checks whether this Pokemon can evolve because of being traded.
   # @param other_pkmn [Pokemon] the other Pokémon involved in the trade
   # @return [Symbol, nil] the ID of the species to evolve into
   def check_evolution_on_trade(other_pkmn)
-    return check_evolution_internal { |pkmn, new_species, method, parameter|
+    return check_evolution_internal do |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_on_trade(pkmn, parameter, other_pkmn)
       next (success) ? new_species : nil
-    }
+    end
   end
 
   # Checks whether this Pokemon can evolve after a battle.
   # @return [Symbol, nil] the ID of the species to evolve into
   def check_evolution_after_battle(party_index)
-    return check_evolution_internal { |pkmn, new_species, method, parameter|
+    return check_evolution_internal do |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_after_battle(pkmn, party_index, parameter)
       next (success) ? new_species : nil
-    }
+    end
   end
 
   # Checks whether this Pokemon can evolve by a triggered event.
   # @param value [Integer] a value that may be used by the evolution method
   # @return [Symbol, nil] the ID of the species to evolve into
   def check_evolution_by_event(value = 0)
-    return check_evolution_internal { |pkmn, new_species, method, parameter|
+    return check_evolution_internal do |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_event(pkmn, parameter, value)
       next (success) ? new_species : nil
-    }
+    end
   end
 
   # Called after this Pokémon evolves, to remove its held item (if the evolution
@@ -1101,12 +1107,12 @@ class Pokemon
   def trigger_event_evolution(number)
     new_species = check_evolution_by_event(number)
     if new_species
-      pbFadeOutInWithMusic {
+      pbFadeOutInWithMusic do
         evo = PokemonEvolutionScene.new
         evo.pbStartScreen(self, new_species)
         evo.pbEvolution
         evo.pbEndScreen
-      }
+      end
       return true
     end
     return false
@@ -1139,11 +1145,13 @@ class Pokemon
   # @return [Integer] the maximum HP of this Pokémon
   def calcHP(base, level, iv, ev)
     return 1 if base == 1   # For Shedinja
+    iv = ev = 0 if Settings::DISABLE_IVS_AND_EVS
     return (((base * 2) + iv + (ev / 4)) * level / 100).floor + level + 10
   end
 
   # @return [Integer] the specified stat of this Pokémon (not used for total HP)
   def calcStat(base, level, iv, ev, nat)
+    iv = ev = 0 if Settings::DISABLE_IVS_AND_EVS
     return (((((base * 2) + iv + (ev / 4)) * level / 100).floor + 5) * nat / 100).floor
   end
 
@@ -1264,7 +1272,7 @@ class Pokemon
     @obtain_text      = nil
     @obtain_level     = level
     @hatched_map      = 0
-    @timeReceived     = pbGetTimeNow.to_i
+    @timeReceived     = Time.now.to_i
     @timeEggHatched   = nil
     @fused            = nil
     @personalID       = rand(2**16) | (rand(2**16) << 16)

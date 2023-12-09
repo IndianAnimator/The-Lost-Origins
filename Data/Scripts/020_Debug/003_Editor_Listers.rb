@@ -93,18 +93,14 @@ def pbListScreenBlock(title, lister)
     if Input.trigger?(Input::ACTION)
       yield(Input::ACTION, lister.value(selectedmap))
       list.commands = lister.commands
-      if list.index == list.commands.length
-        list.index = list.commands.length
-      end
+      list.index = list.commands.length if list.index == list.commands.length
       lister.refresh(list.index)
     elsif Input.trigger?(Input::BACK)
       break
     elsif Input.trigger?(Input::USE)
       yield(Input::USE, lister.value(selectedmap))
       list.commands = lister.commands
-      if list.index == list.commands.length
-        list.index = list.commands.length
-      end
+      list.index = list.commands.length if list.index == list.commands.length
       lister.refresh(list.index)
     end
   end
@@ -146,18 +142,13 @@ class GraphicsLister
 
   def commands
     @commands.clear
-    Dir.chdir(@folder) {
+    Dir.chdir(@folder) do
       Dir.glob("*.png") { |f| @commands.push(f) }
-      Dir.glob("*.PNG") { |f| @commands.push(f) }
       Dir.glob("*.gif") { |f| @commands.push(f) }
-      Dir.glob("*.GIF") { |f| @commands.push(f) }
 #      Dir.glob("*.jpg") { |f| @commands.push(f) }
-#      Dir.glob("*.JPG") { |f| @commands.push(f) }
 #      Dir.glob("*.jpeg") { |f| @commands.push(f) }
-#      Dir.glob("*.JPEG") { |f| @commands.push(f) }
 #      Dir.glob("*.bmp") { |f| @commands.push(f) }
-#      Dir.glob("*.BMP") { |f| @commands.push(f) }
-    }
+    end
     @commands.sort!
     @commands.length.times do |i|
       @index = i if @commands[i] == @selection
@@ -204,8 +195,7 @@ class MusicFileLister
     pbPlayBGM(@oldbgm)
   end
 
-  def setViewport(viewport)
-  end
+  def setViewport(viewport); end
 
   def getPlayingBGM
     ($game_system) ? $game_system.getPlayingBGM : nil
@@ -222,13 +212,14 @@ class MusicFileLister
   def commands
     folder = (@bgm) ? "Audio/BGM/" : "Audio/ME/"
     @commands.clear
-    Dir.chdir(folder) {
-#      Dir.glob("*.mp3") { |f| @commands.push(f) }
-      Dir.glob("*.ogg") { |f| @commands.push(f) }
+    Dir.chdir(folder) do
       Dir.glob("*.wav") { |f| @commands.push(f) }
-      Dir.glob("*.mid") { |f| @commands.push(f) }
+      Dir.glob("*.ogg") { |f| @commands.push(f) }
+      Dir.glob("*.mp3") { |f| @commands.push(f) }
       Dir.glob("*.midi") { |f| @commands.push(f) }
-    }
+      Dir.glob("*.mid") { |f| @commands.push(f) }
+      Dir.glob("*.wma") { |f| @commands.push(f) }
+    end
     @commands.uniq!
     @commands.sort! { |a, b| a.downcase <=> b.downcase }
     @commands.length.times do |i|
@@ -330,9 +321,7 @@ class MapLister
 
   def commands
     @commands.clear
-    if @addGlobalOffset == 1
-      @commands.push(_INTL("[GLOBAL]"))
-    end
+    @commands.push(_INTL("[GLOBAL]")) if @addGlobalOffset == 1
     @maps.length.times do |i|
       @commands.push(sprintf("%s%03d %s", ("  " * @maps[i][2]), @maps[i][0], @maps[i][1]))
     end
@@ -373,7 +362,8 @@ class SpeciesLister
     return @index
   end
 
-  def commands   # Sorted alphabetically
+  # Sorted alphabetically.
+  def commands
     @commands.clear
     @ids.clear
     cmds = []
@@ -432,7 +422,8 @@ class ItemLister
     return @index
   end
 
-  def commands   # Sorted alphabetically
+  # Sorted alphabetically.
+  def commands
     @commands.clear
     @ids.clear
     cmds = []
@@ -583,7 +574,7 @@ class TrainerBattleLister
       cmds.push([idx, trainer.trainer_type, trainer.real_name, trainer.version])
       idx += 1
     end
-    cmds.sort! { |a, b|
+    cmds.sort! do |a, b|
       if a[1] == b[1]
         if a[2] == b[2]
           (a[3] == b[3]) ? a[0] <=> b[0] : a[3] <=> b[3]
@@ -593,7 +584,7 @@ class TrainerBattleLister
       else
         a[1].to_s.downcase <=> b[1].to_s.downcase
       end
-    }
+    end
     if @includeNew
       @commands.push(_INTL("[NEW TRAINER BATTLE]"))
       @ids.push(true)
@@ -644,7 +635,7 @@ class TrainerBattleLister
       tr_data = GameData::Trainer.get(@ids[index][0], @ids[index][1], @ids[index][2])
       if tr_data
         tr_data.pokemon.each_with_index do |pkmn, i|
-          text += "\r\n" if i > 0
+          text += "\n" if i > 0
           text += sprintf("%s Lv.%d", GameData::Species.get(pkmn[:species]).real_name, pkmn[:level])
         end
       end

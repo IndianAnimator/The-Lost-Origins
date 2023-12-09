@@ -34,18 +34,19 @@ class SpriteWindow < Window
     @_windowskin
   end
 
-  # Flags used to preserve compatibility
-  # with RGSS/RGSS2's version of Window
+  # Flags used to preserve compatibility with RGSS/RGSS2's version of Window
   module CompatBits
-    CorrectZ         = 1
-    ExpandBack       = 2
-    ShowScrollArrows = 4
-    StretchSides     = 8
-    ShowPause        = 16
-    ShowCursor       = 32
+    CORRECT_Z          = 1
+    EXPAND_BACK        = 2
+    SHOW_SCROLL_ARROWS = 4
+    STRETCH_SIDES      = 8
+    SHOW_PAUSE         = 16
+    SHOW_CURSOR        = 32
   end
 
   attr_reader :compat
+  attr_reader :skinformat
+  attr_reader :skinrect
 
   def compat=(value)
     @compat = value
@@ -76,7 +77,7 @@ class SpriteWindow < Window
     @contents = @blankcontents
     @_windowskin = nil
     @rpgvx = false
-    @compat = CompatBits::ExpandBack | CompatBits::StretchSides
+    @compat = CompatBits::EXPAND_BACK | CompatBits::STRETCH_SIDES
     @x = 0
     @y = 0
     @width = 0
@@ -98,11 +99,10 @@ class SpriteWindow < Window
     @contents_blend_type = 0
     @contents_opacity = 255
     @cursor_rect = WindowCursorRect.new(self)
-    @cursorblink = 0
     @cursoropacity = 255
     @pause = false
     @pauseframe = 0
-    @flash = 0
+    @flash_duration = 0
     @pauseopacity = 0
     @skinformat = 0
     @skinrect = Rect.new(0, 0, 0, 0)
@@ -285,11 +285,13 @@ class SpriteWindow < Window
     privRefresh if @visible
   end
 
+  # duration is in 1/20ths of a second
   def flash(color, duration)
     return if disposed?
-    @flash = duration + 1
+    @flash_duration = duration / 20.0
+    @flash_timer_start = System.uptime
     @sprites.each do |i|
-      i[1].flash(color, duration)
+      i[1].flash(color, (@flash_duration * Graphics.frame_rate).to_i)   # Must be in frames
     end
   end
 
@@ -297,12 +299,11 @@ class SpriteWindow < Window
     return if disposed?
     mustchange = false
     if @active
-      if @cursorblink == 0
-        @cursoropacity -= 8
-        @cursorblink = 1 if @cursoropacity <= 128
+      cursor_time = System.uptime / 0.4
+      if cursor_time.to_i.even?
+        @cursoropacity = lerp(255, 128, 0.4, cursor_time % 2)
       else
-        @cursoropacity += 8
-        @cursorblink = 0 if @cursoropacity >= 255
+        @cursoropacity = lerp(128, 255, 0.4, (cursor_time - 1) % 2)
       end
     else
       @cursoropacity = 128
@@ -311,22 +312,16 @@ class SpriteWindow < Window
     if @pause
       oldpauseframe = @pauseframe
       oldpauseopacity = @pauseopacity
-      @pauseframe = (Graphics.frame_count / 8) % 4
+      @pauseframe = (System.uptime * 5).to_i % 4   # 4 frames, 5 frames per second
       @pauseopacity = [@pauseopacity + 64, 255].min
       mustchange = @pauseframe != oldpauseframe || @pauseopacity != oldpauseopacity
     end
     privRefresh if mustchange
-    if @flash > 0
-      @sprites.each_value do |i|
-        i.update
-      end
-      @flash -= 1
+    if @flash_timer_start
+      @sprites.each_value { |i| i.update }
+      @flash_timer_start = nil if System.uptime - @flash_timer_start >= @flash_duration
     end
   end
-
-  #############
-  attr_reader :skinformat
-  attr_reader :skinrect
 
   def loadSkinFile(_file)
     if (self.windowskin.width == 80 || self.windowskin.width == 96) &&
@@ -437,7 +432,8 @@ class SpriteWindow < Window
     privRefresh
   end
 
-  #############
+  #-----------------------------------------------------------------------------
+
   private
 
   def ensureBitmap(bitmap, dwidth, dheight)
@@ -516,9 +512,9 @@ class SpriteWindow < Window
       @sprites["back"].visible = @visible
       @sprites["contents"].visible = @visible && @openness == 255
       @sprites["pause"].visible = supported && @visible && @pause &&
-                                  (@combat & CompatBits::ShowPause)
+                                  (@combat & CompatBits::SHOW_PAUSE)
       @sprites["cursor"].visible = supported && @visible && @openness == 255 &&
-                                   (@combat & CompatBits::ShowCursor)
+                                   (@combat & CompatBits::SHOW_CURSOR)
       @sprites["scroll0"].visible = false
       @sprites["scroll1"].visible = false
       @sprites["scroll2"].visible = false
@@ -541,7 +537,7 @@ class SpriteWindow < Window
     @spritekeys.each do |i|
       @sprites[i].z = @z
     end
-    if (@compat & CompatBits::CorrectZ) > 0 && @skinformat == 0 && !@rpgvx
+    if (@compat & CompatBits::CORRECT_Z) > 0 && @skinformat == 0 && !@rpgvx
       # Compatibility Mode: Cursor, pause, and contents have higher Z
       @sprites["cursor"].z = @z + 1
       @sprites["contents"].z = @z + 2
@@ -631,7 +627,7 @@ class SpriteWindow < Window
     end
     @sprites["contents"].x = @x + trimStartX
     @sprites["contents"].y = @y + trimStartY
-    if (@compat & CompatBits::ShowScrollArrows) > 0 && @skinformat == 0 &&
+    if (@compat & CompatBits::SHOW_SCROLL_ARROWS) > 0 && @skinformat == 0 &&
        @_windowskin && !@_windowskin.disposed? &&
        @contents && !@contents.disposed?
       @sprites["scroll0"].visible = @visible && hascontents && @oy > 0
@@ -668,7 +664,7 @@ class SpriteWindow < Window
       @sprites["scroll3"].y = @y + @height - 16
       @sprites["cursor"].x = @x + startX + @cursor_rect.x
       @sprites["cursor"].y = @y + startY + @cursor_rect.y
-      if (@compat & CompatBits::ExpandBack) > 0 && @skinformat == 0
+      if (@compat & CompatBits::EXPAND_BACK) > 0 && @skinformat == 0
         # Compatibility mode: Expand background
         @sprites["back"].x = @x + 2
         @sprites["back"].y = @y + 2
@@ -743,7 +739,7 @@ class SpriteWindow < Window
         @sprites["side#{i}"].src_rect.set(0, 0, dwidth, dheight)
         @sidebitmaps[i].clear
         if sideRects[i].width > 0 && sideRects[i].height > 0
-          if (@compat & CompatBits::StretchSides) > 0 && @skinformat == 0
+          if (@compat & CompatBits::STRETCH_SIDES) > 0 && @skinformat == 0
             # Compatibility mode: Stretch sides
             @sidebitmaps[i].stretch_blt(@sprites["side#{i}"].src_rect,
                                         @_windowskin, sideRects[i])
@@ -753,7 +749,7 @@ class SpriteWindow < Window
           end
         end
       end
-      if (@compat & CompatBits::ExpandBack) > 0 && @skinformat == 0
+      if (@compat & CompatBits::EXPAND_BACK) > 0 && @skinformat == 0
         # Compatibility mode: Expand background
         backwidth = @width - 4
         backheight = @height - 4
@@ -813,13 +809,11 @@ class SpriteWindow < Window
   end
 end
 
-
-
 #===============================================================================
 #
 #===============================================================================
 class SpriteWindow_Base < SpriteWindow
-  TEXTPADDING = 4   # In pixels
+  TEXT_PADDING = 4   # In pixels
 
   def initialize(x, y, width, height)
     super()
@@ -858,7 +852,8 @@ class SpriteWindow_Base < SpriteWindow
     end
   end
 
-  def setSkin(skin)   # Filename of windowskin to apply. Supports XP, VX, and animated skins.
+  # Filename of windowskin to apply. Supports XP, VX, and animated skins.
+  def setSkin(skin)
     @customskin&.dispose
     @customskin = nil
     resolvedName = pbResolveBitmap(skin)

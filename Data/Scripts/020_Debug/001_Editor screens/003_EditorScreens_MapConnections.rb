@@ -105,10 +105,9 @@ class RegionMapSprite
   end
 
   def createRegionMap(map)
-    @mapdata = pbLoadTownMapData
-    @map = @mapdata[map]
-    bitmap = AnimatedBitmap.new("Graphics/Pictures/#{@map[1]}").deanimate
-    retbitmap = BitmapWrapper.new(bitmap.width / 2, bitmap.height / 2)
+    town_map = GameData::TownMap.get(map)
+    bitmap = AnimatedBitmap.new("Graphics/UI/Town Map/#{town_map.filename}").deanimate
+    retbitmap = Bitmap.new(bitmap.width / 2, bitmap.height / 2)
     retbitmap.stretch_blt(
       Rect.new(0, 0, bitmap.width / 2, bitmap.height / 2),
       bitmap,
@@ -272,9 +271,7 @@ class MapScreenScene
         while j < ret.length && !connectionsSymmetric?(ret[j], conn)
           j += 1
         end
-        if j == ret.length
-          ret.push(conn)
-        end
+        ret.push(conn) if j == ret.length
       end
     end
     return ret
@@ -353,12 +350,12 @@ class MapScreenScene
   end
 
   def helpWindow
-    helptext = _INTL("A: Add map to canvas\r\n")
-    helptext += _INTL("DEL: Delete map from canvas\r\n")
-    helptext += _INTL("S: Go to another map\r\n")
-    helptext += _INTL("Click to select a map\r\n")
-    helptext += _INTL("Double-click: Edit map's metadata\r\n")
-    helptext += _INTL("Drag map to move it\r\n")
+    helptext = _INTL("A: Add map to canvas") + "\n"
+    helptext += _INTL("DEL: Delete map from canvas") + "\n"
+    helptext += _INTL("S: Go to another map") + "\n"
+    helptext += _INTL("Click to select a map") + "\n"
+    helptext += _INTL("Double-click: Edit map's metadata") + "\n"
+    helptext += _INTL("Drag map to move it") + "\n"
     helptext += _INTL("Arrow keys/drag canvas: Move around canvas")
     title = Window_UnformattedTextPokemon.newWithSize(
       helptext, 0, 0, Graphics.width * 8 / 10, Graphics.height, @viewport
@@ -385,11 +382,11 @@ class MapScreenScene
   end
 
   def onClick(mapid, x, y)
-    if @lastclick > 0 && Graphics.frame_count - @lastclick < Graphics.frame_rate * 0.5
+    if @lastclick > 0 && System.uptime - @lastclick <= 0.5
       onDoubleClick(mapid)
       @lastclick = -1
     else
-      @lastclick = Graphics.frame_count
+      @lastclick = System.uptime
       if mapid >= 0
         @dragging = true
         @dragmapid = mapid
@@ -433,8 +430,8 @@ class MapScreenScene
     if @dragging
       if @dragmapid >= 0
         sprite = getMapSprite(@dragmapid)
-        x = x + @dragOffsetX
-        y = y + @dragOffsetY
+        x += @dragOffsetX
+        y += @dragOffsetY
         sprite.x = x & ~3
         sprite.y = y & ~3
         @sprites["title"].text = _ISPRINTF("D: Help [{1:03d}: {2:s}]", mapid, @mapinfos[@dragmapid].name)
@@ -568,7 +565,7 @@ end
 #
 #===============================================================================
 def pbConnectionsEditor
-  pbCriticalCode {
+  pbCriticalCode do
     Graphics.resize_screen(Settings::SCREEN_WIDTH + 288, Settings::SCREEN_HEIGHT + 288)
     pbSetResizeFactor(1)
     mapscreen = MapScreenScene.new
@@ -577,5 +574,5 @@ def pbConnectionsEditor
     mapscreen.close
     Graphics.resize_screen(Settings::SCREEN_WIDTH, Settings::SCREEN_HEIGHT)
     pbSetResizeFactor($PokemonSystem.screensize)
-  }
+  end
 end

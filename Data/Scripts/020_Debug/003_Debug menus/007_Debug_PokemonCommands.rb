@@ -2,7 +2,7 @@
 # HP/Status options
 #===============================================================================
 MenuHandlers.add(:pokemon_debug_menu, :hp_status_menu, {
-  "name"   => _INTL("HP/Status..."),
+  "name"   => _INTL("HP/status..."),
   "parent" => :main
 })
 
@@ -206,7 +206,7 @@ MenuHandlers.add(:pokemon_debug_menu, :set_exp, {
 })
 
 MenuHandlers.add(:pokemon_debug_menu, :hidden_values, {
-  "name"   => _INTL("EV/IV/pID..."),
+  "name"   => _INTL("EV/IV/personal ID..."),
   "parent" => :level_stats,
   "effect" => proc { |pkmn, pkmnid, heldpoke, settingUpBattle, screen|
     cmd = 0
@@ -811,10 +811,15 @@ MenuHandlers.add(:pokemon_debug_menu, :species_and_form, {
           form_name = sprintf("%d: %s", sp.form, form_name)
           formcmds[0].push(sp.form)
           formcmds[1].push(form_name)
-          cmd2 = sp.form if pkmn.form == sp.form
+          cmd2 = formcmds[0].length - 1 if pkmn.form == sp.form
         end
         if formcmds[0].length <= 1
           screen.pbDisplay(_INTL("Species {1} only has one form.", pkmn.speciesName))
+          if pkmn.form != 0 && screen.pbConfirm(_INTL("Do you want to reset the form to 0?"))
+            pkmn.form = 0
+            $player.pokedex.register(pkmn) if !settingUpBattle && !pkmn.egg?
+            screen.pbRefreshSingle(pkmnid)
+          end
         else
           cmd2 = screen.pbShowCommands(_INTL("Set the Pokémon's form."), formcmds[1], cmd2)
           next if cmd2 < 0

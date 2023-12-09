@@ -61,6 +61,7 @@ class Battle
   attr_accessor :debug            # Debug flag
   attr_accessor :canRun           # True if player can run from battle
   attr_accessor :canLose          # True if player won't black out if they lose
+  attr_accessor :canSwitch        # True if player is allowed to switch Pokémon
   attr_accessor :switchStyle      # Switch/Set "battle style" option
   attr_accessor :showAnims        # "Battle Effects" option
   attr_accessor :controlPlayer    # Whether player's Pokémon are AI controlled
@@ -84,6 +85,7 @@ class Battle
   attr_accessor :poke_ball_failed # Set after first_poke_ball to prevent it being set again
   attr_reader   :switching        # True if during the switching phase of the round
   attr_reader   :futureSight      # True if Future Sight is hitting
+  attr_reader   :command_phase
   attr_reader   :endOfRound       # True during the end of round
   attr_accessor :moldBreaker      # True if Mold Breaker applies
   attr_reader   :struggle         # The Struggle move
@@ -101,7 +103,6 @@ class Battle
     end
     @scene             = scene
     @peer              = Peer.new
-    @battleAI          = AI.new(self)
     @field             = ActiveField.new    # Whole field (gravity/rooms)
     @sides             = [ActiveSide.new,   # Player's side
                           ActiveSide.new]   # Foe's side
@@ -131,6 +132,7 @@ class Battle
     @debug             = false
     @canRun            = true
     @canLose           = false
+    @canSwitch         = true
     @switchStyle       = true
     @showAnims         = true
     @controlPlayer     = false
@@ -160,17 +162,15 @@ class Battle
     @lastMoveUser      = -1
     @switching         = false
     @futureSight       = false
+    @command_phase     = false
     @endOfRound        = false
     @moldBreaker       = false
     @runCommand        = 0
     @nextPickupUse     = 0
-    if GameData::Move.exists?(:STRUGGLE)
-      @struggle = Move.from_pokemon_move(self, Pokemon::Move.new(:STRUGGLE))
-    else
-      @struggle = Move::Struggle.new(self, nil)
-    end
-    @mega_rings = []
+    @struggle          = Move::Struggle.new(self, nil)
+    @mega_rings        = []
     GameData::Item.each { |item| @mega_rings.push(item.id) if item.has_flag?("MegaRing") }
+    @battleAI          = AI.new(self)
   end
 
   #=============================================================================
@@ -731,12 +731,10 @@ class Battle
     when :HeavyRain   then pbDisplay(_INTL("A heavy rain began to fall!"))
     when :StrongWinds then pbDisplay(_INTL("Mysterious strong winds are protecting Flying-type Pokémon!"))
     when :ShadowSky   then pbDisplay(_INTL("A shadow sky appeared!"))
-    when :Moon        then pbDisplay(_INTL("The moon shines overhead!"))
     end
     # Check for end of primordial weather, and weather-triggered form changes
     allBattlers.each { |b| b.pbCheckFormOnWeatherChange }
     pbEndPrimordialWeather
-    return true
   end
 
   def pbEndPrimordialWeather
@@ -815,14 +813,6 @@ class Battle
     # Check for abilities/items that trigger upon the terrain changing
     allBattlers.each { |b| b.pbAbilityOnTerrainChange }
     allBattlers.each { |b| b.pbItemTerrainStatBoostCheck }
-    return true
-  end
-
-  def pbStartTerrainAbility(new_terrain, battler, show_splash = true)
-    return if @field.terrain == new_terrain
-    pbShowAbilitySplash(battler) if show_splash
-    pbStartTerrain(battler, new_terrain)
-    # NOTE: The ability splash is hidden again in def pbStartTerrain.
   end
 
   #=============================================================================
@@ -863,7 +853,10 @@ class Battle
     return if !Scene::USE_ABILITY_SPLASH
     @scene.pbShowAbilitySplash(battler)
     if delay
-      Graphics.frame_rate.times { @scene.pbUpdate }   # 1 second
+      timer_start = System.uptime
+      until System.uptime - timer_start >= 1   # 1 second
+        @scene.pbUpdate
+      end
     end
   end
 

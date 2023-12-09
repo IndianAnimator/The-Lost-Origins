@@ -12,8 +12,9 @@ module UndefinedProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module ReadOnlyProperty
   def self.set(_settingname, oldsetting)
     pbMessage(_INTL("This property cannot be edited."))
@@ -25,8 +26,9 @@ module ReadOnlyProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class UIntProperty
   def initialize(maxdigits)
     @maxdigits = maxdigits
@@ -48,8 +50,9 @@ class UIntProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LimitProperty
   def initialize(maxvalue)
     @maxvalue = maxvalue
@@ -60,7 +63,7 @@ class LimitProperty
     params = ChooseNumberParams.new
     params.setRange(0, @maxvalue)
     params.setDefaultValue(oldsetting)
-    return pbMessageChooseNumber(_INTL("Set the value for {1} (0-#{@maxvalue}).", settingname), params)
+    return pbMessageChooseNumber(_INTL("Set the value for {1} (0-{2}).", settingname, @maxvalue), params)
   end
 
   def defaultValue
@@ -72,8 +75,9 @@ class LimitProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LimitProperty2
   def initialize(maxvalue)
     @maxvalue = maxvalue
@@ -85,7 +89,7 @@ class LimitProperty2
     params.setRange(0, @maxvalue)
     params.setDefaultValue(oldsetting)
     params.setCancelValue(-1)
-    ret = pbMessageChooseNumber(_INTL("Set the value for {1} (0-#{@maxvalue}).", settingname), params)
+    ret = pbMessageChooseNumber(_INTL("Set the value for {1} (0-{2}).", settingname, @maxvalue), params)
     return (ret >= 0) ? ret : nil
   end
 
@@ -98,8 +102,9 @@ class LimitProperty2
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class NonzeroLimitProperty
   def initialize(maxvalue)
     @maxvalue = maxvalue
@@ -122,8 +127,9 @@ class NonzeroLimitProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module BooleanProperty
   def self.set(settingname, _oldsetting)
     return pbConfirmMessage(_INTL("Enable the setting {1}?", settingname)) ? true : false
@@ -134,8 +140,9 @@ module BooleanProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module BooleanProperty2
   def self.set(_settingname, _oldsetting)
     ret = pbShowCommands(nil, [_INTL("True"), _INTL("False")], -1)
@@ -147,12 +154,14 @@ module BooleanProperty2
   end
 
   def self.format(value)
-    return (value) ? _INTL("True") : (!value.nil?) ? _INTL("False") : "-"
+    return _INTL("True") if value
+    return (value.nil?) ? "-" : _INTL("False")
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module StringProperty
   def self.set(settingname, oldsetting)
     return pbMessageFreeText(_INTL("Set the value for {1}.", settingname),
@@ -164,8 +173,9 @@ module StringProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LimitStringProperty
   def initialize(limit)
     @limit = limit
@@ -181,8 +191,9 @@ class LimitStringProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EnumProperty
   def initialize(values)
     @values = values
@@ -207,9 +218,9 @@ class EnumProperty
   end
 end
 
-
-
+#===============================================================================
 # Unused
+#===============================================================================
 class EnumProperty2
   def initialize(value)
     @module = value
@@ -234,13 +245,15 @@ class EnumProperty2
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class StringListProperty
   def self.set(_setting_name, old_setting)
+    old_setting = [] if !old_setting
     real_cmds = []
     real_cmds.push([_INTL("[ADD VALUE]"), -1])
-    old_setting.length.times do
+    old_setting.length.times do |i|
       real_cmds.push([old_setting[i], 0])
     end
     # Edit list
@@ -275,7 +288,7 @@ class StringListProperty
             do_refresh = true
           end
         else   # Edit value
-          case pbMessage(_INTL("\\ts[]Do what with this value?"),
+          case pbMessage("\\ts[]" + _INTL("Do what with this value?"),
                          [_INTL("Edit"), _INTL("Delete"), _INTL("Cancel")], 3)
           when 0   # Edit
             new_value = pbMessageFreeText(_INTL("Enter the new value."),
@@ -319,12 +332,13 @@ class StringListProperty
   end
 
   def self.format(value)
-    return value.join(",")
+    return (value) ? value.join(",") : ""
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class GameDataProperty
   def initialize(value)
     raise _INTL("Couldn't find class {1} in module GameData.", value.to_s) if !GameData.const_defined?(value.to_sym)
@@ -354,12 +368,13 @@ class GameDataProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module BGMProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, MusicFileLister.new(true, oldsetting))
-    return (chosenmap && chosenmap != "") ? chosenmap : oldsetting
+    return (chosenmap && chosenmap != "") ? File.basename(chosenmap, ".*") : oldsetting
   end
 
   def self.format(value)
@@ -367,12 +382,13 @@ module BGMProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module MEProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, MusicFileLister.new(false, oldsetting))
-    return (chosenmap && chosenmap != "") ? chosenmap : oldsetting
+    return (chosenmap && chosenmap != "") ? File.basename(chosenmap, ".*") : oldsetting
   end
 
   def self.format(value)
@@ -380,12 +396,13 @@ module MEProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module WindowskinProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, GraphicsLister.new("Graphics/Windowskins/", oldsetting))
-    return (chosenmap && chosenmap != "") ? chosenmap : oldsetting
+    return (chosenmap && chosenmap != "") ? File.basename(chosenmap, ".*") : oldsetting
   end
 
   def self.format(value)
@@ -393,8 +410,9 @@ module WindowskinProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module TrainerTypeProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, TrainerTypeLister.new(0, false))
@@ -406,8 +424,9 @@ module TrainerTypeProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module SpeciesProperty
   def self.set(_settingname, oldsetting)
     ret = pbChooseSpeciesList(oldsetting || nil)
@@ -423,8 +442,9 @@ module SpeciesProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class SpeciesFormProperty
   def initialize(default_value)
     @default_value = default_value
@@ -452,8 +472,9 @@ class SpeciesFormProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module TypeProperty
   def self.set(_settingname, oldsetting)
     ret = pbChooseTypeList(oldsetting || nil)
@@ -469,8 +490,41 @@ module TypeProperty
   end
 end
 
+#===============================================================================
+#
+#===============================================================================
+module TypesProperty
+  def self.set(_settingname, oldsetting)
+    ret = oldsetting.clone
+    index = 0
+    loop do
+      cmds = []
+      2.times { |i| cmds.push(_INTL("Type {1} : {2}", i, ret[i] || "-")) }
+      index = pbMessage(_INTL("Set the type(s) for this species."), cmds, -1)
+      break if index < 0
+      new_type = pbChooseTypeList(ret[index])
+      ret[index] = new_type if new_type
+      ret.uniq!
+      ret.compact!
+    end
+    return ret if ret != oldsetting.compact && pbConfirmMessage(_INTL("Apply changes?"))
+    return oldsetting
+  end
 
+  def self.defaultValue
+    return [:NORMAL]
+  end
 
+  def self.format(value)
+    types = value.compact
+    types.each_with_index { |type, i| types[i] = GameData::Type.try_get(types[i])&.real_name || "-" }
+    return types.join(",")
+  end
+end
+
+#===============================================================================
+#
+#===============================================================================
 module MoveProperty
   def self.set(_settingname, oldsetting)
     ret = pbChooseMoveList(oldsetting || nil)
@@ -486,8 +540,9 @@ module MoveProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class MovePropertyForSpecies
   def initialize(pokemondata)
     @pokemondata = pokemondata
@@ -507,8 +562,9 @@ class MovePropertyForSpecies
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module GenderProperty
   def self.set(_settingname, _oldsetting)
     ret = pbShowCommands(nil, [_INTL("Male"), _INTL("Female")], -1)
@@ -520,13 +576,16 @@ module GenderProperty
   end
 
   def self.format(value)
-    return _INTL("-") if !value
-    return (value == 0) ? _INTL("Male") : (value == 1) ? _INTL("Female") : "-"
+    return "-" if !value
+    return _INTL("Male") if value == 0
+    return _INTL("Female") if value == 1
+    return "-"
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module ItemProperty
   def self.set(_settingname, oldsetting)
     ret = pbChooseItemList((oldsetting) ? oldsetting : nil)
@@ -542,8 +601,9 @@ module ItemProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class IVsProperty
   def initialize(limit)
     @limit = limit
@@ -582,8 +642,9 @@ class IVsProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EVsProperty
   def initialize(limit)
     @limit = limit
@@ -628,8 +689,9 @@ class EVsProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class BallProperty
   def initialize(pokemondata)
     @pokemondata = pokemondata
@@ -648,12 +710,13 @@ class BallProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module CharacterProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, GraphicsLister.new("Graphics/Characters/", oldsetting))
-    return (chosenmap && chosenmap != "") ? chosenmap : oldsetting
+    return (chosenmap && chosenmap != "") ? File.basename(chosenmap, ".*") : oldsetting
   end
 
   def self.format(value)
@@ -661,8 +724,9 @@ module CharacterProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module MapSizeProperty
   def self.set(settingname, oldsetting)
     oldsetting = [0, ""] if !oldsetting
@@ -678,8 +742,6 @@ module MapSizeProperty
     return value.inspect
   end
 end
-
-
 
 def chooseMapPoint(map, rgnmap = false)
   viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
@@ -713,8 +775,9 @@ def chooseMapPoint(map, rgnmap = false)
   return ret
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module MapCoordsProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, MapLister.new((oldsetting) ? oldsetting[0] : 0))
@@ -731,8 +794,9 @@ module MapCoordsProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module MapCoordsFacingProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, MapLister.new((oldsetting) ? oldsetting[0] : 0))
@@ -755,8 +819,9 @@ module MapCoordsFacingProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module RegionMapCoordsProperty
   def self.set(_settingname, oldsetting)
     regions = self.getMapNameList
@@ -769,15 +834,10 @@ module RegionMapCoordsProperty
       selregion = regions[0][0]
     else
       cmds = []
-      regions.each do |region|
-        cmds.push(region[1])
-      end
+      regions.each { |region| cmds.push(region[1]) }
       selcmd = pbMessage(_INTL("Choose a region map."), cmds, -1)
-      if selcmd >= 0
-        selregion = regions[selcmd][0]
-      else
-        return oldsetting
-      end
+      return oldsetting if selcmd < 0
+      selregion = regions[selcmd][0]
     end
     mappoint = chooseMapPoint(selregion, true)
     return (mappoint) ? [selregion, mappoint[0], mappoint[1]] : oldsetting
@@ -788,18 +848,15 @@ module RegionMapCoordsProperty
   end
 
   def self.getMapNameList
-    mapdata = pbLoadTownMapData
     ret = []
-    mapdata.length.times do |i|
-      next if !mapdata[i]
-      ret.push([i, pbGetMessage(MessageTypes::RegionNames, i)])
-    end
+    GameData::TownMap.each { |town_map| ret.push([town_map.id, town_map.name]) }
     return ret
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module WeatherEffectProperty
   def self.set(_settingname, oldsetting)
     oldsetting = [:None, 100] if !oldsetting
@@ -825,8 +882,9 @@ module WeatherEffectProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module MapProperty
   def self.set(settingname, oldsetting)
     chosenmap = pbListScreen(settingname, MapLister.new(oldsetting || 0))
@@ -834,7 +892,7 @@ module MapProperty
   end
 
   def self.defaultValue
-    return 0
+    return nil
   end
 
   def self.format(value)
@@ -842,8 +900,9 @@ module MapProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module ItemNameProperty
   def self.set(settingname, oldsetting)
     return pbMessageFreeText(_INTL("Set the value for {1}.", settingname),
@@ -859,8 +918,9 @@ module ItemNameProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module PocketProperty
   def self.set(_settingname, oldsetting)
     commands = Settings.bag_pocket_names.clone
@@ -878,8 +938,9 @@ module PocketProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module BaseStatsProperty
   def self.set(settingname, oldsetting)
     return oldsetting if !oldsetting
@@ -890,35 +951,31 @@ module BaseStatsProperty
       next if s.pbs_order < 0
       properties[s.pbs_order] = [_INTL("Base {1}", s.name), NonzeroLimitProperty.new(255),
                                  _INTL("Base {1} stat of the Pokémon.", s.name)]
-      data[s.pbs_order] = oldsetting[s.id] || 10
+      data[s.pbs_order] = oldsetting[s.pbs_order] || 10
       stat_ids[s.pbs_order] = s.id
     end
     if pbPropertyList(settingname, data, properties, true)
-      ret = {}
-      stat_ids.each_with_index { |s, i| ret[s] = data[i] || 10 }
+      ret = []
+      stat_ids.each_with_index { |s, i| ret[i] = data[i] || 10 }
       oldsetting = ret
     end
     return oldsetting
   end
 
   def self.defaultValue
-    ret = {}
-    GameData::Stat.each_main { |s| ret[s.id] = 10 if s.pbs_order >= 0 }
+    ret = []
+    GameData::Stat.each_main { |s| ret[s.pbs_order] = 10 if s.pbs_order >= 0 }
     return ret
   end
 
   def self.format(value)
-    array = []
-    GameData::Stat.each_main do |s|
-      next if s.pbs_order < 0
-      array[s.pbs_order] = value[s.id] || 0
-    end
-    return array.join(",")
+    return value.join(",")
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module EffortValuesProperty
   def self.set(settingname, oldsetting)
     return oldsetting if !oldsetting
@@ -929,35 +986,39 @@ module EffortValuesProperty
       next if s.pbs_order < 0
       properties[s.pbs_order] = [_INTL("{1} EVs", s.name), LimitProperty.new(255),
                                  _INTL("Number of {1} Effort Value points gained from the Pokémon.", s.name)]
-      data[s.pbs_order] = oldsetting[s.id] || 0
+      data[s.pbs_order] = 0
+      oldsetting.each { |ev| data[s.pbs_order] = ev[1] if ev[0] == s.id }
       stat_ids[s.pbs_order] = s.id
     end
     if pbPropertyList(settingname, data, properties, true)
-      ret = {}
-      stat_ids.each_with_index { |s, i| ret[s] = data[i] || 0 }
+      ret = []
+      stat_ids.each_with_index do |s, i|
+        index = GameData::Stat.get(s).pbs_order
+        ret.push([s, data[index]]) if data[index] > 0
+      end
       oldsetting = ret
     end
     return oldsetting
   end
 
   def self.defaultValue
-    ret = {}
-    GameData::Stat.each_main { |s| ret[s.id] = 0 if s.pbs_order >= 0 }
-    return ret
+    return []
   end
 
   def self.format(value)
-    array = []
-    GameData::Stat.each_main do |s|
-      next if s.pbs_order < 0
-      array[s.pbs_order] = value[s.id] || 0
+    return "" if !value
+    ret = ""
+    value.each_with_index do |val, i|
+      ret += "," if i > 0
+      ret += GameData::Stat.get(val[0]).real_name_brief + "," + val[1].to_s
     end
-    return array.join(",")
+    return ret
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module AbilityProperty
   def self.set(_settingname, oldsetting)
     ret = pbChooseAbilityList((oldsetting) ? oldsetting : nil)
@@ -973,8 +1034,9 @@ module AbilityProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class GameDataPoolProperty
   def initialize(game_data, allow_multiple = true, auto_sort = false)
     if !GameData.const_defined?(game_data.to_sym)
@@ -1037,7 +1099,7 @@ class GameDataPoolProperty
               need_refresh = true
             end
           else   # Edit existing value
-            case pbMessage(_INTL("\\ts[]Do what with this value?"),
+            case pbMessage("\\ts[]" + _INTL("Do what with this value?"),
                            [_INTL("Change value"), _INTL("Delete"), _INTL("Cancel")], 3)
             when 0   # Change value
               new_value = pbChooseFromGameDataList(@game_data, entry[0])
@@ -1092,16 +1154,36 @@ class GameDataPoolProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EggMovesProperty < GameDataPoolProperty
   def initialize
     super(:Move, false, true)
   end
 end
 
+#===============================================================================
+#
+#===============================================================================
+class EggGroupsProperty < GameDataPoolProperty
+  def initialize
+    super(:EggGroup, false, false)
+  end
+end
 
+#===============================================================================
+#
+#===============================================================================
+class AbilitiesProperty < GameDataPoolProperty
+  def initialize
+    super(:Ability, false, false)
+  end
+end
 
+#===============================================================================
+#
+#===============================================================================
 module LevelUpMovesProperty
   def self.set(_settingname, oldsetting)
     # Get all moves in move pool
@@ -1171,7 +1253,7 @@ module LevelUpMovesProperty
               end
             end
           else   # Edit existing move
-            case pbMessage(_INTL("\\ts[]Do what with this move?"),
+            case pbMessage("\\ts[]" + _INTL("Do what with this move?"),
                            [_INTL("Change level"), _INTL("Change move"), _INTL("Delete"), _INTL("Cancel")], 4)
             when 0   # Change level
               params = ChooseNumberParams.new
@@ -1252,8 +1334,9 @@ module LevelUpMovesProperty
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EvolutionsProperty
   def initialize
     @methods = []
@@ -1286,12 +1369,12 @@ class EvolutionsProperty
     else
       params = ChooseNumberParams.new
       params.setRange(0, 65_535)
-      params.setDefaultValue(value) if value
+      params.setDefaultValue(value.to_i) if value
       params.setCancelValue(-1)
       ret = pbMessageChooseNumber(_INTL("Choose a parameter."), params)
       ret = nil if ret < 0
     end
-    return ret
+    return (ret) ? ret.to_s : nil
   end
 
   def set(_settingname, oldsetting)
@@ -1377,7 +1460,7 @@ class EvolutionsProperty
               end
             end
           else   # Edit evolution
-            case pbMessage(_INTL("\\ts[]Do what with this evolution?"),
+            case pbMessage("\\ts[]" + _INTL("Do what with this evolution?"),
                            [_INTL("Change species"), _INTL("Change method"),
                             _INTL("Change parameter"), _INTL("Delete"), _INTL("Cancel")], 5)
             when 0   # Change species
@@ -1474,28 +1557,21 @@ class EvolutionsProperty
   end
 
   def format(value)
+    return "" if !value
     ret = ""
     value.length.times do |i|
       ret << "," if i > 0
-      param = value[i][2]
-      evo_method_data = GameData::Evolution.get(value[i][1])
-      param_type = evo_method_data.parameter
-      if param_type.nil?
-        param = ""
-      elsif param_type.is_a?(Symbol) && !GameData.const_defined?(param_type)
-        param = getConstantName(param_type, param)
-      else
-        param = param.to_s
-      end
-      param = "" if !param
-      ret << sprintf("#{GameData::Species.get(value[i][0]).name},#{evo_method_data.real_name},#{param}")
+      ret << (value[i][0].to_s + ",")
+      ret << (value[i][1].to_s + ",")
+      ret << value[i][2].to_s if value[i][2]
     end
     return ret
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 module EncounterSlotProperty
   def self.set(setting_name, data)
     max_level = GameData::GrowthRate.max_level
@@ -1541,8 +1617,6 @@ module EncounterSlotProperty
     return sprintf("%d, %s (Lv.%d-%d)", value[0], species_data.real_name, value[2], value[3])
   end
 end
-
-
 
 #===============================================================================
 # Core property editor script

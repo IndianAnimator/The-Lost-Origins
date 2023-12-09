@@ -87,7 +87,7 @@ class Sprite_Shadow < RPG::Sprite
     end
     @deltax = ScreenPosHelper.pbScreenX(@source) - self.x
     @deltay = ScreenPosHelper.pbScreenY(@source) - self.y
-    self.color = Color.new(0, 0, 0)
+    self.color = Color.black
     @distance = ((@deltax**2) + (@deltay**2))
     self.opacity = @self_opacity * 13_000 / ((@distance * 370 / @distancemax) + 6000)
     self.angle = 57.3 * Math.atan2(@deltax, @deltay)
@@ -105,7 +105,8 @@ class Sprite_Shadow < RPG::Sprite
     end
   end
 
-  def in_range?(element, object, range)   # From Near's Anti Lag Script, edited
+  # From Near's Anti Lag Script, edited.
+  def in_range?(element, object, range)
     elemScreenX = ScreenPosHelper.pbScreenX(element)
     elemScreenY = ScreenPosHelper.pbScreenY(element)
     objScreenX  = ScreenPosHelper.pbScreenX(object)
@@ -117,11 +118,9 @@ class Sprite_Shadow < RPG::Sprite
   end
 end
 
-
-
-#===================================================
+#===============================================================================
 # ? CLASS Sprite_Character edit
-#===================================================
+#===============================================================================
 class Sprite_Character < RPG::Sprite
   alias shadow_initialize initialize unless private_method_defined?(:shadow_initialize)
 
@@ -161,20 +160,16 @@ class Sprite_Character < RPG::Sprite
   end
 end
 
-
-
-#===================================================
+#===============================================================================
 # ? CLASS Game_Event edit
-#===================================================
+#===============================================================================
 class Game_Event
   attr_accessor :id
 end
 
-
-
-#===================================================
+#===============================================================================
 # ? CLASS Spriteset_Map edit
-#===================================================
+#===============================================================================
 class Spriteset_Map
   attr_accessor :shadows
 
@@ -202,9 +197,7 @@ class Spriteset_Map
   end
 end
 
-
-
-#===================================================
+#===============================================================================
 # ? XPML Definition, by Rataime, using ideas from Near Fantastica
 #
 #   Returns nil if the markup wasn't present at all,
@@ -222,7 +215,7 @@ end
 #   p XPML_read("second", event_id) -> [1, "two"]
 #   p XPML_read("third", event_id) -> [3]
 #   p XPML_read("forth", event_id) -> nil
-#===================================================
+#===============================================================================
 def XPML_read(map, markup, event, max_param_number = 0)
   parameter_list = nil
   return nil if !event || event.list.nil?

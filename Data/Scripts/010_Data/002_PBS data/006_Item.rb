@@ -3,37 +3,73 @@ module GameData
     attr_reader :id
     attr_reader :real_name
     attr_reader :real_name_plural
+    attr_reader :real_portion_name
+    attr_reader :real_portion_name_plural
     attr_reader :pocket
     attr_reader :price
     attr_reader :sell_price
-    attr_reader :real_description
+    attr_reader :bp_price
     attr_reader :field_use
     attr_reader :battle_use
-    attr_reader :consumable
     attr_reader :flags
+    attr_reader :consumable
+    attr_reader :show_quantity
     attr_reader :move
+    attr_reader :real_description
+    attr_reader :pbs_file_suffix
 
     DATA = {}
     DATA_FILENAME = "items.dat"
+    PBS_BASE_FILENAME = "items"
 
     SCHEMA = {
-      "Name"        => [:name,        "s"],
-      "NamePlural"  => [:name_plural, "s"],
-      "Pocket"      => [:pocket,      "v"],
-      "Price"       => [:price,       "u"],
-      "SellPrice"   => [:sell_price,  "u"],
-      "Description" => [:description, "q"],
-      "FieldUse"    => [:field_use,   "e", { "OnPokemon" => 1, "Direct" => 2, "TM" => 3,
-                                             "HM" => 4, "TR" => 5 }],
-      "BattleUse"   => [:battle_use,  "e", { "OnPokemon" => 1, "OnMove" => 2, "OnBattler" => 3,
-                                             "OnFoe" => 4, "Direct" => 5 }],
-      "Consumable"  => [:consumable,  "b"],
-      "Flags"       => [:flags,       "*s"],
-      "Move"        => [:move,        "e", :Move]
+      "SectionName"       => [:id,                       "m"],
+      "Name"              => [:real_name,                "s"],
+      "NamePlural"        => [:real_name_plural,         "s"],
+      "PortionName"       => [:real_portion_name,        "s"],
+      "PortionNamePlural" => [:real_portion_name_plural, "s"],
+      "Pocket"            => [:pocket,                   "v"],
+      "Price"             => [:price,                    "u"],
+      "SellPrice"         => [:sell_price,               "u"],
+      "BPPrice"           => [:bp_price,                 "u"],
+      "FieldUse"          => [:field_use,                "e", {"OnPokemon" => 1, "Direct" => 2,
+                                                               "TM" => 3, "HM" => 4, "TR" => 5}],
+      "BattleUse"         => [:battle_use,               "e", {"OnPokemon" => 1, "OnMove" => 2,
+                                                               "OnBattler" => 3, "OnFoe" => 4, "Direct" => 5}],
+      "Flags"             => [:flags,                    "*s"],
+      "Consumable"        => [:consumable,               "b"],
+      "ShowQuantity"      => [:show_quantity,            "b"],
+      "Move"              => [:move,                     "e", :Move],
+      "Description"       => [:real_description,         "q"]
     }
 
     extend ClassMethodsSymbols
     include InstanceMethods
+
+    def self.editor_properties
+      field_use_array = [_INTL("Can't use in field")]
+      self.schema["FieldUse"][2].each { |key, value| field_use_array[value] = key if !field_use_array[value] }
+      battle_use_array = [_INTL("Can't use in battle")]
+      self.schema["BattleUse"][2].each { |key, value| battle_use_array[value] = key if !battle_use_array[value] }
+      return [
+        ["ID",                ReadOnlyProperty,                        _INTL("ID of this item (used as a symbol like :XXX).")],
+        ["Name",              ItemNameProperty,                        _INTL("Name of this item as displayed by the game.")],
+        ["NamePlural",        ItemNameProperty,                        _INTL("Plural name of this item as displayed by the game.")],
+        ["PortionName",       ItemNameProperty,                        _INTL("Name of a portion of this item as displayed by the game.")],
+        ["PortionNamePlural", ItemNameProperty,                        _INTL("Name of 2 or more portions of this item as displayed by the game.")],
+        ["Pocket",            PocketProperty,                          _INTL("Pocket in the Bag where this item is stored.")],
+        ["Price",             LimitProperty.new(Settings::MAX_MONEY),  _INTL("Purchase price of this item.")],
+        ["SellPrice",         LimitProperty2.new(Settings::MAX_MONEY), _INTL("Sell price of this item. If blank, is half the purchase price.")],
+        ["BPPrice",           LimitProperty.new(Settings::MAX_BATTLE_POINTS), _INTL("Purchase price of this item in Battle Points (BP).")],
+        ["FieldUse",          EnumProperty.new(field_use_array),       _INTL("How this item can be used outside of battle.")],
+        ["BattleUse",         EnumProperty.new(battle_use_array),      _INTL("How this item can be used within a battle.")],
+        ["Flags",             StringListProperty,                      _INTL("Words/phrases that can be used to group certain kinds of items.")],
+        ["Consumable",        BooleanProperty,                         _INTL("Whether this item is consumed after use.")],
+        ["ShowQuantity",      BooleanProperty,                         _INTL("Whether the Bag shows how many of this item are in there.")],
+        ["Move",              MoveProperty,                            _INTL("Move taught by this HM, TM or TR.")],
+        ["Description",       StringProperty,                          _INTL("Description of this item.")]
+      ]
+    end
 
     def self.icon_filename(item)
       return "Graphics/Items/back" if item.nil?
@@ -67,48 +103,65 @@ module GameData
       return nil if !item_data
       name_base = (item_data.is_mail?) ? "mail" : "item"
       # Check for files
-      ret = sprintf("Graphics/Pictures/Party/icon_%s_%s", name_base, item_data.id)
+      ret = sprintf("Graphics/UI/Party/icon_%s_%s", name_base, item_data.id)
       return ret if pbResolveBitmap(ret)
-      return sprintf("Graphics/Pictures/Party/icon_%s", name_base)
+      return sprintf("Graphics/UI/Party/icon_%s", name_base)
     end
 
     def self.mail_filename(item)
       item_data = self.try_get(item)
       return nil if !item_data
       # Check for files
-      ret = sprintf("Graphics/Pictures/Mail/mail_%s", item_data.id)
+      ret = sprintf("Graphics/UI/Mail/mail_%s", item_data.id)
       return pbResolveBitmap(ret) ? ret : nil
     end
 
     def initialize(hash)
-      @id               = hash[:id]
-      @real_name        = hash[:name]        || "Unnamed"
-      @real_name_plural = hash[:name_plural] || "Unnamed"
-      @pocket           = hash[:pocket]      || 1
-      @price            = hash[:price]       || 0
-      @sell_price       = hash[:sell_price]  || (@price / 2)
-      @real_description = hash[:description] || "???"
-      @field_use        = hash[:field_use]   || 0
-      @battle_use       = hash[:battle_use]  || 0
-      @flags            = hash[:flags]       || []
-      @consumable       = hash[:consumable]
-      @consumable       = !is_important? if @consumable.nil?
-      @move             = hash[:move]
+      @id                       = hash[:id]
+      @real_name                = hash[:real_name]        || "Unnamed"
+      @real_name_plural         = hash[:real_name_plural] || "Unnamed"
+      @real_portion_name        = hash[:real_portion_name]
+      @real_portion_name_plural = hash[:real_portion_name_plural]
+      @pocket                   = hash[:pocket]           || 1
+      @price                    = hash[:price]            || 0
+      @sell_price               = hash[:sell_price]       || (@price / 2)
+      @bp_price                 = hash[:bp_price]         || 1
+      @field_use                = hash[:field_use]        || 0
+      @battle_use               = hash[:battle_use]       || 0
+      @flags                    = hash[:flags]            || []
+      @consumable               = hash[:consumable]
+      @consumable               = !is_important? if @consumable.nil?
+      @show_quantity            = hash[:show_quantity]
+      @move                     = hash[:move]
+      @real_description         = hash[:real_description] || "???"
+      @pbs_file_suffix          = hash[:pbs_file_suffix]  || ""
     end
 
     # @return [String] the translated name of this item
     def name
-      return pbGetMessageFromHash(MessageTypes::Items, @real_name)
+      return pbGetMessageFromHash(MessageTypes::ITEM_NAMES, @real_name)
     end
 
     # @return [String] the translated plural version of the name of this item
     def name_plural
-      return pbGetMessageFromHash(MessageTypes::ItemPlurals, @real_name_plural)
+      return pbGetMessageFromHash(MessageTypes::ITEM_NAME_PLURALS, @real_name_plural)
+    end
+
+    # @return [String] the translated portion name of this item
+    def portion_name
+      return pbGetMessageFromHash(MessageTypes::ITEM_PORTION_NAMES, @real_portion_name) if @real_portion_name
+      return name
+    end
+
+    # @return [String] the translated plural version of the portion name of this item
+    def portion_name_plural
+      return pbGetMessageFromHash(MessageTypes::ITEM_PORTION_NAME_PLURALS, @real_portion_name_plural) if @real_portion_name_plural
+      return name_plural
     end
 
     # @return [String] the translated description of this item
     def description
-      return pbGetMessageFromHash(MessageTypes::ItemDescriptions, @real_description)
+      return pbGetMessageFromHash(MessageTypes::ITEM_DESCRIPTIONS, @real_description)
     end
 
     def has_flag?(flag)
@@ -138,10 +191,14 @@ module GameData
       return false
     end
 
-    def can_hold?;           return !is_important?; end
+    def can_hold?; return !is_important?; end
 
     def consumed_after_use?
       return !is_important? && @consumable
+    end
+
+    def show_quantity?
+      return @show_quantity || !is_important?
     end
 
     def unlosable?(species, ability)
@@ -190,6 +247,24 @@ module GameData
         :ZAMAZENTA => [:RUSTEDSHIELD]
       }
       return combos[species]&.include?(@id)
+    end
+
+    alias __orig__get_property_for_PBS get_property_for_PBS unless method_defined?(:__orig__get_property_for_PBS)
+    def get_property_for_PBS(key)
+      key = "SectionName" if key == "ID"
+      ret = __orig__get_property_for_PBS(key)
+      case key
+      when "SellPrice"
+        ret = nil if ret == @price / 2
+      when "BPPrice"
+        ret = nil if ret == 1
+      when "FieldUse", "BattleUse"
+        ret = nil if ret == 0
+      when "Consumable"
+        ret = @consumable
+        ret = nil if ret || is_important?   # Only return false, only for non-important items
+      end
+      return ret
     end
   end
 end

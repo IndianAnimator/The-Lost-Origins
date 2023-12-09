@@ -6,18 +6,18 @@ module FilenameUpdater
 
   def readDirectoryFiles(directory, formats)
     files = []
-    Dir.chdir(directory) {
+    Dir.chdir(directory) do
       formats.each do |format|
         Dir.glob(format) { |f| files.push(f) }
       end
-    }
+    end
     return files
   end
 
   def rename_berry_plant_charsets
     src_dir = "Graphics/Characters/"
     return false if !FileTest.directory?(src_dir)
-    Console.echo_li _INTL("Renaming berry tree charsets...")
+    Console.echo_li(_INTL("Renaming berry tree charsets..."))
     ret = false
     # generates a list of all graphic files
     files = readDirectoryFiles(src_dir, ["berrytree*.png"])
@@ -36,9 +36,9 @@ module FilenameUpdater
   def update_berry_tree_event_charsets
     ret = []
     mapData = Compiler::MapData.new
-    t = Time.now.to_i
+    t = System.uptime
     Graphics.update
-    Console.echo_li _INTL("Checking {1} maps for used berry tree charsets...", mapData.mapinfos.keys.length)
+    Console.echo_li(_INTL("Checking {1} maps for used berry tree charsets...", mapData.mapinfos.keys.length))
     idx = 0
     mapData.mapinfos.keys.sort.each do |id|
       echo "." if idx % 20 == 0
@@ -48,9 +48,9 @@ module FilenameUpdater
       next if !map || !mapData.mapinfos[id]
       changed = false
       map.events.each_key do |key|
-        if Time.now.to_i - t >= 5
+        if System.uptime - t >= 5
+          t += 5
           Graphics.update
-          t = Time.now.to_i
         end
         map.events[key].pages.each do |page|
           next if nil_or_empty?(page.graphic.character_name)
@@ -71,19 +71,19 @@ module FilenameUpdater
   end
 
   def rename_files
-    Console.echo_h1 "Updating file names and locations"
+    Console.echo_h1(_INTL("Updating file names and locations"))
     change_record = []
     # Add underscore to berry plant charsets
     if rename_berry_plant_charsets
-      Console.echo_warn _INTL("Berry plant charset files were renamed.")
+      Console.echo_warn(_INTL("Berry plant charset files were renamed."))
     end
     change_record += update_berry_tree_event_charsets
     # Warn if any map data has been changed
     if !change_record.empty?
-      change_record.each { |msg| Console.echo_warn msg }
-      Console.echo_warn _INTL("RMXP data was altered. Close RMXP now to ensure changes are applied.")
+      change_record.each { |msg| Console.echo_warn(msg) }
+      Console.echo_warn(_INTL("RMXP data was altered. Close RMXP now to ensure changes are applied."))
     end
     echoln ""
-    Console.echo_h2("Finished updating file names and locations", text: :green)
+    Console.echo_h2(_INTL("Finished updating file names and locations"), text: :green)
   end
 end

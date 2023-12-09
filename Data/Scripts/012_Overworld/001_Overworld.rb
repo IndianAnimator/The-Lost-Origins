@@ -4,7 +4,7 @@
 # Pokérus check
 EventHandlers.add(:on_frame_update, :pokerus_counter,
   proc {
-    next if !$player
+    next if !$player || $player.party.none? { |pkmn| pkmn.pokerusStage == 1 }
     last = $PokemonGlobal.pokerusTime
     next if !last
     now = pbGetTimeNow
@@ -25,15 +25,12 @@ def pbPokerus?
   return false
 end
 
-
-
 class Game_Temp
   attr_accessor :warned_low_battery
   attr_accessor :cue_bgm
-  attr_accessor :cue_bgm_frame_delay
+  attr_accessor :cue_bgm_timer_start
+  attr_accessor :cue_bgm_delay
 end
-
-
 
 def pbBatteryLow?
   pstate = System.power_state
@@ -52,7 +49,6 @@ EventHandlers.add(:on_frame_update, :low_battery_warning,
     next if $game_temp.warned_low_battery || !pbBatteryLow?
     next if $game_temp.in_menu || $game_temp.in_battle || $game_player.move_route_forcing ||
             $game_temp.message_window_showing || pbMapInterpreterRunning?
-    next if pbGetTimeNow.sec != 0
     $game_temp.warned_low_battery = true
     pbMessage(_INTL("The game has detected that the battery is low. You should save soon to avoid losing your progress."))
   }
@@ -60,10 +56,9 @@ EventHandlers.add(:on_frame_update, :low_battery_warning,
 
 EventHandlers.add(:on_frame_update, :cue_bgm_after_delay,
   proc {
-    next if $game_temp.cue_bgm_frame_delay.nil?
-    $game_temp.cue_bgm_frame_delay -= 1
-    next if $game_temp.cue_bgm_frame_delay > 0
-    $game_temp.cue_bgm_frame_delay = nil
+    next if $game_temp.cue_bgm_delay.nil?
+    next if System.uptime - $game_temp.cue_bgm_timer_start < $game_temp.cue_bgm_delay
+    $game_temp.cue_bgm_delay = nil
     pbBGMPlay($game_temp.cue_bgm) if $game_system.getPlayingBGM.nil?
   }
 )
@@ -95,13 +90,14 @@ EventHandlers.add(:on_player_step_taken_can_transfer, :poison_party,
     $player.able_party.each do |pkmn|
       next if pkmn.status != :POISON || pkmn.hasAbility?(:IMMUNITY)
       if !flashed
+        pbSEPlay("Poison step")
         pbFlash(Color.new(255, 0, 0, 128), 8)
         flashed = true
       end
       pkmn.hp -= 1 if pkmn.hp > 1 || Settings::POISON_FAINT_IN_FIELD
       if pkmn.hp == 1 && !Settings::POISON_FAINT_IN_FIELD
         pkmn.status = :NONE
-        pbMessage(_INTL("{1} survived the poisoning.\\nThe poison faded away!\1", pkmn.name))
+        pbMessage(_INTL("{1} survived the poisoning.\\nThe poison faded away!", pkmn.name))
         next
       elsif pkmn.hp == 0
         pkmn.changeHappiness("faint")
@@ -118,7 +114,7 @@ EventHandlers.add(:on_player_step_taken_can_transfer, :poison_party,
 
 def pbCheckAllFainted
   if $player.able_pokemon_count == 0
-    pbMessage(_INTL("You have no more Pokémon that can fight!\1"))
+    pbMessage(_INTL("You have no more Pokémon that can fight!") + "\1")
     pbMessage(_INTL("You blacked out!"))
     pbBGMFade(1.0)
     pbBGSFade(1.0)
@@ -164,9 +160,10 @@ EventHandlers.add(:on_step_taken, :auto_move_player,
     next if !$scene.is_a?(Scene_Map)
     next if event != $game_player
     currentTag = $game_player.pbTerrainTag
-    if currentTag.waterfall_crest
-      pbDescendWaterfall
-    elsif currentTag.ice && !$PokemonGlobal.sliding
+    if currentTag.waterfall_crest || currentTag.waterfall ||
+       $PokemonGlobal.descending_waterfall || $PokemonGlobal.ascending_waterfall
+      pbTraverseWaterfall
+    elsif currentTag.ice || $PokemonGlobal.ice_sliding
       pbSlideOnIce
     end
   }
@@ -220,29 +217,10 @@ def pbBattleOnStepTaken(repel_active)
   $game_temp.force_single_battle = false
 end
 
-
-
 #===============================================================================
 # Checks when moving between maps
 #===============================================================================
-# Clears the weather of the old map, if the old map has defined weather and the
-# new map either has the same name as the old map or doesn't have defined
-# weather.
-EventHandlers.add(:on_leave_map, :end_weather,
-  proc { |new_map_id, new_map|
-    next if new_map_id == 0
-    old_map_metadata = $game_map.metadata
-    next if !old_map_metadata || !old_map_metadata.weather
-    map_infos = pbLoadMapInfos
-    if $game_map.name == map_infos[new_map_id].name
-      new_map_metadata = GameData::MapMetadata.try_get(new_map_id)
-      next if new_map_metadata&.weather
-    end
-    $game_screen.weather(:None, 0, 0)
-  }
-)
-
-# Set up various data related to the new map
+# Set up various data related to the new map.
 EventHandlers.add(:on_enter_map, :setup_new_map,
   proc { |old_map_id|   # previous map ID, is 0 if no map ID
     # Record new Teleport destination
@@ -256,16 +234,21 @@ EventHandlers.add(:on_enter_map, :setup_new_map,
     $PokemonEncounters&.setup($game_map.map_id)
     # Record the new map as having been visited
     $PokemonGlobal.visitedMaps[$game_map.map_id] = true
-    # Set weather if new map has weather
+  }
+)
+
+# Changes the overworld weather.
+EventHandlers.add(:on_enter_map, :set_weather,
+  proc { |old_map_id|   # previous map ID, is 0 if no map ID
     next if old_map_id == 0 || old_map_id == $game_map.map_id
-    next if !new_map_metadata || !new_map_metadata.weather
-    map_infos = pbLoadMapInfos
-    if $game_map.name == map_infos[old_map_id].name
-      old_map_metadata = GameData::MapMetadata.try_get(old_map_id)
-      next if old_map_metadata&.weather
+    old_weather = $game_screen.weather_type
+    new_weather = :None
+    new_map_metadata = $game_map.metadata
+    if new_map_metadata&.weather
+      new_weather = new_map_metadata.weather[0] if rand(100) < new_map_metadata.weather[1]
     end
-    new_weather = new_map_metadata.weather
-    $game_screen.weather(new_weather[0], 9, 0) if rand(100) < new_weather[1]
+    next if old_weather == new_weather
+    $game_screen.weather(new_weather, 9, 0)
   }
 )
 
@@ -330,8 +313,6 @@ EventHandlers.add(:on_map_or_spriteset_change, :show_location_window,
     scene.spriteset.addUserSprite(LocationWindow.new($game_map.name)) if !nosignpost
   }
 )
-
-
 
 #===============================================================================
 # Event locations, terrain tags
@@ -416,21 +397,20 @@ def pbFacingEachOther(event1, event2)
   return pbEventFacesPlayer?(event1, event2, 1) && pbEventFacesPlayer?(event2, event1, 1)
 end
 
-
-
 #===============================================================================
 # Audio playing
 #===============================================================================
 def pbCueBGM(bgm, seconds, volume = nil, pitch = nil)
   return if !bgm
-  bgm        = pbResolveAudioFile(bgm, volume, pitch)
+  bgm = pbResolveAudioFile(bgm, volume, pitch)
   playingBGM = $game_system.playing_bgm
   if !playingBGM || playingBGM.name != bgm.name || playingBGM.pitch != bgm.pitch
     pbBGMFade(seconds)
-    if !$game_temp.cue_bgm_frame_delay
-      $game_temp.cue_bgm_frame_delay = (seconds * Graphics.frame_rate) * 3 / 5
-    end
     $game_temp.cue_bgm = bgm
+    if !$game_temp.cue_bgm_delay
+      $game_temp.cue_bgm_delay = seconds * 0.6
+      $game_temp.cue_bgm_timer_start = System.uptime
+    end
   elsif playingBGM
     pbBGMPlay(bgm)
   end
@@ -454,84 +434,80 @@ def pbAutoplayOnSave
   end
 end
 
-
-
 #===============================================================================
 # Event movement
 #===============================================================================
 module PBMoveRoute
-  Down               = 1
-  Left               = 2
-  Right              = 3
-  Up                 = 4
-  LowerLeft          = 5
-  LowerRight         = 6
-  UpperLeft          = 7
-  UpperRight         = 8
-  Random             = 9
-  TowardPlayer       = 10
-  AwayFromPlayer     = 11
-  Forward            = 12
-  Backward           = 13
-  Jump               = 14 # xoffset, yoffset
-  Wait               = 15 # frames
-  TurnDown           = 16
-  TurnLeft           = 17
-  TurnRight          = 18
-  TurnUp             = 19
-  TurnRight90        = 20
-  TurnLeft90         = 21
-  Turn180            = 22
-  TurnRightOrLeft90  = 23
-  TurnRandom         = 24
-  TurnTowardPlayer   = 25
-  TurnAwayFromPlayer = 26
-  SwitchOn           = 27 # 1 param
-  SwitchOff          = 28 # 1 param
-  ChangeSpeed        = 29 # 1 param
-  ChangeFreq         = 30 # 1 param
-  WalkAnimeOn        = 31
-  WalkAnimeOff       = 32
-  StepAnimeOn        = 33
-  StepAnimeOff       = 34
-  DirectionFixOn     = 35
-  DirectionFixOff    = 36
-  ThroughOn          = 37
-  ThroughOff         = 38
-  AlwaysOnTopOn      = 39
-  AlwaysOnTopOff     = 40
-  Graphic            = 41 # Name, hue, direction, pattern
-  Opacity            = 42 # 1 param
-  Blending           = 43 # 1 param
-  PlaySE             = 44 # 1 param
-  Script             = 45 # 1 param
-  ScriptAsync        = 101 # 1 param
+  DOWN                  = 1
+  LEFT                  = 2
+  RIGHT                 = 3
+  UP                    = 4
+  LOWER_LEFT            = 5
+  LOWER_RIGHT           = 6
+  UPPER_LEFT            = 7
+  UPPER_RIGHT           = 8
+  RANDOM                = 9
+  TOWARD_PLAYER         = 10
+  AWAY_FROM_PLAYER      = 11
+  FORWARD               = 12
+  BACKWARD              = 13
+  JUMP                  = 14   # xoffset, yoffset
+  WAIT                  = 15   # frames
+  TURN_DOWN             = 16
+  TURN_LEFT             = 17
+  TURN_RIGHT            = 18
+  TURN_UP               = 19
+  TURN_RIGHT90          = 20
+  TURN_LEFT90           = 21
+  TURN180               = 22
+  TURN_RIGHT_OR_LEFT90  = 23
+  TURN_RANDOM           = 24
+  TURN_TOWARD_PLAYER    = 25
+  TURN_AWAY_FROM_PLAYER = 26
+  SWITCH_ON             = 27   # 1 param
+  SWITCH_OFF            = 28   # 1 param
+  CHANGE_SPEED          = 29   # 1 param
+  CHANGE_FREQUENCY      = 30   # 1 param
+  WALK_ANIME_ON         = 31
+  WALK_ANIME_OFF        = 32
+  STEP_ANIME_ON         = 33
+  STEP_ANIME_OFF        = 34
+  DIRECTION_FIX_ON      = 35
+  DIRECTION_FIX_OFF     = 36
+  THROUGH_ON            = 37
+  THROUGH_OFF           = 38
+  ALWAYS_ON_TOP_ON      = 39
+  ALWAYS_ON_TOP_OFF     = 40
+  GRAPHIC               = 41   # Name, hue, direction, pattern
+  OPACITY               = 42   # 1 param
+  BLENDING              = 43   # 1 param
+  PLAY_SE               = 44   # 1 param
+  SCRIPT                = 45   # 1 param
+  SCRIPT_ASYNC          = 101   # 1 param
 end
-
-
 
 def pbMoveRoute(event, commands, waitComplete = false)
   route = RPG::MoveRoute.new
   route.repeat    = false
   route.skippable = true
   route.list.clear
-  route.list.push(RPG::MoveCommand.new(PBMoveRoute::ThroughOn))
+  route.list.push(RPG::MoveCommand.new(PBMoveRoute::THROUGH_ON))
   i = 0
   while i < commands.length
     case commands[i]
-    when PBMoveRoute::Wait, PBMoveRoute::SwitchOn, PBMoveRoute::SwitchOff,
-       PBMoveRoute::ChangeSpeed, PBMoveRoute::ChangeFreq, PBMoveRoute::Opacity,
-       PBMoveRoute::Blending, PBMoveRoute::PlaySE, PBMoveRoute::Script
+    when PBMoveRoute::WAIT, PBMoveRoute::SWITCH_ON, PBMoveRoute::SWITCH_OFF,
+       PBMoveRoute::CHANGE_SPEED, PBMoveRoute::CHANGE_FREQUENCY, PBMoveRoute::OPACITY,
+       PBMoveRoute::BLENDING, PBMoveRoute::PLAY_SE, PBMoveRoute::SCRIPT
       route.list.push(RPG::MoveCommand.new(commands[i], [commands[i + 1]]))
       i += 1
-    when PBMoveRoute::ScriptAsync
-      route.list.push(RPG::MoveCommand.new(PBMoveRoute::Script, [commands[i + 1]]))
-      route.list.push(RPG::MoveCommand.new(PBMoveRoute::Wait, [0]))
+    when PBMoveRoute::SCRIPT_ASYNC
+      route.list.push(RPG::MoveCommand.new(PBMoveRoute::SCRIPT, [commands[i + 1]]))
+      route.list.push(RPG::MoveCommand.new(PBMoveRoute::WAIT, [0]))
       i += 1
-    when PBMoveRoute::Jump
+    when PBMoveRoute::JUMP
       route.list.push(RPG::MoveCommand.new(commands[i], [commands[i + 1], commands[i + 2]]))
       i += 2
-    when PBMoveRoute::Graphic
+    when PBMoveRoute::GRAPHIC
       route.list.push(RPG::MoveCommand.new(commands[i],
                                            [commands[i + 1], commands[i + 2],
                                             commands[i + 3], commands[i + 4]]))
@@ -541,62 +517,37 @@ def pbMoveRoute(event, commands, waitComplete = false)
     end
     i += 1
   end
-  route.list.push(RPG::MoveCommand.new(PBMoveRoute::ThroughOff))
+  route.list.push(RPG::MoveCommand.new(PBMoveRoute::THROUGH_OFF))
   route.list.push(RPG::MoveCommand.new(0))
   event&.force_move_route(route)
   return route
 end
 
-def pbWait(numFrames)
-  numFrames.times do
+# duration is in seconds
+def pbWait(duration)
+  timer_start = System.uptime
+  until System.uptime - timer_start >= duration
+    yield System.uptime - timer_start if block_given?
     Graphics.update
     Input.update
     pbUpdateSceneMap
   end
 end
 
-
-
 #===============================================================================
 # Player/event movement in the field
 #===============================================================================
-def pbLedge(_xOffset, _yOffset)
-  if $game_player.pbFacingTerrainTag.ledge
-    if pbJumpToward(2, true)
-      $scene.spriteset.addUserAnimation(Settings::DUST_ANIMATION_ID, $game_player.x, $game_player.y, true, 1)
-      $game_player.increase_steps
-      $game_player.check_event_trigger_here([1, 2])
-    end
-    return true
-  end
-  return false
-end
-
 def pbSlideOnIce
-  return if !$game_player.pbTerrainTag.ice
-  $game_temp.followers.update
-  $PokemonGlobal.sliding = true
-  direction    = $game_player.direction
-  oldwalkanime = $game_player.walk_anime
-  $game_player.straighten
-  $game_player.walk_anime = false
-  first_loop = true
-  loop do
-    break if !$game_player.can_move_in_direction?(direction)
-    break if !$game_player.pbTerrainTag.ice
-    $game_player.move_forward
-    $game_temp.followers.move_followers if first_loop
-    while $game_player.moving?
-      pbUpdateSceneMap
-      Graphics.update
-      Input.update
+  if !$DEBUG || !Input.press?(Input::CTRL)
+    if $game_player.pbTerrainTag.ice && $game_player.can_move_in_direction?($game_player.direction)
+      $PokemonGlobal.ice_sliding = true
+      $game_player.straighten
+      $game_player.walk_anime = false
+      return
     end
-    first_loop = false
   end
-  $game_player.center($game_player.x, $game_player.y)
-  $game_player.straighten
-  $game_player.walk_anime = oldwalkanime
-  $PokemonGlobal.sliding = false
+  $PokemonGlobal.ice_sliding = false
+  $game_player.walk_anime = true
 end
 
 def pbTurnTowardEvent(event, otherEvent)
@@ -636,31 +587,6 @@ def pbMoveTowardPlayer(event)
   end
   $PokemonMap&.addMovedEvent(event.id)
 end
-
-def pbJumpToward(dist = 1, playSound = false, cancelSurf = false)
-  x = $game_player.x
-  y = $game_player.y
-  case $game_player.direction
-  when 2 then $game_player.jump(0, dist)    # down
-  when 4 then $game_player.jump(-dist, 0)   # left
-  when 6 then $game_player.jump(dist, 0)    # right
-  when 8 then $game_player.jump(0, -dist)   # up
-  end
-  if $game_player.x != x || $game_player.y != y
-    pbSEPlay("Player jump") if playSound
-    $PokemonEncounters.reset_step_count if cancelSurf
-    $game_temp.ending_surf = true if cancelSurf
-    while $game_player.jumping?
-      Graphics.update
-      Input.update
-      pbUpdateSceneMap
-    end
-    return true
-  end
-  return false
-end
-
-
 
 #===============================================================================
 # Bridges, cave escape points, and setting the heal point
@@ -705,8 +631,6 @@ def pbSetPokemonCenter
   $PokemonGlobal.pokecenterDirection = $game_player.direction
 end
 
-
-
 #===============================================================================
 # Partner trainer
 #===============================================================================
@@ -726,53 +650,55 @@ def pbDeregisterPartner
   $PokemonGlobal.partner = nil
 end
 
-
-
 #===============================================================================
 # Picking up an item found on the ground
 #===============================================================================
 def pbItemBall(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
-  itemname = (quantity > 1) ? item.name_plural : item.name
+  itemname = (quantity > 1) ? item.portion_name_plural : item.portion_name
   pocket = item.pocket
   move = item.move
   if $bag.add(item, quantity)   # If item can be picked up
     meName = (item.is_key_item?) ? "Key item get" : "Item get"
-    if item == :LEFTOVERS
-      pbMessage(_INTL("\\me[{1}]You found some \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
-    elsif item == :DNASPLICERS
-      pbMessage(_INTL("\\me[{1}]You found \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+    if item == :DNASPLICERS
+      pbMessage("\\me[#{meName}]" + _INTL("You found \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
     elsif item.is_machine?   # TM or HM
-      pbMessage(_INTL("\\me[{1}]You found \\c[1]{2} {3}\\c[0]!\\wtnp[30]", meName, itemname, GameData::Move.get(move).name))
+      if quantity > 1
+        pbMessage("\\me[Machine get]" + _INTL("You found {1} \\c[1]{2} {3}\\c[0]!",
+                                              quantity, itemname, GameData::Move.get(move).name) + "\\wtnp[70]")
+      else
+        pbMessage("\\me[Machine get]" + _INTL("You found \\c[1]{1} {2}\\c[0]!",
+                                              itemname, GameData::Move.get(move).name) + "\\wtnp[70]")
+      end
     elsif quantity > 1
-      pbMessage(_INTL("\\me[{1}]You found {2} \\c[1]{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
+      pbMessage("\\me[#{meName}]" + _INTL("You found {1} \\c[1]{2}\\c[0]!", quantity, itemname) + "\\wtnp[40]")
     elsif itemname.starts_with_vowel?
-      pbMessage(_INTL("\\me[{1}]You found an \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+      pbMessage("\\me[#{meName}]" + _INTL("You found an \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
     else
-      pbMessage(_INTL("\\me[{1}]You found a \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+      pbMessage("\\me[#{meName}]" + _INTL("You found a \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
     end
     pbMessage(_INTL("You put the {1} in\\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
                     itemname, pocket, PokemonBag.pocket_names[pocket - 1]))
     return true
   end
   # Can't add the item
-  if item == :LEFTOVERS
-    pbMessage(_INTL("You found some \\c[1]{1}\\c[0]!\\wtnp[30]", itemname))
-  elsif item.is_machine?   # TM or HM
-    pbMessage(_INTL("You found \\c[1]{1} {2}\\c[0]!\\wtnp[30]", itemname, GameData::Move.get(move).name))
+  if item.is_machine?   # TM or HM
+    if quantity > 1
+      pbMessage(_INTL("You found {1} \\c[1]{2} {3}\\c[0]!", quantity, itemname, GameData::Move.get(move).name))
+    else
+      pbMessage(_INTL("You found \\c[1]{1} {2}\\c[0]!", itemname, GameData::Move.get(move).name))
+    end
   elsif quantity > 1
-    pbMessage(_INTL("You found {1} \\c[1]{2}\\c[0]!\\wtnp[30]", quantity, itemname))
+    pbMessage(_INTL("You found {1} \\c[1]{2}\\c[0]!", quantity, itemname))
   elsif itemname.starts_with_vowel?
-    pbMessage(_INTL("You found an \\c[1]{1}\\c[0]!\\wtnp[30]", itemname))
+    pbMessage(_INTL("You found an \\c[1]{1}\\c[0]!", itemname))
   else
-    pbMessage(_INTL("You found a \\c[1]{1}\\c[0]!\\wtnp[30]", itemname))
+    pbMessage(_INTL("You found a \\c[1]{1}\\c[0]!", itemname))
   end
   pbMessage(_INTL("But your Bag is full..."))
   return false
 end
-
-
 
 #===============================================================================
 # Being given an item
@@ -780,22 +706,26 @@ end
 def pbReceiveItem(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
-  itemname = (quantity > 1) ? item.name_plural : item.name
+  itemname = (quantity > 1) ? item.portion_name_plural : item.portion_name
   pocket = item.pocket
   move = item.move
   meName = (item.is_key_item?) ? "Key item get" : "Item get"
-  if item == :LEFTOVERS
-    pbMessage(_INTL("\\me[{1}]You obtained some \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
-  elsif item == :DNASPLICERS
-    pbMessage(_INTL("\\me[{1}]You obtained \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+  if item == :DNASPLICERS
+    pbMessage("\\me[#{meName}]" + _INTL("You obtained \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
   elsif item.is_machine?   # TM or HM
-    pbMessage(_INTL("\\me[{1}]You obtained \\c[1]{2} {3}\\c[0]!\\wtnp[30]", meName, itemname, GameData::Move.get(move).name))
+    if quantity > 1
+      pbMessage("\\me[Machine get]" + _INTL("You obtained {1} \\c[1]{2} {3}\\c[0]!",
+                                            quantity, itemname, GameData::Move.get(move).name) + "\\wtnp[70]")
+    else
+      pbMessage("\\me[Machine get]" + _INTL("You obtained \\c[1]{1} {2}\\c[0]!",
+                                            itemname, GameData::Move.get(move).name) + "\\wtnp[70]")
+    end
   elsif quantity > 1
-    pbMessage(_INTL("\\me[{1}]You obtained {2} \\c[1]{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
+    pbMessage("\\me[#{meName}]" + _INTL("You obtained {1} \\c[1]{2}\\c[0]!", quantity, itemname) + "\\wtnp[40]")
   elsif itemname.starts_with_vowel?
-    pbMessage(_INTL("\\me[{1}]You obtained an \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+    pbMessage("\\me[#{meName}]" + _INTL("You obtained an \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
   else
-    pbMessage(_INTL("\\me[{1}]You obtained a \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
+    pbMessage("\\me[#{meName}]" + _INTL("You obtained a \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
   end
   if $bag.add(item, quantity)   # If item can be added
     pbMessage(_INTL("You put the {1} in\\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
@@ -811,10 +741,10 @@ end
 def pbBuyPrize(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
-  item_name = (quantity > 1) ? item.name_plural : item.name
+  item_name = (quantity > 1) ? item.portion_name_plural : item.portion_name
   pocket = item.pocket
   return false if !$bag.add(item, quantity)
-  pbMessage(_INTL("\\CNYou put the {1} in\\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
-                  item_name, pocket, PokemonBag.pocket_names[pocket - 1]))
+  pbMessage("\\CN" + _INTL("You put the {1} in\\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
+                           item_name, pocket, PokemonBag.pocket_names[pocket - 1]))
   return true
 end

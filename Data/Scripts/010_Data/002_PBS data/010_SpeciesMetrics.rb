@@ -8,16 +8,19 @@ module GameData
     attr_accessor :front_sprite_altitude
     attr_accessor :shadow_x
     attr_accessor :shadow_size
+    attr_reader   :pbs_file_suffix
 
     DATA = {}
     DATA_FILENAME = "species_metrics.dat"
+    PBS_BASE_FILENAME = "pokemon_metrics"
 
     SCHEMA = {
-      "BackSprite"          => [0, "ii"],
-      "FrontSprite"         => [0, "ii"],
-      "FrontSpriteAltitude" => [0, "i"],
-      "ShadowX"             => [0, "i"],
-      "ShadowSize"          => [0, "u"]
+      "SectionName"         => [:id,                    "eV", :Species],
+      "BackSprite"          => [:back_sprite,           "ii"],
+      "FrontSprite"         => [:front_sprite,          "ii"],
+      "FrontSpriteAltitude" => [:front_sprite_altitude, "i"],
+      "ShadowX"             => [:shadow_x,              "i"],
+      "ShadowSize"          => [:shadow_size,           "u"]
     }
 
     extend ClassMethodsSymbols
@@ -35,7 +38,7 @@ module GameData
       if form > 0
         trial = sprintf("%s_%d", species, form).to_sym
         if !DATA.has_key?(trial)
-          self.register({ :id => species }) if !DATA[species]
+          self.register({:id => species}) if !DATA[species]
           self.register({
             :id                    => trial,
             :species               => species,
@@ -49,7 +52,7 @@ module GameData
         end
         return DATA[trial]
       end
-      self.register({ :id => species }) if !DATA[species]
+      self.register({:id => species}) if !DATA[species]
       return DATA[species]
     end
 
@@ -62,13 +65,12 @@ module GameData
       @front_sprite_altitude = hash[:front_sprite_altitude] || 0
       @shadow_x              = hash[:shadow_x]              || 0
       @shadow_size           = hash[:shadow_size]           || 2
+      @pbs_file_suffix       = hash[:pbs_file_suffix]       || ""
     end
 
     def apply_metrics_to_sprite(sprite, index, shadow = false)
       if shadow
-        if (index & 1) == 1    # Foe Pokémon
-          sprite.x += @shadow_x * 2
-        end
+        sprite.x += @shadow_x * 2 if (index & 1) == 1   # Foe Pokémon
       elsif (index & 1) == 0   # Player's Pokémon
         sprite.x += @back_sprite[0] * 2
         sprite.y += @back_sprite[1] * 2
@@ -82,6 +84,18 @@ module GameData
     def shows_shadow?
       return true
 #      return @front_sprite_altitude > 0
+    end
+
+    alias __orig__get_property_for_PBS get_property_for_PBS unless method_defined?(:__orig__get_property_for_PBS)
+    def get_property_for_PBS(key)
+      ret = __orig__get_property_for_PBS(key)
+      case key
+      when "SectionName"
+        ret = [@species, (@form > 0) ? @form : nil]
+      when "FrontSpriteAltitude"
+        ret = nil if ret == 0
+      end
+      return ret
     end
   end
 end

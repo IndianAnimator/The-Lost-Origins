@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class PictureSprite < Sprite
   def initialize(viewport, picture)
     super(viewport)
@@ -50,8 +53,6 @@ class PictureSprite < Sprite
   end
 end
 
-
-
 def pbTextBitmap(text, maxwidth = Graphics.width)
   tmp = Bitmap.new(maxwidth, Graphics.height)
   pbSetSystemFont(tmp)
@@ -59,10 +60,8 @@ def pbTextBitmap(text, maxwidth = Graphics.width)
   return tmp
 end
 
-
-
 #===============================================================================
-# EventScene
+#
 #===============================================================================
 class EventScene
   attr_accessor :onCTrigger, :onBTrigger, :onUpdate
@@ -80,12 +79,8 @@ class EventScene
 
   def dispose
     return if disposed?
-    @picturesprites.each do |sprite|
-      sprite.dispose
-    end
-    @usersprites.each do |sprite|
-      sprite.dispose
-    end
+    @picturesprites.each { |sprite| sprite.dispose }
+    @usersprites.each { |sprite| sprite.dispose }
     @onCTrigger.clear
     @onBTrigger.clear
     @onUpdate.clear
@@ -136,36 +131,38 @@ class EventScene
     return @pictures[num]
   end
 
-  def wait(frames)
-    frames.times { update }
+  # ticks is in 1/20ths of a second.
+  def wait(ticks)
+    return if ticks <= 0
+    timer_start = System.uptime
+    loop do
+      update
+      break if System.uptime - timer_start >= ticks / 20.0
+    end
   end
 
-  def pictureWait(extraframes = 0)
+  # extra_ticks is in 1/20ths of a second.
+  def pictureWait(extra_ticks = 0)
     loop do
       hasRunning = false
-      @pictures.each do |pic|
-        hasRunning = true if pic.running?
-      end
+      @pictures.each { |pic| hasRunning = true if pic.running? }
       break if !hasRunning
       update
     end
-    extraframes.times { update }
+    wait(extra_ticks)
   end
 
   def update
     return if disposed?
     Graphics.update
     Input.update
-    @pictures.each do |picture|
-      picture.update
-    end
-    @picturesprites.each do |sprite|
-      sprite.update
-    end
+    @pictures.each { |picture| picture.update }
+    @picturesprites.each { |sprite| sprite.update }
     @usersprites.each do |sprite|
       next if !sprite || sprite.disposed? || !sprite.is_a?(Sprite)
       sprite.update
     end
+    @usersprites.delete_if { |sprite| sprite.disposed? }
     @onUpdate.trigger(self)
     if Input.trigger?(Input::BACK)
       @onBTrigger.trigger(self)
@@ -175,24 +172,21 @@ class EventScene
   end
 
   def main
-    until disposed?
+    loop do
       update
+      break if disposed?
     end
   end
 end
-
-
 
 #===============================================================================
 #
 #===============================================================================
 def pbEventScreen(cls)
-  pbFadeOutIn {
+  pbFadeOutIn do
     viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     viewport.z = 99999
-    PBDebug.logonerr {
-      cls.new(viewport).main
-    }
+    PBDebug.logonerr { cls.new(viewport).main }
     viewport.dispose
-  }
+  end
 end

@@ -8,7 +8,7 @@ MenuHandlers.add(:battle_debug_menu, :battlers, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :list_player_battlers, {
-  "name"        => _INTL("Player-Side Battlers"),
+  "name"        => _INTL("Player-side battlers"),
   "parent"      => :battlers,
   "description" => _INTL("Edit Pokémon on the player's side of battle."),
   "effect"      => proc { |battle|
@@ -34,7 +34,7 @@ MenuHandlers.add(:battle_debug_menu, :list_player_battlers, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :list_foe_battlers, {
-  "name"        => _INTL("Foe-Side Battlers"),
+  "name"        => _INTL("Foe-side battlers"),
   "parent"      => :battlers,
   "description" => _INTL("Edit Pokémon on the opposing side of battle."),
   "effect"      => proc { |battle|
@@ -54,7 +54,7 @@ MenuHandlers.add(:battle_debug_menu, :list_foe_battlers, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :speed_order, {
-  "name"        => _INTL("Battler Speed Order"),
+  "name"        => _INTL("View battler speed order"),
   "parent"      => :battlers,
   "description" => _INTL("Show all battlers in order from fastest to slowest."),
   "effect"      => proc { |battle|
@@ -74,7 +74,7 @@ MenuHandlers.add(:battle_debug_menu, :speed_order, {
 # Pokémon
 #===============================================================================
 MenuHandlers.add(:battle_debug_menu, :pokemon_teams, {
-  "name"        => _INTL("Pokémon Teams"),
+  "name"        => _INTL("Pokémon teams"),
   "parent"      => :main,
   "description" => _INTL("Look at and edit all Pokémon in each team."),
   "effect"      => proc { |battle|
@@ -88,7 +88,7 @@ MenuHandlers.add(:battle_debug_menu, :pokemon_teams, {
       if battle.opponent
         battle.opponent.each_with_index do |trainer, i|
           first_index = foe_party_starts[i]
-          last_index   = (i < foe_party_starts.length - 1) ? foe_party_starts[i + 1] : battle.pbParty(1).length
+          last_index = (i < foe_party_starts.length - 1) ? foe_party_starts[i + 1] : battle.pbParty(1).length
           num_pkmn = last_index - first_index
           commands.push(_INTL("Opponent {1}: {2} ({3} Pokémon)", i + 1, trainer.full_name, num_pkmn))
           team_indices.push([1, i, first_index])
@@ -99,7 +99,7 @@ MenuHandlers.add(:battle_debug_menu, :pokemon_teams, {
       end
       battle.player.each_with_index do |trainer, i|
         first_index = player_party_starts[i]
-        last_index   = (i < player_party_starts.length - 1) ? player_party_starts[i + 1] : battle.pbParty(0).length
+        last_index = (i < player_party_starts.length - 1) ? player_party_starts[i + 1] : battle.pbParty(0).length
         num_pkmn = last_index - first_index
         if i == 0   # Player
           commands.push(_INTL("You: {1} ({2} Pokémon)", trainer.full_name, num_pkmn))
@@ -133,13 +133,13 @@ MenuHandlers.add(:battle_debug_menu, :pokemon_teams, {
 # Trainer Options
 #===============================================================================
 MenuHandlers.add(:battle_debug_menu, :trainers, {
-  "name"        => _INTL("Trainer Options..."),
+  "name"        => _INTL("Trainer options..."),
   "parent"      => :main,
   "description" => _INTL("Variables that apply to trainers.")
 })
 
 MenuHandlers.add(:battle_debug_menu, :trainer_items, {
-  "name"        => _INTL("NPC Trainer Items"),
+  "name"        => _INTL("NPC trainer items"),
   "parent"      => :trainers,
   "description" => _INTL("View and change the items each NPC trainer has access to."),
   "effect"      => proc { |battle|
@@ -206,8 +206,8 @@ MenuHandlers.add(:battle_debug_menu, :mega_evolution, {
           next if !trainers[i]
           text = (side == 0) ? "Your side:" : "Foe side:"
           text += sprintf(" %d: %s", i, trainers[i].name)
-          text += sprintf(" [ABLE]") if value == -1
-          text += sprintf(" [UNABLE]") if value == -2
+          text += " [ABLE]" if value == -1
+          text += " [UNABLE]" if value == -2
           commands.push(text)
           cmds.push([side, i])
         end
@@ -229,7 +229,7 @@ MenuHandlers.add(:battle_debug_menu, :mega_evolution, {
 # Field Options
 #===============================================================================
 MenuHandlers.add(:battle_debug_menu, :field, {
-  "name"        => _INTL("Field Effects..."),
+  "name"        => _INTL("Field effects..."),
   "parent"      => :main,
   "description" => _INTL("Effects that apply to the whole battlefield.")
 })
@@ -252,10 +252,10 @@ MenuHandlers.add(:battle_debug_menu, :weather, {
       msg = _INTL("Current weather: {1}", weather_data.name || _INTL("Unknown"))
       if weather_data.id != :None
         if battle.field.weatherDuration > 0
-          msg += "\r\n"
+          msg += "\n"
           msg += _INTL("Duration : {1} more round(s)", battle.field.weatherDuration)
         elsif battle.field.weatherDuration < 0
-          msg += "\r\n"
+          msg += "\n"
           msg += _INTL("Duration : Infinite")
         end
       end
@@ -314,10 +314,10 @@ MenuHandlers.add(:battle_debug_menu, :terrain, {
       msg = _INTL("Current terrain: {1}", terrain_data.name || _INTL("Unknown"))
       if terrain_data.id != :None
         if battle.field.terrainDuration > 0
-          msg += "\r\n"
+          msg += "\n"
           msg += _INTL("Duration : {1} more round(s)", battle.field.terrainDuration)
         elsif battle.field.terrainDuration < 0
-          msg += "\r\n"
+          msg += "\n"
           msg += _INTL("Duration : Infinite")
         end
       end
@@ -359,7 +359,7 @@ MenuHandlers.add(:battle_debug_menu, :terrain, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :environment_time, {
-  "name"        => _INTL("Environment/Time"),
+  "name"        => _INTL("Environment/time"),
   "parent"      => :field,
   "description" => _INTL("Set the battle's environment and time of day."),
   "effect"      => proc { |battle|
@@ -373,7 +373,7 @@ MenuHandlers.add(:battle_debug_menu, :environment_time, {
     loop do
       environment_data = GameData::Environment.try_get(battle.environment)
       msg = _INTL("Environment: {1}", environment_data.name || _INTL("Unknown"))
-      msg += "\r\n"
+      msg += "\n"
       msg += _INTL("Time of day: {1}", [_INTL("Day"), _INTL("Evening"), _INTL("Night")][battle.time])
       cmd = pbMessage("\\ts[]" + msg, [_INTL("Change environment"),
                                        _INTL("Change time of day")], -1, nil, cmd)
@@ -397,7 +397,7 @@ MenuHandlers.add(:battle_debug_menu, :environment_time, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :backdrop, {
-  "name"        => _INTL("Backdrop Names"),
+  "name"        => _INTL("Backdrop names"),
   "parent"      => :field,
   "description" => _INTL("Set the names of the backdrop and base graphics."),
   "effect"      => proc { |battle|
@@ -421,7 +421,7 @@ MenuHandlers.add(:battle_debug_menu, :backdrop, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :set_field_effects, {
-  "name"        => _INTL("Other Field Effects..."),
+  "name"        => _INTL("Other field effects..."),
   "parent"      => :field,
   "description" => _INTL("View/set other effects that apply to the whole battlefield."),
   "effect"      => proc { |battle|
@@ -432,7 +432,7 @@ MenuHandlers.add(:battle_debug_menu, :set_field_effects, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :player_side, {
-  "name"        => _INTL("Player's Side Effects..."),
+  "name"        => _INTL("Player's side effects..."),
   "parent"      => :field,
   "description" => _INTL("Effects that apply to the side the player is on."),
   "effect"      => proc { |battle|
@@ -443,7 +443,7 @@ MenuHandlers.add(:battle_debug_menu, :player_side, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :opposing_side, {
-  "name"        => _INTL("Foe's Side Effects..."),
+  "name"        => _INTL("Foe's side effects..."),
   "parent"      => :field,
   "description" => _INTL("Effects that apply to the opposing side."),
   "effect"      => proc { |battle|
@@ -454,7 +454,7 @@ MenuHandlers.add(:battle_debug_menu, :opposing_side, {
 })
 
 MenuHandlers.add(:battle_debug_menu, :position_effects, {
-  "name"        => _INTL("Battler Position Effects..."),
+  "name"        => _INTL("Battler position effects..."),
   "parent"      => :field,
   "description" => _INTL("Effects that apply to individual battler positions."),
   "effect"      => proc { |battle|
@@ -467,14 +467,14 @@ MenuHandlers.add(:battle_debug_menu, :position_effects, {
       if battler && !battler.fainted?
         text = "[#{i}] #{battler.name}"
       else
-        text = _INTL("[#{i}] (empty)", i)
+        text = "[#{i}] " + _INTL("(empty)")
       end
       if battler.pbOwnedByPlayer?
-        text += " (yours)"
+        text += " " + _INTL("(yours)")
       elsif battle.opposes?(i)
-        text += " (opposing)"
+        text += " " + _INTL("(opposing)")
       else
-        text += " (ally's)"
+        text += " " + _INTL("(ally's)")
       end
       cmds.push(text)
     end

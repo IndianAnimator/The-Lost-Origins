@@ -47,10 +47,8 @@ class Battle::Battler
       return false
     end
     # Use the move
-    PBDebug.log("[Move usage] #{pbThis} started using #{choice[2].name}")
-    PBDebug.logonerr {
-      pbUseMove(choice, choice[2] == @battle.struggle)
-    }
+    PBDebug.log("[Use move] #{pbThis} (#{@index}) used #{choice[2].name}")
+    PBDebug.logonerr { pbUseMove(choice, choice[2] == @battle.struggle) }
     @battle.pbJudge
     # Update priority order
     @battle.pbCalculatePriority if Settings::RECALCULATE_TURN_ORDER_AFTER_SPEED_CHANGES
@@ -91,7 +89,7 @@ class Battle::Battler
     @effects[PBEffects::Outrage]       = 0
     @effects[PBEffects::Uproar]        = 0
     @effects[PBEffects::Bide]          = 0
-    @currentMove = nil
+    @currentMove = nil if @effects[PBEffects::HyperBeam] == 0
     # Reset counters for moves which increase them when used in succession
     @effects[PBEffects::FuryCutter] = 0
   end
@@ -146,7 +144,7 @@ class Battle::Battler
       choice[2].pp = -1
     end
     choice[3] = target     # Target (-1 means no target yet)
-    PBDebug.log("[Move usage] #{pbThis} started using the called/simple move #{choice[2].name}")
+    PBDebug.log("[Use move] #{pbThis} used the called/simple move #{choice[2].name}")
     pbUseMove(choice, specialUsage)
   end
 
@@ -160,17 +158,19 @@ class Battle::Battler
     # Start using the move
     pbBeginTurn(choice)
     # Force the use of certain moves if they're already being used
-    if usingMultiTurnAttack?
-      choice[2] = Battle::Move.from_pokemon_move(@battle, Pokemon::Move.new(@currentMove))
-      specialUsage = true
-    elsif @effects[PBEffects::Encore] > 0 && choice[1] >= 0 &&
-          @battle.pbCanShowCommands?(@index)
-      idxEncoredMove = pbEncoredMoveIndex
-      if idxEncoredMove >= 0 && choice[1] != idxEncoredMove &&
-         @battle.pbCanChooseMove?(@index, idxEncoredMove, false)   # Change move if battler was Encored mid-round
-        choice[1] = idxEncoredMove
-        choice[2] = @moves[idxEncoredMove]
-        choice[3] = -1   # No target chosen
+    if !@battle.futureSight
+      if usingMultiTurnAttack?
+        choice[2] = Battle::Move.from_pokemon_move(@battle, Pokemon::Move.new(@currentMove))
+        specialUsage = true
+      elsif @effects[PBEffects::Encore] > 0 && choice[1] >= 0 &&
+            @battle.pbCanShowCommands?(@index)
+        idxEncoredMove = pbEncoredMoveIndex
+        if idxEncoredMove >= 0 && choice[1] != idxEncoredMove &&
+           @battle.pbCanChooseMove?(@index, idxEncoredMove, false)   # Change move if battler was Encored mid-round
+          choice[1] = idxEncoredMove
+          choice[2] = @moves[idxEncoredMove]
+          choice[3] = -1   # No target chosen
+        end
       end
     end
     # Labels the move being used as "move"
@@ -293,7 +293,7 @@ class Battle::Battler
     end
     # "But it failed!" checks
     if move.pbMoveFailed?(user, targets)
-      PBDebug.log(sprintf("[Move failed] In function code %s's def pbMoveFailed?", move.function))
+      PBDebug.log(sprintf("[Move failed] In function code %s's def pbMoveFailed?", move.function_code))
       user.lastMoveFailed = true
       pbCancelMoves
       pbEndTurn(choice)
@@ -313,9 +313,9 @@ class Battle::Battler
       @battle.pbDisplay(_INTL("When the flame touched the powder on the Pokémon, it exploded!"))
       user.lastMoveFailed = true
       if ![:Rain, :HeavyRain].include?(user.effectiveWeather) && user.takesIndirectDamage?
-        user.pbTakeEffectDamage((user.totalhp / 4.0).round, false) { |hp_lost|
-          @battle.pbDisplay(_INTL("{1} is hurt by its {2}!", battler.pbThis, battler.itemName))
-        }
+        user.pbTakeEffectDamage((user.totalhp / 4.0).round, false) do |hp_lost|
+          @battle.pbDisplay(_INTL("{1} is hurt by Powder!", user.pbThis))
+        end
         @battle.pbGainExp   # In case user is KO'd by this
       end
       pbCancelMoves
@@ -356,11 +356,13 @@ class Battle::Battler
       #       Pokémon which becomes Ghost-type because of Protean, it should
       #       target and curse itself. I think this is silly, so I'm making it
       #       choose a random opponent to curse instead.
-      if move.function == "CurseTargetOrLowerUserSpd1RaiseUserAtkDef1" && targets.length == 0
+      if move.function_code == "CurseTargetOrLowerUserSpd1RaiseUserAtkDef1" && targets.length == 0
         choice[3] = -1
         targets = pbFindTargets(choice, move, user)
       end
     end
+    # For two-turn moves when they charge and attack in the same turn
+    move.pbQuickChargingMove(user, targets)
     #---------------------------------------------------------------------------
     magicCoater  = -1
     magicBouncer = -1
@@ -526,10 +528,10 @@ class Battle::Battler
       oldLastRoundMoved = b.lastRoundMoved
       @battle.pbDisplay(_INTL("{1} used the move instructed by {2}!", b.pbThis, user.pbThis(true)))
       b.effects[PBEffects::Instructed] = true
-      if b.pbCanChooseMove?(@moves[idxMove], false)
-        PBDebug.logonerr {
+      if b.pbCanChooseMove?(b.moves[idxMove], false)
+        PBDebug.logonerr do
           b.pbUseMoveSimple(b.lastMoveUsed, b.lastRegularMoveTarget, idxMove, false)
-        }
+        end
         b.lastRoundMoved = oldLastRoundMoved
         @battle.pbJudge
         return if @battle.decision > 0
@@ -563,9 +565,7 @@ class Battle::Battler
         end
         nextUser.effects[PBEffects::Dancer] = true
         if nextUser.pbCanChooseMove?(move, false)
-          PBDebug.logonerr {
-            nextUser.pbUseMoveSimple(move.id, preTarget)
-          }
+          PBDebug.logonerr { nextUser.pbUseMoveSimple(move.id, preTarget) }
           nextUser.lastRoundMoved = oldLastRoundMoved
           nextUser.effects[PBEffects::Outrage] = oldOutrage
           nextUser.currentMove = oldCurrentMove
@@ -692,7 +692,10 @@ class Battle::Battler
       end
       # HP-healing held items (checks all battlers rather than just targets
       # because Flame Burst's splash damage affects non-targets)
-      @battle.pbPriority(true).each { |b| b.pbItemHPHealCheck }
+      @battle.pbPriority(true).each do |b|
+        next if move.preventsBattlerConsumingHealingBerry?(b, targets)
+        b.pbItemHPHealCheck
+      end
       # Animate battlers fainting (checks all battlers rather than just targets
       # because Flame Burst's splash damage affects non-targets)
       @battle.pbPriority(true).each { |b| b.pbFaint if b&.fainted? }
@@ -712,9 +715,7 @@ class Battle::Battler
         next if b.damageState.calcDamage == 0
         chance = move.pbAdditionalEffectChance(user, b)
         next if chance <= 0
-        if @battle.pbRandom(100) < chance
-          move.pbAdditionalEffect(user, b)
-        end
+        move.pbAdditionalEffect(user, b) if @battle.pbRandom(100) < chance
       end
     end
     # Make the target flinch (because of an item/ability)
