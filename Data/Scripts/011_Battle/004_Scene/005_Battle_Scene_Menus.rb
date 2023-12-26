@@ -91,16 +91,14 @@ class Battle::Scene::MenuBase
   end
 end
 
-
-
 #===============================================================================
 # Command menu (Fight/Pokémon/Bag/Run)
 #===============================================================================
 class Battle::Scene::CommandMenu < Battle::Scene::MenuBase
-  # If true, displays graphics from Graphics/Pictures/Battle/overlay_command.png
-  #     and Graphics/Pictures/Battle/cursor_command.png.
+  # If true, displays graphics from Graphics/UI/Battle/overlay_command.png
+  #     and Graphics/UI/Battle/cursor_command.png.
   # If false, just displays text and the command window over the graphic
-  #     Graphics/Pictures/Battle/overlay_message.png. You will need to edit def
+  #     Graphics/UI/Battle/overlay_message.png. You will need to edit def
   #     pbShowWindow to make the graphic appear while the command menu is being
   #     displayed.
   USE_GRAPHICS = true
@@ -110,7 +108,7 @@ class Battle::Scene::CommandMenu < Battle::Scene::MenuBase
     [0, 2, 1, 9],   # 1 = Regular battle with "Cancel" instead of "Run"
     [0, 2, 1, 4],   # 2 = Regular battle with "Call" instead of "Run"
     [5, 7, 6, 3],   # 3 = Safari Zone
-    [0, 8, 1, 3]    # 4 = Bug Catching Contest
+    [0, 8, 1, 3]    # 4 = Bug-Catching Contest
   ]
 
   def initialize(viewport, z)
@@ -128,10 +126,10 @@ class Battle::Scene::CommandMenu < Battle::Scene::MenuBase
     if USE_GRAPHICS
       # Create background graphic
       background = IconSprite.new(self.x, self.y, viewport)
-      background.setBitmap("Graphics/Pictures/Battle/overlay_command")
+      background.setBitmap("Graphics/UI/Battle/overlay_command")
       addSprite("background", background)
       # Create bitmaps
-      @buttonBitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Battle/cursor_command"))
+      @buttonBitmap = AnimatedBitmap.new(_INTL("Graphics/UI/Battle/cursor_command"))
       # Create action buttons
       @buttons = Array.new(4) do |i|   # 4 command options, therefore 4 buttons
         button = Sprite.new(viewport)
@@ -194,8 +192,6 @@ class Battle::Scene::CommandMenu < Battle::Scene::MenuBase
   end
 end
 
-
-
 #===============================================================================
 # Fight menu (choose a move)
 #===============================================================================
@@ -205,10 +201,10 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
 
   GET_MOVE_TEXT_COLOR_FROM_MOVE_BUTTON = true
 
-  # If true, displays graphics from Graphics/Pictures/Battle/overlay_fight.png
-  #     and Graphics/Pictures/Battle/cursor_fight.png.
+  # If true, displays graphics from Graphics/UI/Battle/overlay_fight.png
+  #     and Graphics/UI/Battle/cursor_fight.png.
   # If false, just displays text and the command window over the graphic
-  #     Graphics/Pictures/Battle/overlay_message.png. You will need to edit def
+  #     Graphics/UI/Battle/overlay_message.png. You will need to edit def
   #     pbShowWindow to make the graphic appear while the command menu is being
   #     displayed.
   USE_GRAPHICS     = true
@@ -231,13 +227,13 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
     #       0=don't show, 1=show unpressed, 2=show pressed
     if USE_GRAPHICS
       # Create bitmaps
-      @buttonBitmap  = AnimatedBitmap.new(_INTL("Graphics/Pictures/Battle/cursor_fight"))
-      @typeBitmap    = AnimatedBitmap.new(_INTL("Graphics/Pictures/types"))
-      @megaEvoBitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Battle/cursor_mega"))
-      @shiftBitmap   = AnimatedBitmap.new(_INTL("Graphics/Pictures/Battle/cursor_shift"))
+      @buttonBitmap  = AnimatedBitmap.new(_INTL("Graphics/UI/Battle/cursor_fight"))
+      @typeBitmap    = AnimatedBitmap.new(_INTL("Graphics/UI/types"))
+      @megaEvoBitmap = AnimatedBitmap.new(_INTL("Graphics/UI/Battle/cursor_mega"))
+      @shiftBitmap   = AnimatedBitmap.new(_INTL("Graphics/UI/Battle/cursor_shift"))
       # Create background graphic
       background = IconSprite.new(0, Graphics.height - 96, viewport)
-      background.setBitmap("Graphics/Pictures/Battle/overlay_fight")
+      background.setBitmap("Graphics/UI/Battle/overlay_fight")
       addSprite("background", background)
       # Create move buttons
       @buttons = Array.new(Pokemon::MAX_MOVES) do |i|
@@ -362,7 +358,7 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
         #       code to ensure the font is an appropriate color.
         moveNameBase = button.bitmap.get_pixel(10, button.src_rect.y + 34)
       end
-      textPos.push([moves[i].name, x, y, 2, moveNameBase, TEXT_SHADOW_COLOR])
+      textPos.push([moves[i].name, x, y, :center, moveNameBase, TEXT_SHADOW_COLOR])
     end
     pbDrawTextPositions(@overlay.bitmap, textPos)
   end
@@ -388,6 +384,7 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
   def refreshMoveData(move)
     # Write PP and type of the selected move
     if !USE_GRAPHICS
+      return if !move
       moveType = GameData::Type.get(move.display_type(@battler)).name
       if move.total_pp <= 0
         @msgBox.text = _INTL("PP: ---<br>TYPE/{1}", moveType)
@@ -411,7 +408,7 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
       ppFraction = [(4.0 * move.pp / move.total_pp).ceil, 3].min
       textPos = []
       textPos.push([_INTL("PP: {1}/{2}", move.pp, move.total_pp),
-                    448, 56, 2, PP_COLORS[ppFraction * 2], PP_COLORS[(ppFraction * 2) + 1]])
+                    448, 56, :center, PP_COLORS[ppFraction * 2], PP_COLORS[(ppFraction * 2) + 1]])
       pbDrawTextPositions(@infoOverlay.bitmap, textPos)
     end
   end
@@ -439,8 +436,6 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
   end
 end
 
-
-
 #===============================================================================
 # Target menu (choose a move's target)
 # NOTE: Unlike the command and fight menus, this one doesn't have a textbox-only
@@ -455,7 +450,7 @@ class Battle::Scene::TargetMenu < Battle::Scene::MenuBase
     [0, 2, 1, 9],   # 1 = Regular battle with "Cancel" instead of "Run"
     [0, 2, 1, 4],   # 2 = Regular battle with "Call" instead of "Run"
     [5, 7, 6, 3],   # 3 = Safari Zone
-    [0, 8, 1, 3]    # 4 = Bug Catching Contest
+    [0, 8, 1, 3]    # 4 = Bug-Catching Contest
   ]
   CMD_BUTTON_WIDTH_SMALL = 170
   TEXT_BASE_COLOR   = Color.new(240, 248, 224)
@@ -472,7 +467,7 @@ class Battle::Scene::TargetMenu < Battle::Scene::MenuBase
     # NOTE: @mode is for which buttons are shown as selected.
     #       0=select 1 button (@index), 1=select all buttons with text
     # Create bitmaps
-    @buttonBitmap = AnimatedBitmap.new("Graphics/Pictures/Battle/cursor_target")
+    @buttonBitmap = AnimatedBitmap.new("Graphics/UI/Battle/cursor_target")
     # Create target buttons
     @buttons = Array.new(maxIndex + 1) do |i|
       numButtons = @sideSizes[i % 2]
@@ -545,7 +540,7 @@ class Battle::Scene::TargetMenu < Battle::Scene::MenuBase
       next if !button || nil_or_empty?(@texts[i])
       x = button.x - self.x + (button.src_rect.width / 2)
       y = button.y - self.y + 14
-      textpos.push([@texts[i], x, y, 2, TEXT_BASE_COLOR, TEXT_SHADOW_COLOR])
+      textpos.push([@texts[i], x, y, :center, TEXT_BASE_COLOR, TEXT_SHADOW_COLOR])
     end
     pbDrawTextPositions(@overlay.bitmap, textpos)
   end

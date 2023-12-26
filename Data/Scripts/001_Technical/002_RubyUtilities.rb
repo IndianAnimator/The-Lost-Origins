@@ -23,7 +23,7 @@ end
 #===============================================================================
 class String
   def starts_with_vowel?
-    return ["a", "e", "i", "o", "u"].include?(self[0, 1].downcase)
+    return ["a", "e", "i", "o", "u"].include?(self[0].downcase)
   end
 
   def first(n = 1); return self[0...n]; end
@@ -52,7 +52,7 @@ class String
   end
 
   def numeric?
-    return !self[/^[+-]?([0-9]+)(?:\.[0-9]+)?$/].nil?
+    return !self[/\A[+-]?\d+(?:\.\d+)?\Z/].nil?
   end
 end
 
@@ -81,7 +81,8 @@ end
 # class Array
 #===============================================================================
 class Array
-  def ^(other)   # xor of two arrays
+  # xor of two arrays
+  def ^(other)
     return (self | other) - (self & other)
   end
 
@@ -128,20 +129,30 @@ module Enumerable
 end
 
 #===============================================================================
+# Collision testing
+#===============================================================================
+class Rect < Object
+  def contains?(cx, cy)
+    return cx >= self.x && cx < self.x + self.width &&
+           cy >= self.y && cy < self.y + self.height
+  end
+end
+
+#===============================================================================
 # class File
 #===============================================================================
 class File
   # Copies the source file to the destination path.
   def self.copy(source, destination)
     data = ""
-    t = Time.now
+    t = System.uptime
     File.open(source, "rb") do |f|
       loop do
         r = f.read(4096)
         break if !r
-        if Time.now - t > 1
+        if System.uptime - t >= 5
+          t += 5
           Graphics.update
-          t = Time.now
         end
         data += r
       end
@@ -168,47 +179,129 @@ class Color
 
   # New constructor, accepts RGB values as well as a hex number or string value.
   def initialize(*args)
-  	pbPrintException("Wrong number of arguments! At least 1 is needed!") if args.length < 1
-  	if args.length == 1
-      if args.first.is_a?(Fixnum)
+    pbPrintException("Wrong number of arguments! At least 1 is needed!") if args.length < 1
+    case args.length
+    when 1
+      case args.first
+      when Integer
         hex = args.first.to_s(16)
-      elsif args.first.is_a?(String)
+      when String
         try_rgb_format = args.first.split(",")
-        return init_original(*try_rgb_format.map(&:to_i)) if try_rgb_format.length.between?(3, 4)
+        init_original(*try_rgb_format.map(&:to_i)) if try_rgb_format.length.between?(3, 4)
         hex = args.first.delete("#")
       end
       pbPrintException("Wrong type of argument given!") if !hex
       r = hex[0...2].to_i(16)
       g = hex[2...4].to_i(16)
       b = hex[4...6].to_i(16)
-  	elsif args.length == 3
+    when 3
       r, g, b = *args
-  	end
-  	return init_original(r, g, b) if r && g && b
-  	return init_original(*args)
+    end
+    init_original(r, g, b) if r && g && b
+    init_original(*args)
   end
 
-  # Returns this color as a hex string like "#RRGGBB".
+  def self.new_from_rgb(param)
+    return Font.default_color if !param
+    base_int = param.to_i(16)
+    case param.length
+    when 8   # 32-bit hex
+      return Color.new(
+        (base_int >> 24) & 0xFF,
+        (base_int >> 16) & 0xFF,
+        (base_int >> 8) & 0xFF,
+        (base_int) & 0xFF
+      )
+    when 6   # 24-bit hex
+      return Color.new(
+        (base_int >> 16) & 0xFF,
+        (base_int >> 8) & 0xFF,
+        (base_int) & 0xFF
+      )
+    when 4   # 15-bit hex
+      return Color.new(
+        ((base_int) & 0x1F) << 3,
+        ((base_int >> 5) & 0x1F) << 3,
+        ((base_int >> 10) & 0x1F) << 3
+      )
+    when 1, 2   # Color number
+      case base_int
+      when 0 then return Color.white
+      when 1 then return Color.blue
+      when 2 then return Color.red
+      when 3 then return Color.green
+      when 4 then return Color.cyan
+      when 5 then return Color.pink
+      when 6 then return Color.yellow
+      when 7 then return Color.gray
+      else        return Font.default_color
+      end
+    end
+    return Font.default_color
+  end
+
+  # @return [String] the 15-bit representation of this color in a string, ignoring its alpha
+  def to_rgb15
+    ret = (self.red.to_i >> 3)
+    ret |= ((self.green.to_i >> 3) << 5)
+    ret |= ((self.blue.to_i >> 3) << 10)
+    return sprintf("%04X", ret)
+  end
+
+  # @return [String] this color in the format "RRGGBB", ignoring its alpha
+  def to_rgb24
+    return sprintf("%02X%02X%02X", self.red.to_i, self.green.to_i, self.blue.to_i)
+  end
+
+  # @return [String] this color in the format "RRGGBBAA" (or "RRGGBB" if this color's alpha is 255)
+  def to_rgb32(always_include_alpha = false)
+    if self.alpha.to_i == 255 && !always_include_alpha
+      return sprintf("%02X%02X%02X", self.red.to_i, self.green.to_i, self.blue.to_i)
+    end
+    return sprintf("%02X%02X%02X%02X", self.red.to_i, self.green.to_i, self.blue.to_i, self.alpha.to_i)
+  end
+
+  # @return [String] this color in the format "#RRGGBB", ignoring its alpha
   def to_hex
-  	r = sprintf("%02X", self.red)
-  	g = sprintf("%02X", self.green)
-  	b = sprintf("%02X", self.blue)
-  	return ("#" + r + g + b).upcase
+    return "#" + to_rgb24
   end
 
-  # Returns this color as a 24-bit color integer.
+  # @return [Integer] this color in RGB format converted to an integer
   def to_i
-  	return self.to_hex.delete("#").to_i(16)
+    return self.to_rgb24.to_i(16)
+  end
+
+  # @return [Color] the contrasting color to this one
+  def get_contrast_color
+    r = self.red
+    g = self.green
+    b = self.blue
+    yuv = [
+      (r * 0.299) + (g * 0.587) + (b * 0.114),
+      (r * -0.1687) + (g * -0.3313) + (b *  0.500) + 0.5,
+      (r * 0.500) + (g * -0.4187) + (b * -0.0813) + 0.5
+    ]
+    if yuv[0] < 127.5
+      yuv[0] += (255 - yuv[0]) / 2
+    else
+      yuv[0] = yuv[0] / 2
+    end
+    return Color.new(
+      yuv[0] + (1.4075 * (yuv[2] - 0.5)),
+      yuv[0] - (0.3455 * (yuv[1] - 0.5)) - (0.7169 * (yuv[2] - 0.5)),
+      yuv[0] + (1.7790 * (yuv[1] - 0.5)),
+      self.alpha
+    )
   end
 
   # Converts the provided hex string/24-bit integer to RGB values.
   def self.hex_to_rgb(hex)
     hex = hex.delete("#") if hex.is_a?(String)
-  	hex = hex.to_s(16) if hex.is_a?(Numeric)
-  	r = hex[0...2].to_i(16)
-  	g = hex[2...4].to_i(16)
-  	b = hex[4...6].to_i(16)
-  	return r, g, b
+    hex = hex.to_s(16) if hex.is_a?(Numeric)
+    r = hex[0...2].to_i(16)
+    g = hex[2...4].to_i(16)
+    b = hex[4...6].to_i(16)
+    return r, g, b
   end
 
   # Parses the input as a Color and returns a Color object made from it.
@@ -223,15 +316,17 @@ class Color
     return nil
   end
 
-  # Returns color object for some commonly used colors
-  def self.red;     return Color.new(255,   0,   0); end
-  def self.green;   return Color.new(  0, 255,   0); end
-  def self.blue;    return Color.new(  0,   0, 255); end
-  def self.black;   return Color.new(  0,   0,   0); end
-  def self.white;   return Color.new(255, 255, 255); end
-  def self.yellow;  return Color.new(255, 255,   0); end
+  # Returns color object for some commonly used colors.
+  def self.red;     return Color.new(255, 128, 128); end
+  def self.green;   return Color.new(128, 255, 128); end
+  def self.blue;    return Color.new(128, 128, 255); end
+  def self.yellow;  return Color.new(255, 255, 128); end
   def self.magenta; return Color.new(255,   0, 255); end
-  def self.teal;    return Color.new(  0, 255, 255); end
+  def self.cyan;    return Color.new(128, 255, 255); end
+  def self.white;   return Color.new(255, 255, 255); end
+  def self.gray;    return Color.new(192, 192, 192); end
+  def self.black;   return Color.new(  0,   0,   0); end
+  def self.pink;    return Color.new(255, 128, 255); end
   def self.orange;  return Color.new(255, 155,   0); end
   def self.purple;  return Color.new(155,   0, 255); end
   def self.brown;   return Color.new(112,  72,  32); end
@@ -255,7 +350,7 @@ class CallbackWrapper
   def execute(given_block = nil, *args)
     execute_block = given_block || @code_block
     @params.each do |key, value|
-      args.instance_variable_set("@#{key.to_s}", value)
+      args.instance_variable_set("@#{key}", value)
     end
     args.instance_eval(&execute_block)
   end
@@ -294,4 +389,18 @@ end
 
 def nil_or_empty?(string)
   return string.nil? || !string.is_a?(String) || string.size == 0
+end
+
+#===============================================================================
+# Linear interpolation between two values, given the duration of the change and
+# either:
+#   - the time passed since the start of the change (delta), or
+#   - the start time of the change (delta) and the current time (now)
+#===============================================================================
+def lerp(start_val, end_val, duration, delta, now = nil)
+  return end_val if duration <= 0
+  delta = now - delta if now
+  return start_val if delta <= 0
+  return end_val if delta >= duration
+  return start_val + ((end_val - start_val) * delta / duration.to_f)
 end

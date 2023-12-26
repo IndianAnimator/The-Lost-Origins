@@ -15,7 +15,7 @@ module SaveData
   # Populated during runtime by SaveData.register_conversion calls.
   @conversions = {
     essentials: {},
-    game: {}
+    game:       {}
   }
 
   #=============================================================================
@@ -70,6 +70,8 @@ module SaveData
     def run_single(object, key)
       @value_procs[key].call(object) if @value_procs[key].is_a?(Proc)
     end
+
+    #---------------------------------------------------------------------------
 
     private
 
@@ -169,7 +171,7 @@ module SaveData
     conversions_to_run = []
     versions = {
       essentials: save_data[:essentials_version] || "18.1",
-      game: save_data[:game_version] || "0.0.0"
+      game:       save_data[:game_version] || "0.0.0"
     }
     [:essentials, :game].each do |trigger_type|
       # Ensure the versions are sorted from lowest to highest
@@ -195,14 +197,13 @@ module SaveData
     conversions_to_run = self.get_conversions(save_data)
     return false if conversions_to_run.none?
     File.open(SaveData::FILE_PATH + ".bak", "wb") { |f| Marshal.dump(save_data, f) }
-    Console.echo_h1 "Running #{conversions_to_run.length} save file conversions"
+    Console.echo_h1(_INTL("Converting save file"))
     conversions_to_run.each do |conversion|
-      Console.echo_li "#{conversion.title}..."
+      Console.echo_li("#{conversion.title}...")
       conversion.run(save_data)
       Console.echo_done(true)
     end
-    echoln "" if conversions_to_run.length > 0
-    Console.echo_h2("All save file conversions applied successfully", text: :green)
+    Console.echoln_li_done(_INTL("Successfully applied {1} save file conversion(s)", conversions_to_run.length))
     save_data[:essentials_version] = Essentials::VERSION
     save_data[:game_version] = Settings::GAME_VERSION
     return true

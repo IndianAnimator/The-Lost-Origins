@@ -26,15 +26,16 @@ class SafariState
 
   def pbGoToStart
     if $scene.is_a?(Scene_Map)
-      pbFadeOutIn {
+      pbFadeOutIn do
         $game_temp.player_transferring   = true
         $game_temp.transition_processing = true
         $game_temp.player_new_map_id    = @start[0]
         $game_temp.player_new_x         = @start[1]
         $game_temp.player_new_y         = @start[2]
         $game_temp.player_new_direction = 2
+        pbDismountBike
         $scene.transfer_player
-      }
+      end
     end
   end
 
@@ -92,7 +93,7 @@ EventHandlers.add(:on_player_step_taken_can_transfer, :safari_game_counter,
     next if Settings::SAFARI_STEPS == 0 || !pbInSafari? || pbSafariState.decision != 0
     pbSafariState.steps -= 1
     next if pbSafariState.steps > 0
-    pbMessage(_INTL("PA: Ding-dong!\1"))
+    pbMessage("\\se[Safari Zone end]" + _INTL("PA: Ding-dong!") + "\1")
     pbMessage(_INTL("PA: Your safari game is over!"))
     pbSafariState.decision = 1
     pbSafariState.pbGoToStart
@@ -104,19 +105,19 @@ EventHandlers.add(:on_player_step_taken_can_transfer, :safari_game_counter,
 #
 #===============================================================================
 EventHandlers.add(:on_calling_wild_battle, :safari_battle,
-  proc { |species, level, handled|
+  proc { |pkmn, handled|
     # handled is an array: [nil]. If [true] or [false], the battle has already
     # been overridden (the boolean is its outcome), so don't do anything that
     # would override it again
     next if !handled[0].nil?
     next if !pbInSafari?
-    handled[0] = pbSafariBattle(species, level)
+    handled[0] = pbSafariBattle(pkmn)
   }
 )
 
-def pbSafariBattle(species, level)
+def pbSafariBattle(pkmn, level = 1)
   # Generate a wild Pokémon based on the species and level
-  pkmn = pbGenerateWildPokemon(species, level)
+  pkmn = pbGenerateWildPokemon(pkmn, level) if !pkmn.is_a?(Pokemon)
   foeParty = [pkmn]
   # Calculate who the trainer is
   playerTrainer = $player
@@ -128,11 +129,9 @@ def pbSafariBattle(species, level)
   BattleCreationHelperMethods.prepare_battle(battle)
   # Perform the battle itself
   decision = 0
-  pbBattleAnimation(pbGetWildBattleBGM(foeParty), 0, foeParty) {
-    pbSceneStandby {
-      decision = battle.pbStartBattle
-    }
-  }
+  pbBattleAnimation(pbGetWildBattleBGM(foeParty), 0, foeParty) do
+    pbSceneStandby { decision = battle.pbStartBattle }
+  end
   Input.update
   # Update Safari game data based on result of battle
   pbSafariState.ballcount = battle.ballCount
@@ -155,7 +154,7 @@ def pbSafariBattle(species, level)
   end
   pbSet(1, decision)
   # Used by the Poké Radar to update/break the chain
-  EventHandlers.trigger(:on_wild_battle_end, species, level, decision)
+  EventHandlers.trigger(:on_wild_battle_end, pkmn.species_data.id, pkmn.level, decision)
   # Return the outcome of the battle
   return decision
 end

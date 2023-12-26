@@ -1,6 +1,6 @@
 #==============================================================================#
 #                              Pokémon Essentials                              #
-#                                 Version 20.1                                 #
+#                                 Version 21.1                                 #
 #                https://github.com/Maruno17/pokemon-essentials                #
 #==============================================================================#
 
@@ -40,11 +40,17 @@ module Settings
   SUPER_SHINY          = (MECHANICS_GENERATION >= 8)
   # The odds of a wild Pokémon/bred egg having Pokérus (out of 65536).
   POKERUS_CHANCE       = 3
+  # Whether IVs and EVs are treated as 0 when calculating a Pokémon's stats.
+  # IVs and EVs still exist, and are used by Hidden Power and some cosmetic
+  # things as normal.
+  DISABLE_IVS_AND_EVS  = false
 
   #=============================================================================
 
   # Whether outdoor maps should be shaded according to the time of day.
   TIME_SHADING                               = true
+  # Whether the reflections of the player/events will ripple horizontally.
+  ANIMATE_REFLECTIONS                        = true
   # Whether poisoned Pokémon will lose HP while walking around in the field.
   POISON_IN_FIELD                            = (MECHANICS_GENERATION <= 4)
   # Whether poisoned Pokémon will faint while walking around in the field
@@ -84,7 +90,7 @@ module Settings
   MORE_BONUS_PREMIER_BALLS                   = (MECHANICS_GENERATION >= 8)
   # The number of steps allowed before a Safari Zone game is over (0=infinite).
   SAFARI_STEPS                               = 600
-  # The number of seconds a Bug Catching Contest lasts for (0=infinite).
+  # The number of seconds a Bug-Catching Contest lasts for (0=infinite).
   BUG_CONTEST_TIME                           = 20 * 60   # 20 minutes
 
   #=============================================================================
@@ -132,6 +138,15 @@ module Settings
   # Whether overworld weather can set the default terrain effect in battle.
   # Storm weather sets Electric Terrain, and fog weather sets Misty Terrain.
   OVERWORLD_WEATHER_SETS_BATTLE_TERRAIN    = (MECHANICS_GENERATION >= 8)
+  # The default setting for Phone.rematches_enabled, which determines whether
+  # trainers registered in the Phone can become ready for a rematch. If false,
+  # Phone.rematches_enabled = true will enable rematches at any point you want.
+  PHONE_REMATCHES_POSSIBLE_FROM_BEGINNING  = false
+  # Whether the messages in a phone call with a trainer are colored blue or red
+  # depending on that trainer's gender. Note that this doesn't apply to contacts
+  # that are not trainers; they will need to be colored manually in their Common
+  # Events.
+  COLOR_PHONE_CALL_MESSAGES_BY_CONTACT_GENDER = true
 
   #=============================================================================
 
@@ -193,7 +208,7 @@ module Settings
   NUM_STORAGE_BOXES   = 40
   # Whether putting a Pokémon into Pokémon storage will heal it. IF false, they
   # are healed by the Recover All: Entire Party event command (at Poké Centers).
-  HEAL_STORED_POKEMON = (MECHANICS_GENERATION >= 8)
+  HEAL_STORED_POKEMON = (MECHANICS_GENERATION <= 7)
 
   #=============================================================================
 
@@ -237,11 +252,11 @@ module Settings
   #   * Game Switch; the graphic is shown if this is ON (non-wall maps only).
   #   * X coordinate of the graphic on the map, in squares.
   #   * Y coordinate of the graphic on the map, in squares.
-  #   * Name of the graphic, found in the Graphics/Pictures folder.
+  #   * Name of the graphic, found in the Graphics/UI/Town Map folder.
   #   * The graphic will always (true) or never (false) be shown on a wall map.
   REGION_MAP_EXTRAS = [
-    [0, 51, 16, 15, "mapHiddenBerth", false],
-    [0, 52, 20, 14, "mapHiddenFaraday", false]
+    [0, 51, 16, 15, "hidden_Berth", false],
+    [0, 52, 20, 14, "hidden_Faraday", false]
   ]
 
   # Whether the player can use Fly while looking at the Town Map. This is only
@@ -297,23 +312,6 @@ module Settings
 
   #=============================================================================
 
-  # A set of arrays, each containing the details of a wild encounter that can
-  # only occur via using the Poké Radar. The information within each array is as
-  # follows:
-  #   * Map ID on which this encounter can occur.
-  #   * Probability that this encounter will occur (as a percentage).
-  #   * Species.
-  #   * Minimum possible level.
-  #   * Maximum possible level (optional).
-  POKE_RADAR_ENCOUNTERS = [
-    [5,  20, :STARLY,     12, 15],
-    [21, 10, :STANTLER,   14],
-    [28, 20, :BUTTERFREE, 15, 18],
-    [28, 20, :BEEDRILL,   15, 18]
-  ]
-
-  #=============================================================================
-
   # The Game Switch that is set to ON when the player blacks out.
   STARTING_OVER_SWITCH      = 1
   # The Game Switch that is set to ON when the player has seen Pokérus in the
@@ -363,12 +361,14 @@ module Settings
 
   #=============================================================================
 
-  # An array of available languages in the game, and their corresponding message
-  # file in the Data folder. Edit only if you have 2 or more languages to choose
-  # from.
+  # An array of available languages in the game. Each one is an array containing
+  # the display name of the language in-game, and that language's filename
+  # fragment. A language will use the language data files from the Data folder
+  # called messages_FRAGMENT_core.dat and messages_FRAGMENT_game.dat (if they
+  # exist).
   LANGUAGES = [
-  #  ["English", "english.dat"],
-  #  ["Deutsch", "deutsch.dat"]
+#    ["English", "english"],
+#    ["Deutsch", "deutsch"]
   ]
 
   #=============================================================================
@@ -429,10 +429,34 @@ module Settings
     "choice 27",
     "choice 28"
   ]
+
+  #=============================================================================
+
+  # Your game's credits, in an array. You can allow certain lines to be
+  # translated by wrapping them in _INTL() as shown. Blank lines are just "".
+  # To split a line into two columns, put "<s>" in it. Plugin credits and
+  # Essentials engine credits are added to the end of these credits
+  # automatically.
+  def self.game_credits
+    return [
+      _INTL("My Game by:"),
+      "Maruno",
+      "",
+      _INTL("Also involved were:"),
+      "A. Lee Uss<s>Anne O'Nymus",
+      "Ecksam Pell<s>Jane Doe",
+      "Joe Dan<s>Nick Nayme",
+      "Sue Donnim<s>",
+      "",
+      _INTL("Special thanks to:"),
+      "Pizza"
+    ]
+  end
 end
 
 # DO NOT EDIT THESE!
 module Essentials
-  VERSION = "20.1"
+  VERSION = "21.1"
   ERROR_TEXT = ""
+  MKXPZ_VERSION = "2.4.2/c9378cf"
 end

@@ -19,7 +19,6 @@ module Game
   # Loads bootup data from save file (if it exists) or creates bootup data (if
   # it doesn't).
   def self.set_up_system
-    SaveData.move_old_windows_save if System.platform[/Windows/]
     save_data = (SaveData.exists?) ? SaveData.read_from_file(SaveData::FILE_PATH) : {}
     if save_data.empty?
       SaveData.initialize_bootup_values
@@ -29,9 +28,9 @@ module Game
     # Set resize factor
     pbSetResizeFactor([$PokemonSystem.screensize, 4].min)
     # Set language (and choose language if there is no save file)
-    if Settings::LANGUAGES.length >= 2
-      $PokemonSystem.language = pbChooseLanguage if save_data.empty?
-      pbLoadMessages("Data/" + Settings::LANGUAGES[$PokemonSystem.language][1])
+    if !Settings::LANGUAGES.empty?
+      $PokemonSystem.language = pbChooseLanguage if save_data.empty? && Settings::LANGUAGES.length >= 2
+      MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
     end
   end
 
@@ -43,8 +42,11 @@ module Game
     end
     $game_temp.common_event_id = 0 if $game_temp
     $game_temp.begun_new_game = true
+    pbMapInterpreter&.clear
+    pbMapInterpreter&.setup(nil, 0, 0)
     $scene = Scene_Map.new
     SaveData.load_new_game_values
+    $game_temp.last_uptime_refreshed_play_time = System.uptime
     $stats.play_sessions += 1
     $map_factory = PokemonMapFactory.new($data_system.start_map_id)
     $game_player.moveto($data_system.start_x, $data_system.start_y)
@@ -61,6 +63,7 @@ module Game
   def self.load(save_data)
     validate save_data => Hash
     SaveData.load_all_values(save_data)
+    $game_temp.last_uptime_refreshed_play_time = System.uptime
     $stats.play_sessions += 1
     self.load_map
     pbAutoplayOnSave
@@ -74,9 +77,7 @@ module Game
     $game_map = $map_factory.map
     magic_number_matches = ($game_system.magic_number == $data_system.magic_number)
     if !magic_number_matches || $PokemonGlobal.safesave
-      if pbMapInterpreterRunning?
-        pbMapInterpreter.setup(nil, 0)
-      end
+      pbMapInterpreter.setup(nil, 0) if pbMapInterpreterRunning?
       begin
         $map_factory.setup($game_map.map_id)
       rescue Errno::ENOENT

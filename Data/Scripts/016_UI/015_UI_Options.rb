@@ -18,7 +18,7 @@ class PokemonSystem
   attr_accessor :speedup
 
   def initialize
-    @textspeed     = 1     # Text speed (0=slow, 1=normal, 2=fast)
+    @textspeed     = 1     # Text speed (0=slow, 1=medium, 2=fast, 3=instant)
     @battlescene   = 0     # Battle effects (animations) (0=on, 1=off)
     @battlestyle   = 0     # Battle style (0=switch, 1=set)
     @sendtoboxes   = 0     # Send to Boxes (0=manual, 1=automatic)
@@ -28,10 +28,10 @@ class PokemonSystem
     @screensize    = (Settings::SCREEN_SCALE * 2).floor - 1   # 0=half size, 1=full size, 2=full-and-a-half size, 3=double size
     @language      = 0     # Language (see also Settings::LANGUAGES in script PokemonSystem)
     @runstyle      = 0     # Default movement speed (0=walk, 1=run)
-    @bgmvolume     = 100   # Volume of background music and ME
+    @bgmvolume     = 80    # Volume of background music and ME
     @sevolume      = 100   # Volume of sound effects
     @textinput     = 0     # Text input mode (0=cursor, 1=keyboard)
-    @speedup       = 1     # Speedup multiplier
+    @speedup       = 1     # speedup
   end
 end
 
@@ -232,7 +232,7 @@ class Window_PokemonOption < Window_DrawableCommand
         rect.y - 8 + (rect.height / 2),
         8, 16, SEL_VALUE_BASE_COLOR
       )
-      value = sprintf("%d", @options[index].lowest_value + self[index])
+      value = (@options[index].lowest_value + self[index]).to_s
       xpos += (rect.width - rect.x - optionwidth) - self.contents.text_size(value).width
       pbDrawShadowText(self.contents, xpos, rect.y, optionwidth, rect.height, value,
                        SEL_VALUE_BASE_COLOR, SEL_VALUE_SHADOW_COLOR)
@@ -300,7 +300,7 @@ class PokemonOption_Scene
     @sprites["option"].viewport = @viewport
     @sprites["option"].visible  = true
     # Get the values of each option
-    @options.length.times { |i|  @sprites["option"].setValueNoRefresh(i, @options[i].get || 0) }
+    @options.length.times { |i| @sprites["option"].setValueNoRefresh(i, @options[i].get || 0) }
     @sprites["option"].refresh
     pbChangeSelection
     pbDeactivateWindows(@sprites)
@@ -327,7 +327,7 @@ class PokemonOption_Scene
   end
 
   def pbOptions
-    pbActivateWindow(@sprites, "option") {
+    pbActivateWindow(@sprites, "option") do
       index = -1
       loop do
         Graphics.update
@@ -344,7 +344,7 @@ class PokemonOption_Scene
           break if @sprites["option"].index == @options.length
         end
       end
-    }
+    end
   end
 
   def pbEndScene
@@ -424,7 +424,7 @@ MenuHandlers.add(:options_menu, :text_speed, {
   "name"        => _INTL("Text Speed"),
   "order"       => 30,
   "type"        => EnumOption,
-  "parameters"  => [_INTL("Slow"), _INTL("Normal"), _INTL("Fast")],
+  "parameters"  => [_INTL("Slow"), _INTL("Mid"), _INTL("Fast"), _INTL("Inst")],
   "description" => _INTL("Choose the speed at which text appears."),
   "on_select"   => proc { |scene| scene.sprites["textbox"].letterbyletter = true },
   "get_proc"    => proc { next $PokemonSystem.textspeed },
@@ -544,7 +544,6 @@ MenuHandlers.add(:options_menu, :screen_size, {
     pbSetResizeFactor($PokemonSystem.screensize)
   }
 })
-
 MenuHandlers.add(:options_menu, :speed_up, {
   "name"        => _INTL("Speed Up"),
   "order"       => 130,

@@ -51,10 +51,13 @@ class TriadCard
   end
 
   def bonus(opponent)
-    case Effectiveness.calculate_one(@type, opponent.type)
-    when Effectiveness::INEFFECTIVE            then return -2
-    when Effectiveness::NOT_VERY_EFFECTIVE_ONE then return -1
-    when Effectiveness::SUPER_EFFECTIVE_ONE    then return 1
+    effectiveness = Effectiveness.calculate(@type, opponent.type)
+    if Effectiveness.ineffective?(effectiveness)
+      return -2
+    elsif Effectiveness.not_very_effective?(effectiveness)
+      return -1
+    elsif Effectiveness.super_effective?(effectiveness)
+      return 1
     end
     return 0
   end
@@ -82,14 +85,14 @@ class TriadCard
   end
 
   def self.createBack(type = nil, noback = false)
-    bitmap = BitmapWrapper.new(80, 96)
+    bitmap = Bitmap.new(80, 96)
     if !noback
-      cardbitmap = AnimatedBitmap.new("Graphics/Pictures/triad_card_opponent")
+      cardbitmap = AnimatedBitmap.new("Graphics/UI/Triple Triad/card_opponent")
       bitmap.blt(0, 0, cardbitmap.bitmap, Rect.new(0, 0, cardbitmap.width, cardbitmap.height))
       cardbitmap.dispose
     end
     if type
-      typebitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/types"))
+      typebitmap = AnimatedBitmap.new(_INTL("Graphics/UI/types"))
       type_number = GameData::Type.get(type).icon_position
       typerect = Rect.new(0, type_number * 28, 64, 28)
       bitmap.blt(8, 50, typebitmap.bitmap, typerect, 192)
@@ -100,15 +103,15 @@ class TriadCard
 
   def createBitmap(owner)
     return TriadCard.createBack if owner == 0
-    bitmap = BitmapWrapper.new(80, 96)
+    bitmap = Bitmap.new(80, 96)
     if owner == 2   # Opponent
-      cardbitmap = AnimatedBitmap.new("Graphics/Pictures/triad_card_opponent")
+      cardbitmap = AnimatedBitmap.new("Graphics/UI/Triple Triad/card_opponent")
     else            # Player
-      cardbitmap = AnimatedBitmap.new("Graphics/Pictures/triad_card_player")
+      cardbitmap = AnimatedBitmap.new("Graphics/UI/Triple Triad/card_player")
     end
-    typebitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/types"))
+    typebitmap = AnimatedBitmap.new(_INTL("Graphics/UI/types"))
     iconbitmap = AnimatedBitmap.new(GameData::Species.icon_filename(@species, @form))
-    numbersbitmap = AnimatedBitmap.new("Graphics/Pictures/triad_numbers")
+    numbersbitmap = AnimatedBitmap.new("Graphics/UI/Triple Triad/numbers")
     # Draw card background
     bitmap.blt(0, 0, cardbitmap.bitmap, Rect.new(0, 0, cardbitmap.width, cardbitmap.height))
     # Draw type icon
@@ -129,8 +132,6 @@ class TriadCard
     return bitmap
   end
 end
-
-
 
 #===============================================================================
 # Duel screen visuals
@@ -157,9 +158,9 @@ class TriadSquare
   end
 end
 
-
-
+#===============================================================================
 # Scene class for handling appearance of the screen
+#===============================================================================
 class TriadScene
   def pbStartScene(battle)
     @sprites = {}
@@ -168,7 +169,7 @@ class TriadScene
     # Allocate viewport
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
-    addBackgroundPlane(@sprites, "background", "triad_bg", @viewport)
+    addBackgroundPlane(@sprites, "background", "Triple Triad/bg", @viewport)
     @sprites["helpwindow"] = Window_AdvancedTextPokemon.newWithSize(
       "", 0, Graphics.height - 64, Graphics.width, 64, @viewport
     )
@@ -195,15 +196,15 @@ class TriadScene
       @cardIndexes.push(i)
     end
     @sprites["overlay"] = Sprite.new(@viewport)
-    @sprites["overlay"].bitmap = BitmapWrapper.new(Graphics.width, Graphics.height)
+    @sprites["overlay"].bitmap = Bitmap.new(Graphics.width, Graphics.height)
     pbSetSystemFont(@sprites["overlay"].bitmap)
     pbDrawTextPositions(
       @sprites["overlay"].bitmap,
-      [[@battle.opponentName, 52, 10, 2, Color.new(248, 248, 248), Color.new(96, 96, 96)],
-       [@battle.playerName, Graphics.width - 52, 10, 2, Color.new(248, 248, 248), Color.new(96, 96, 96)]]
+      [[@battle.opponentName, 52, 10, :center, Color.new(248, 248, 248), Color.new(96, 96, 96)],
+       [@battle.playerName, Graphics.width - 52, 10, :center, Color.new(248, 248, 248), Color.new(96, 96, 96)]]
     )
     @sprites["score"] = Sprite.new(@viewport)
-    @sprites["score"].bitmap = BitmapWrapper.new(Graphics.width, Graphics.height)
+    @sprites["score"].bitmap = Bitmap.new(Graphics.width, Graphics.height)
     pbSetSystemFont(@sprites["score"].bitmap)
     pbBGMPlay("Triple Triad")
     # Fade in all sprites
@@ -220,13 +221,12 @@ class TriadScene
 
   def pbDisplay(text)
     @sprites["helpwindow"].text = text
-    timer = 0.0
+    timer_start = System.uptime
     loop do
       Graphics.update
       Input.update
       pbUpdate
-      timer += Graphics.delta_s
-      break if timer >= 1.5
+      break if System.uptime - timer_start >= 1.5
     end
   end
 
@@ -292,8 +292,8 @@ class TriadScene
           item = chosenCards.pop
           @battle.pbAdd(cardStorage, item)
           commands = []
-          cardStorage.each do |item|
-            commands.push(_INTL("{1} x{2}", GameData::Species.get(item[0]).name, item[1]))
+          cardStorage.each do |itm|
+            commands.push(_INTL("{1} x{2}", GameData::Species.get(itm[0]).name, itm[1]))
           end
           command.commands = commands
           index = -1
@@ -314,8 +314,8 @@ class TriadScene
           chosenCards.push(item[0])
           @battle.pbSubtract(cardStorage, item[0])
           commands = []
-          cardStorage.each do |item|
-            commands.push(_INTL("{1} x{2}", GameData::Species.get(item[0]).name, item[1]))
+          cardStorage.each do |itm|
+            commands.push(_INTL("{1} x{2}", GameData::Species.get(itm[0]).name, itm[1]))
           end
           command.commands = commands
           command.index = commands.length - 1 if command.index >= commands.length
@@ -577,7 +577,7 @@ class TriadScene
     end
     pbDrawTextPositions(
       bitmap,
-      [[_INTL("{1}-{2}", oppscore, playerscore), Graphics.width / 2, 10, 2, Color.new(248, 248, 248), Color.new(96, 96, 96)]]
+      [[_INTL("{1}-{2}", oppscore, playerscore), Graphics.width / 2, 10, :center, Color.new(248, 248, 248), Color.new(96, 96, 96)]]
     )
   end
 
@@ -585,8 +585,6 @@ class TriadScene
     pbUpdateSpriteHash(@sprites)
   end
 end
-
-
 
 #===============================================================================
 # Duel screen logic
@@ -616,7 +614,7 @@ class TriadScreen
     if numcards.odd?
       numcards = (numcards / 2) + 1
     else
-      numcards = numcards / 2
+      numcards /= 2
     end
     return numcards
   end
@@ -763,10 +761,10 @@ class TriadScreen
     # Set the opponent's cards.
     if oppdeck.is_a?(Array) && oppdeck.length == self.maxCards   # Preset
       opponentCards = []
-      oppdeck.each do |i|
-        species_data = GameData::Species.try_get(i)
+      oppdeck.each do |species|
+        species_data = GameData::Species.try_get(species)
         if !species_data
-          @scene.pbDisplayPaused(_INTL("Opponent has an illegal card, \"{1}\".", i))
+          @scene.pbDisplayPaused(_INTL("Opponent has an illegal card, \"{1}\".", species))
           @scene.pbEndScene
           return 0
         end
@@ -820,16 +818,16 @@ class TriadScreen
         # Opponent's turn
         @scene.pbDisplay(_INTL("{1} is making a move...", @opponentName))
         scores = []
-        opponentCards.length.times do |cardIndex|
+        opponentCards.length.times do |cardIdx|
           square = TriadSquare.new
-          square.card = TriadCard.new(opponentCards[cardIndex])
+          square.card = TriadCard.new(opponentCards[cardIdx])
           square.owner = 2
-          (@width * @height).times do |i|
-            x = i % @width
-            y = i / @width
-            square.type = @board[i].type
+          (@width * @height).times do |j|
+            x = j % @width
+            y = j / @width
+            square.type = @board[j].type
             flips = flipBoard(x, y, square)
-            scores.push([cardIndex, x, y, flips.length]) if flips
+            scores.push([cardIdx, x, y, flips.length]) if flips
           end
         end
         # Sort by number of flips
@@ -876,16 +874,12 @@ class TriadScreen
       result = 3
       if @trade == 1
         # Keep only cards of your color
-        originalCards.each do |card|
-          $PokemonGlobal.triads.remove(card)
-        end
-        cards.each do |i|
-          $PokemonGlobal.triads.add(i)
-        end
+        originalCards.each { |crd| $PokemonGlobal.triads.remove(crd) }
+        cards.each { |crd| $PokemonGlobal.triads.add(crd) }
         (@width * @height).times do |i|
           if board[i].owner == 1
-            card = GameData::Species.get_species_form(board[i].card.species, board[i].card.form).id
-            $PokemonGlobal.triads.add(card)
+            crd = GameData::Species.get_species_form(board[i].card.species, board[i].card.form).id
+            $PokemonGlobal.triads.add(crd)
           end
         end
         @scene.pbDisplayPaused(_INTL("Kept all cards of your color."))
@@ -907,12 +901,8 @@ class TriadScreen
             @scene.pbDisplayPaused(_INTL("Got opponent's {1} card.", cardname))
           end
         when 1   # Keep only cards of your color
-          originalCards.each do |card|
-            $PokemonGlobal.triads.remove(card)
-          end
-          cards.each do |i|
-            $PokemonGlobal.triads.add(i)
-          end
+          originalCards.each { |crd| $PokemonGlobal.triads.remove(crd) }
+          cards.each { |crd| $PokemonGlobal.triads.add(crd) }
           (@width * @height).times do |i|
             if board[i].owner == 1
               card = GameData::Species.get_species_form(board[i].card.species, board[i].card.form).id
@@ -921,9 +911,7 @@ class TriadScreen
           end
           @scene.pbDisplayPaused(_INTL("Kept all cards of your color."))
         when 2   # Gain all opponent's cards
-          originalOpponentCards.each do |card|
-            $PokemonGlobal.triads.add(card)
-          end
+          originalOpponentCards.each { |crd| $PokemonGlobal.triads.add(crd) }
           @scene.pbDisplayPaused(_INTL("Got all opponent's cards."))
         end
       end
@@ -937,12 +925,8 @@ class TriadScreen
         cardname = GameData::Species.get(card).name
         @scene.pbDisplayPaused(_INTL("Opponent won your {1} card.", cardname))
       when 1   # Keep only cards of your color
-        originalCards.each do |card|
-          $PokemonGlobal.triads.remove(card)
-        end
-        cards.each do |i|
-          $PokemonGlobal.triads.add(i)
-        end
+        originalCards.each { |crd| $PokemonGlobal.triads.remove(card) }
+        cards.each { |crd| $PokemonGlobal.triads.add(crd) }
         (@width * @height).times do |i|
           if board[i].owner == 1
             card = GameData::Species.get_species_form(board[i].card.species, board[i].card.form).id
@@ -951,9 +935,7 @@ class TriadScreen
         end
         @scene.pbDisplayPaused(_INTL("Kept all cards of your color.", cardname))
       when 2   # Lose all your cards
-        originalCards.each do |card|
-          $PokemonGlobal.triads.remove(card)
-        end
+        originalCards.each { |crd| $PokemonGlobal.triads.remove(crd) }
         @scene.pbDisplayPaused(_INTL("Opponent won all your cards."))
       end
     end
@@ -961,8 +943,6 @@ class TriadScreen
     return result
   end
 end
-
-
 
 #===============================================================================
 # Start duel
@@ -974,15 +954,13 @@ end
 
 def pbTriadDuel(name, minLevel, maxLevel, rules = nil, oppdeck = nil, prize = nil)
   ret = 0
-  pbFadeOutInWithMusic {
+  pbFadeOutInWithMusic do
     scene = TriadScene.new
     screen = TriadScreen.new(scene)
     ret = screen.pbStartScreen(name, minLevel, maxLevel, rules, oppdeck, prize)
-  }
+  end
   return ret
 end
-
-
 
 #===============================================================================
 # Card storage
@@ -998,8 +976,9 @@ class PokemonGlobalMetadata
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class TriadStorage
   attr_reader :items
 
@@ -1063,8 +1042,6 @@ class TriadStorage
   end
 end
 
-
-
 #===============================================================================
 # Card shop screen
 #===============================================================================
@@ -1089,7 +1066,7 @@ def pbBuyTriads
   cmdwindow = Window_CommandPokemonEx.newWithSize(realcommands, 0, 0, Graphics.width / 2, Graphics.height)
   cmdwindow.z = 99999
   goldwindow = Window_UnformattedTextPokemon.newWithSize(
-    _INTL("Money:\r\n{1}", pbGetGoldString), 0, 0, 32, 32
+    _INTL("Money:\n{1}", pbGetGoldString), 0, 0, 32, 32
   )
   goldwindow.resizeToFit(goldwindow.text, Graphics.width)
   goldwindow.x = Graphics.width - goldwindow.width
@@ -1147,8 +1124,8 @@ def pbBuyTriads
       end
       $PokemonGlobal.triads.add(item, quantity)
       $player.money -= price
-      goldwindow.text = _INTL("Money:\r\n{1}", pbGetGoldString)
-      pbMessage(_INTL("Here you are! Thank you!\\se[Mart buy item]"))
+      goldwindow.text = _INTL("Money:\n{1}", pbGetGoldString)
+      pbMessage(_INTL("Here you are! Thank you!") + "\\se[Mart buy item]")
     end
   end
   cmdwindow.dispose
@@ -1179,7 +1156,7 @@ def pbSellTriads
   cmdwindow = Window_CommandPokemonEx.newWithSize(commands, 0, 0, Graphics.width / 2, Graphics.height)
   cmdwindow.z = 99999
   goldwindow = Window_UnformattedTextPokemon.newWithSize(
-    _INTL("Money:\r\n{1}", pbGetGoldString), 0, 0, 32, 32
+    _INTL("Money:\n{1}", pbGetGoldString), 0, 0, 32, 32
   )
   goldwindow.resizeToFit(goldwindow.text, Graphics.width)
   goldwindow.x = Graphics.width - goldwindow.width
@@ -1204,9 +1181,7 @@ def pbSellTriads
       item = $PokemonGlobal.triads.get_item(cmdwindow.index)
       if olditem != item
         preview.bitmap&.dispose
-        if item
-          preview.bitmap = TriadCard.new(item).createBitmap(1)
-        end
+        preview.bitmap = TriadCard.new(item).createBitmap(1) if item
         olditem = item
       end
       if Input.trigger?(Input::BACK)
@@ -1242,9 +1217,9 @@ def pbSellTriads
           price *= quantity
           if pbConfirmMessage(_INTL("I can pay ${1}. Would that be OK?", price.to_s_formatted))
             $player.money += price
-            goldwindow.text = _INTL("Money:\r\n{1}", pbGetGoldString)
+            goldwindow.text = _INTL("Money:\n{1}", pbGetGoldString)
             $PokemonGlobal.triads.remove(item, quantity)
-            pbMessage(_INTL("Turned over the {1} card and received ${2}.\\se[Mart buy item]", itemname, price.to_s_formatted))
+            pbMessage(_INTL("Turned over the {1} card and received ${2}.", itemname, price.to_s_formatted) + "\\se[Mart buy item]")
             commands = []
             $PokemonGlobal.triads.length.times do |i|
               item = $PokemonGlobal.triads[i]

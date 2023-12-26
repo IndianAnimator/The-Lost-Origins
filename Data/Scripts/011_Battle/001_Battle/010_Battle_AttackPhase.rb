@@ -57,9 +57,9 @@ class Battle
       pbPursuit(b.index)
       return if @decision > 0
       # Switch Pokémon
-      allBattlers.each do |b|
-        b.droppedBelowHalfHP = false
-        b.statsDropped = false
+      allBattlers.each do |b2|
+        b2.droppedBelowHalfHP = false
+        b2.statsDropped = false
       end
       pbRecallAndReplace(b.index, idxNewPkmn)
       pbOnBattlerEnteringBattle(b.index, true)
@@ -186,9 +186,9 @@ class Battle
       end
       b.effects[PBEffects::Rage] = false if !pbChoseMoveFunctionCode?(i, "StartRaiseUserAtk1WhenDamaged")
     end
-    PBDebug.log("")
     # Calculate move order for this round
     pbCalculatePriority(true)
+    PBDebug.log("")
     # Perform actions
     pbAttackPhasePriorityChangeMessages
     pbAttackPhaseCall

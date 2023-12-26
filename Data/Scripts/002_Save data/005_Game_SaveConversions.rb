@@ -147,7 +147,8 @@ SaveData.register_conversion(:v20_refactor_follower_data) do
   display_title "Updating follower data format"
   to_value :global_metadata do |global|
     # NOTE: dependentEvents is still defined in class PokemonGlobalMetadata just
-    #       for the sake of this conversion. It will be removed in future.
+    #       for the sake of this conversion. It is deprecated and will be
+    #       removed in v22.
     if global.dependentEvents && global.dependentEvents.length > 0
       global.followers = []
       global.dependentEvents.each do |follower|
@@ -288,7 +289,7 @@ SaveData.register_conversion(:v20_add_stats) do
   to_all do |save_data|
     unless save_data.has_key?(:stats)
       save_data[:stats] = GameStats.new
-      save_data[:stats].play_time = save_data[:frame_count].to_f / Graphics.frame_rate
+      save_data[:stats].play_time = (save_data[:frame_count] || 0).to_f / Graphics.frame_rate
       save_data[:stats].play_sessions = 1
       save_data[:stats].time_last_saved = save_data[:stats].play_time
     end
@@ -345,6 +346,75 @@ SaveData.register_conversion(:v20_convert_pokemon_markings) do
       when Pokemon
         update_markings.call(value)
       end
+    end
+  end
+end
+
+#===============================================================================
+
+SaveData.register_conversion(:v21_replace_phone_data) do
+  essentials_version 21
+  display_title "Updating Phone data format"
+  to_value :global_metadata do |global|
+    if !global.phone
+      global.instance_eval do
+        @phone = Phone.new
+        @phoneTime = nil   # Don't bother using this
+        if @phoneNumbers
+          @phoneNumbers.each do |contact|
+            if contact.length > 4
+              # Trainer
+              Phone.add_silent(contact[6], contact[7], contact[1], contact[2], contact[5], 0)
+              new_contact = Phone.get(contact[1], contact[2], 0)
+              new_contact.visible = contact[0]
+              new_contact.rematch_flag = [contact[4] - 1, 0].max
+            else
+              # Non-trainer
+              Phone.add_silent(contact[3], contact[2], contact[1])
+            end
+          end
+          @phoneNumbers = nil
+        end
+      end
+    end
+  end
+end
+
+#===============================================================================
+
+SaveData.register_conversion(:v21_replace_flute_booleans) do
+  essentials_version 21
+  display_title "Updating Black/White Flute variables"
+  to_value :map_metadata do |metadata|
+    metadata.instance_eval do
+      if !@blackFluteUsed.nil?
+        if Settings::FLUTES_CHANGE_WILD_ENCOUNTER_LEVELS
+          @higher_level_wild_pokemon = @blackFluteUsed
+        else
+          @lower_encounter_rate = @blackFluteUsed
+        end
+        @blackFluteUsed = nil
+      end
+      if !@whiteFluteUsed.nil?
+        if Settings::FLUTES_CHANGE_WILD_ENCOUNTER_LEVELS
+          @lower_level_wild_pokemon = @whiteFluteUsed
+        else
+          @higher_encounter_rate = @whiteFluteUsed
+        end
+        @whiteFluteUsed = nil
+      end
+    end
+  end
+end
+
+#===============================================================================
+
+SaveData.register_conversion(:v21_add_bump_stat) do
+  essentials_version 21
+  display_title "Adding a bump stat"
+  to_value :stats do |stats|
+    stats.instance_eval do
+      @bump_count = 0 if !@bump_count
     end
   end
 end

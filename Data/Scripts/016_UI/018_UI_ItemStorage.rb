@@ -32,17 +32,17 @@ class Window_PokemonItemStorage < Window_DrawableCommand
     rect = drawCursor(index, rect)
     textpos = []
     if index == @bag.length
-      textpos.push([_INTL("CANCEL"), rect.x, rect.y, false, self.baseColor, self.shadowColor])
+      textpos.push([_INTL("CANCEL"), rect.x, rect.y, :left, self.baseColor, self.shadowColor])
     else
       item     = @bag[index][0]
       itemname = @adapter.getDisplayName(item)
       baseColor = (index == @sortIndex) ? Color.new(248, 24, 24) : self.baseColor
-      textpos.push([itemname, rect.x, rect.y, false, self.baseColor, self.shadowColor])
-      if !GameData::Item.get(item).is_important?   # Not a Key item/HM/TM
+      textpos.push([itemname, rect.x, rect.y, :left, self.baseColor, self.shadowColor])
+      if GameData::Item.get(item).show_quantity?
         qty     = _ISPRINTF("x{1: 2d}", @bag[index][1])
         sizeQty = self.contents.text_size(qty).width
         xQty = rect.x + rect.width - sizeQty - 2
-        textpos.push([qty, xQty, rect.y, false, baseColor, self.shadowColor])
+        textpos.push([qty, xQty, rect.y, :left, baseColor, self.shadowColor])
       end
     end
     pbDrawTextPositions(self.contents, textpos)
@@ -75,7 +75,7 @@ class ItemStorage_Scene
     @bag = bag
     @sprites = {}
     @sprites["background"] = IconSprite.new(0, 0, @viewport)
-    @sprites["background"].setBitmap("Graphics/Pictures/pcItembg")
+    @sprites["background"].setBitmap("Graphics/UI/itemstorage_bg")
     @sprites["icon"] = ItemIconSprite.new(50, 334, nil, @viewport)
     # Item list
     @sprites["itemwindow"] = Window_PokemonItemStorage.new(@bag, 98, 14, 334, 32 + (ITEMSVISIBLE * 32))
@@ -150,7 +150,7 @@ class ItemStorage_Scene
     @sprites["helpwindow"].visible = false
     itemwindow = @sprites["itemwindow"]
     itemwindow.refresh
-    pbActivateWindow(@sprites, "itemwindow") {
+    pbActivateWindow(@sprites, "itemwindow") do
       loop do
         Graphics.update
         Input.update
@@ -168,7 +168,7 @@ class ItemStorage_Scene
           end
         end
       end
-    }
+    end
   end
 end
 

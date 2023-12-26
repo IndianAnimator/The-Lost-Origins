@@ -4,9 +4,9 @@ class Battle::Battler
   #=============================================================================
   def pbEffectsOnMakingHit(move, user, target)
     if target.damageState.calcDamage > 0 && !target.damageState.substitute
+      # Target's ability
       # add OnBeingHit AttributeEffects
       Battle::AttributeEffects.triggerOnBeingHit(target.attribute, user, target, move, @battle)
-      # Target's ability
       if target.abilityActive?(true)
         oldHP = user.hp
         Battle::AbilityEffects.triggerOnBeingHit(target.ability, user, target, move, @battle)
@@ -28,7 +28,7 @@ class Battle::Battler
         when 1   # Gulping Form
           user.pbLowerStatStageByAbility(:DEFENSE, 1, target, false)
         when 2   # Gorging Form
-          target.pbParalyze(user) if target.pbCanParalyze?(user, false)
+          user.pbParalyze(target) if user.pbCanParalyze?(target, false)
         end
         @battle.pbHideAbilitySplash(target)
         user.pbItemHPHealCheck if user.hp < oldHP
@@ -56,8 +56,8 @@ class Battle::Battler
       if target.effects[PBEffects::BeakBlast]
         PBDebug.log("[Lingering effect] #{target.pbThis}'s Beak Blast")
         if move.pbContactMove?(user) && user.affectedByContactEffect? &&
-           target.pbCanBurn?(user, false, self)
-          target.pbBurn(user)
+           user.pbCanBurn?(target, false, self)
+          user.pbBurn(target)
         end
       end
       # Shell Trap (make the trapper move next if the trap was triggered)
@@ -86,8 +86,6 @@ class Battle::Battler
   # Effects after all hits (i.e. at end of move usage)
   #=============================================================================
   def pbEffectsAfterMove(user, targets, move, numHits)
-    # add end of move attribute effect
-    Battle::AttributeEffects.triggerOnEndOfUsingMove(user.attribute, user, targets, move, @battle)
     # Defrost
     if move.damagingMove?
       targets.each do |b|
@@ -112,6 +110,8 @@ class Battle::Battler
       user.pbFaint
       @battle.pbJudgeCheckpoint(user)
     end
+    # add end of move attribute effect
+    Battle::AttributeEffects.triggerOnEndOfUsingMove(user.attribute, user, targets, move, @battle)
     # User's ability
     if user.abilityActive?
       Battle::AbilityEffects.triggerOnEndOfUsingMove(user.ability, user, targets, move, @battle)
@@ -139,7 +139,7 @@ class Battle::Battler
       end
     end
     # Room Service
-    if move.function == "StartSlowerBattlersActFirst" && @battle.field.effects[PBEffects::TrickRoom] > 0
+    if move.function_code == "StartSlowerBattlersActFirst" && @battle.field.effects[PBEffects::TrickRoom] > 0
       @battle.allBattlers.each do |b|
         next if !b.hasActiveItem?(:ROOMSERVICE)
         next if !b.pbCanLowerStatStage?(:SPEED)

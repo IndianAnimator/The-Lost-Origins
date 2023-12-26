@@ -139,7 +139,7 @@ class Player < Trainer
       @last_seen_forms[species] = [gender, form, shiny]
     end
 
-    #===========================================================================
+    #---------------------------------------------------------------------------
 
     # Sets the given species as owned in the Pokédex.
     # @param species [Symbol, GameData::Species] species to set as owned
@@ -185,7 +185,7 @@ class Player < Trainer
       return self.count_species(@owned, dex)
     end
 
-    #===========================================================================
+    #---------------------------------------------------------------------------
 
     # @param species [Pokemon, Symbol, GameData::Species] Pokemon to register as seen
     # @param gender [Integer] gender to register (0=male, 1=female, 2=genderless)
@@ -227,7 +227,7 @@ class Player < Trainer
       @last_seen_forms[pkmn.species] = [pkmn.gender, form, pkmn.shiny?]
     end
 
-    #===========================================================================
+    #---------------------------------------------------------------------------
 
     # @param species [Symbol, GameData::Species] species to check
     # @return [Integer] the number of Pokémon of the given species that have
@@ -272,7 +272,7 @@ class Player < Trainer
       @defeated_counts[species_id] += 1
     end
 
-    #===========================================================================
+    #---------------------------------------------------------------------------
 
     # Unlocks the given Dex, -1 being the National Dex.
     # @param dex [Integer] Dex ID (-1 is the National Dex)
@@ -321,9 +321,7 @@ class Player < Trainer
         return
       end
       if dexes_count == 1   # Only National Dex is defined
-        if self.unlocked?(0) && self.seen_any?
-          @accessible_dexes.push(-1)
-        end
+        @accessible_dexes.push(-1) if self.unlocked?(0) && self.seen_any?
       else   # Regional Dexes + National Dex
         dexes_count.times do |i|
           dex_list_to_check = (i == dexes_count - 1) ? -1 : i
@@ -334,7 +332,16 @@ class Player < Trainer
       end
     end
 
-    #===========================================================================
+    def species_in_unlocked_dex?(species)
+      return true if @unlocked_dexes.last
+      (@unlocked_dexes.length - 1).times do |i|
+        next if !self.unlocked?(i)
+        return true if pbGetRegionalNumber(i, species) > 0
+      end
+      return false
+    end
+
+    #---------------------------------------------------------------------------
 
     private
 

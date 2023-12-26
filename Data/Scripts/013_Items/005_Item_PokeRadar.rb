@@ -1,18 +1,20 @@
+#===============================================================================
+#
+#===============================================================================
 class PokemonGlobalMetadata
   attr_accessor :pokeradarBattery
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class Game_Temp
   attr_accessor :poke_radar_data   # [species, level, chain count, grasses (x,y,ring,rarity)]
 end
 
-
-
-################################################################################
+#===============================================================================
 # Using the Poke Radar
-################################################################################
+#===============================================================================
 def pbCanUsePokeRadar?
   # Can't use Radar if not in tall grass
   terrain = $game_map.terrain_tag($game_player.x, $game_player.y)
@@ -44,7 +46,7 @@ end
 def pbUsePokeRadar
   return false if !pbCanUsePokeRadar?
   $stats.poke_radar_count += 1
-  $game_temp.poke_radar_data = [0, 0, 0, [], false] if !$game_temp.poke_radar_data
+  $game_temp.poke_radar_data = [nil, 0, 0, [], false] if !$game_temp.poke_radar_data
   $game_temp.poke_radar_data[4] = false
   $PokemonGlobal.pokeradarBattery = 50
   pbPokeRadarHighlightGrass
@@ -104,7 +106,7 @@ def pbPokeRadarHighlightGrass(showmessage = true)
       end
     end
     $game_temp.poke_radar_data[3] = grasses if $game_temp.poke_radar_data
-    pbWait(Graphics.frame_rate / 2)
+    pbWait(0.5)
   end
 end
 
@@ -126,29 +128,36 @@ def pbPokeRadarGetEncounter(rarity = 0)
   # Poké Radar-exclusive encounters can only be found in vigorously-shaking grass
   if rarity > 0
     # Get all Poké Radar-exclusive encounters for this map
-    map = $game_map.map_id
-    array = []
-    Settings::POKE_RADAR_ENCOUNTERS.each do |enc|
-      array.push(enc) if enc[0] == map && GameData::Species.exists?(enc[2])
+    map_id = $game_map.map_id
+    enc_list = nil
+    encounter_data = GameData::Encounter.get(map_id, $PokemonGlobal.encounter_version)
+    if encounter_data && encounter_data.types[:PokeRadar] &&
+       rand(100) < encounter_data.step_chances[:PokeRadar]
+      enc_list = encounter_data.types[:PokeRadar]
     end
     # If there are any exclusives, first have a chance of encountering those
-    if array.length > 0
-      rnd = rand(100)
-      array.each do |enc|
-        rnd -= enc[1]
+    if enc_list && enc_list.length > 0
+      chance_total = 0
+      enc_list.each { |a| chance_total += a[0] }
+      rnd = rand(chance_total)
+      encounter = nil
+      enc_list.each do |enc|
+        rnd -= enc[0]
         next if rnd >= 0
-        level = (enc[4] && enc[4] > enc[3]) ? rand(enc[3]..enc[4]) : enc[3]
-        return [enc[2], level]
+        encounter = enc
+        break
       end
+      level = rand(encounter[2]..encounter[3])
+      return [encounter[1], level]
     end
   end
   # Didn't choose a Poké Radar-exclusive species, choose a regular encounter instead
   return $PokemonEncounters.choose_wild_pokemon($PokemonEncounters.encounter_type, rarity + 1)
 end
 
-################################################################################
+#===============================================================================
 # Event handlers
-################################################################################
+#===============================================================================
 EventHandlers.add(:on_wild_species_chosen, :poke_radar_chain,
   proc { |encounter|
     if GameData::EncounterType.get($game_temp.encounter_type).type != :land ||
@@ -246,9 +255,9 @@ EventHandlers.add(:on_enter_map, :cancel_poke_radar,
   }
 )
 
-################################################################################
+#===============================================================================
 # Item handlers
-################################################################################
+#===============================================================================
 ItemHandlers::UseInField.add(:POKERADAR, proc { |item|
   next pbUsePokeRadar
 })

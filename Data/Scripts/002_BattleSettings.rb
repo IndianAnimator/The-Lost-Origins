@@ -46,8 +46,8 @@ module Settings
   AFFECTION_EFFECTS        = false
   # Whether a Pokémon's happiness is limited to 179, and can only be increased
   # further with friendship-raising berries. Related to AFFECTION_EFFECTS by
-  # default as affection effects only start applying above a happiness of 179.
-  # Also lowers the happiness evolution threshold to 160.
+  # default because affection effects only start applying above a happiness of
+  # 179. Also lowers the happiness evolution threshold to 160.
   APPLY_HAPPINESS_SOFT_CAP = AFFECTION_EFFECTS
 
   #=============================================================================
@@ -76,6 +76,9 @@ module Settings
   # that much Exp (false). This also applies to Exp gained via the Exp Share
   # (held item version) being distributed to all Exp Share holders.
   SPLIT_EXP_BETWEEN_GAINERS            = (MECHANICS_GENERATION <= 5)
+  # Whether the Exp gained from beating a Pokémon is multiplied by 1.5 if that
+  # Pokémon is owned by another trainer.
+  MORE_EXP_FROM_TRAINER_POKEMON        = (MECHANICS_GENERATION <= 6)
   # Whether a Pokémon holding a Power item gains 8 (true) or 4 (false) EVs in
   # the relevant stat.
   MORE_EVS_FROM_POWER_ITEMS            = (MECHANICS_GENERATION >= 7)
@@ -101,4 +104,11 @@ module Settings
   CHECK_EVOLUTION_AFTER_ALL_BATTLES   = (MECHANICS_GENERATION >= 6)
   # Whether fainted Pokémon can try to evolve after a battle.
   CHECK_EVOLUTION_FOR_FAINTED_POKEMON = true
+
+  #=============================================================================
+
+  # Whether wild Pokémon with the "Legendary", "Mythical" or "UltraBeast" flag
+  # (as defined in pokemon.txt) have a smarter AI. Their skill level is set to
+  # 32, which is a medium skill level.
+  SMARTER_WILD_LEGENDARY_POKEMON = true
 end

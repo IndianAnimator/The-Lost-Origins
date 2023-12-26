@@ -38,8 +38,6 @@ def pbWarpToMap
   return nil
 end
 
-
-
 #===============================================================================
 # Debug Variables screen
 #===============================================================================
@@ -68,14 +66,14 @@ class SpriteWindow_DebugVariables < Window_DrawableCommand
       x += (w / 2) - (width / 2)
     end
     y += 8   # TEXT OFFSET
-    base = Color.new(12 * 8, 12 * 8, 12 * 8)
+    base = Color.new(96, 96, 96)
     case colors
     when 1   # Red
       base = Color.new(168, 48, 56)
     when 2   # Green
       base = Color.new(0, 144, 0)
     end
-    pbDrawShadowText(self.contents, x, y, [width, w].max, h, t, base, Color.new(26 * 8, 26 * 8, 25 * 8))
+    pbDrawShadowText(self.contents, x, y, [width, w].max, h, t, base, Color.new(208, 208, 200))
   end
 
   def drawItem(index, _count, rect)
@@ -91,13 +89,18 @@ class SpriteWindow_DebugVariables < Window_DrawableCommand
         code_parts[0].strip!
         code_parts[0].gsub!(/^\s*!/, "")
         val = nil
-        if code_parts[0][0].upcase == code_parts[0][0] &&
-           (Kernel.const_defined?(code_parts[0]) rescue false)
-          val = (eval(code) rescue nil)   # Code starts with a class/method name
-        elsif code_parts[0][0].downcase == code_parts[0][0] &&
-           !(Interpreter.method_defined?(code_parts[0].to_sym) rescue false) &&
-           !(Game_Event.method_defined?(code_parts[0].to_sym) rescue false)
-          val = (eval(code) rescue nil)   # Code starts with a method name (that isn't in Interpreter/Game_Event)
+        if code_parts[0][0][/[a-z]/i]
+          if code_parts[0][0].upcase == code_parts[0][0] &&
+             (Kernel.const_defined?(code_parts[0]) rescue false)
+            val = (eval(code) rescue nil)   # Code starts with a class/method name
+          elsif code_parts[0][0].downcase == code_parts[0][0] &&
+                !(Interpreter.method_defined?(code_parts[0].to_sym) rescue false) &&
+                !(Game_Event.method_defined?(code_parts[0].to_sym) rescue false)
+            val = (eval(code) rescue nil)   # Code starts with a method name (that isn't in Interpreter/Game_Event)
+          end
+        else
+          # Code doesn't start with a letter, probably $, just evaluate it
+          val = (eval(code) rescue nil)
         end
       else
         val = $game_switches[index + 1]
@@ -131,8 +134,9 @@ class SpriteWindow_DebugVariables < Window_DrawableCommand
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbDebugSetVariable(id, diff)
   $game_variables[id] = 0 if $game_variables[id].nil?
   if $game_variables[id].is_a?(Numeric)
@@ -181,14 +185,14 @@ def pbDebugVariables(mode)
     end
     current_id = right_window.index + 1
     case mode
-    when 0 # Switches
+    when 0   # Switches
       if Input.trigger?(Input::USE)
         pbPlayDecisionSE
         $game_switches[current_id] = !$game_switches[current_id]
         right_window.refresh
         $game_map.need_refresh = true
       end
-    when 1 # Variables
+    when 1   # Variables
       if Input.repeat?(Input::LEFT)
         pbDebugSetVariable(current_id, -1)
         right_window.refresh
@@ -330,12 +334,12 @@ def pbDebugDayCare
         case pbMessage("\\ts[]" + msg,
                        [_INTL("Summary"), _INTL("Withdraw"), _INTL("Cancel")], 3)
         when 0   # Summary
-          pbFadeOutIn {
+          pbFadeOutIn do
             scene = PokemonSummary_Scene.new
             screen = PokemonSummaryScreen.new(scene, false)
             screen.pbStartScreen([pkmn], 0)
             need_refresh = true
-          }
+          end
         when 1   # Withdraw
           if $player.party_full?
             pbMessage(_INTL("Party is full, can't withdraw Pokémon."))
@@ -371,8 +375,6 @@ def pbDebugDayCare
   cmd_window.dispose
 end
 
-
-
 #===============================================================================
 # Debug roaming Pokémon screen
 #===============================================================================
@@ -394,18 +396,18 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
     width = self.contents.text_size(t).width
     case align
     when 1
-      x += (w - width)         # Right aligned
+      x += (w - width)             # Right aligned
     when 2
       x += (w / 2) - (width / 2)   # Centre aligned
     end
-    base = Color.new(12 * 8, 12 * 8, 12 * 8)
+    base = Color.new(96, 96, 96)
     case colors
     when 1
       base = Color.new(168, 48, 56)   # Red
     when 2
       base = Color.new(0, 144, 0)     # Green
     end
-    pbDrawShadowText(self.contents, x, y, [width, w].max, h, t, base, Color.new(26 * 8, 26 * 8, 25 * 8))
+    pbDrawShadowText(self.contents, x, y, [width, w].max, h, t, base, Color.new(208, 208, 200))
   end
 
   def drawItem(index, _count, rect)
@@ -453,8 +455,9 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbDebugRoamers
   viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
   viewport.z = 99999
@@ -466,6 +469,11 @@ def pbDebugRoamers
     Graphics.update
     Input.update
     pbUpdateSpriteHash(sprites)
+    if cmdwindow.index < cmdwindow.roamerCount
+      pkmn = Settings::ROAMING_SPECIES[cmdwindow.index]
+    else
+      pkmn = nil
+    end
     if Input.trigger?(Input::ACTION) && cmdwindow.index < cmdwindow.roamerCount &&
        (pkmn[2] <= 0 || $game_switches[pkmn[2]]) &&
        $PokemonGlobal.roamPokemon[cmdwindow.index] != true
@@ -494,7 +502,6 @@ def pbDebugRoamers
       if cmdwindow.index < cmdwindow.roamerCount
         pbPlayDecisionSE
         # Toggle through roaming, not roaming, defeated
-        pkmn = Settings::ROAMING_SPECIES[cmdwindow.index]
         if pkmn[2] > 0 && !$game_switches[pkmn[2]]
           # not roaming -> roaming
           $game_switches[pkmn[2]] = true
@@ -507,7 +514,7 @@ def pbDebugRoamers
           # defeated -> caught
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = true
         elsif pkmn[2] > 0
-          # caught -> not roaming (or roaming if Switch ID is 0
+          # caught -> not roaming (or roaming if Switch ID is 0)
           $game_switches[pkmn[2]] = false if pkmn[2] > 0
           $PokemonGlobal.roamPokemon[cmdwindow.index] = nil
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = false
@@ -540,39 +547,6 @@ def pbDebugRoamers
   viewport.dispose
 end
 
-
-
-#===============================================================================
-# Text import/export for localisation
-#===============================================================================
-def pbExtractText
-  msgwindow = pbCreateMessageWindow
-  if safeExists?("intl.txt") &&
-     !pbConfirmMessageSerious(_INTL("intl.txt already exists. Overwrite it?"))
-    pbDisposeMessageWindow(msgwindow)
-    return
-  end
-  pbMessageDisplay(msgwindow, _INTL("Please wait.\\wtnp[0]"))
-  MessageTypes.extract("intl.txt")
-  pbMessageDisplay(msgwindow, _INTL("All text in the game was extracted and saved to intl.txt.\1"))
-  pbMessageDisplay(msgwindow, _INTL("To localize the text for a particular language, translate every second line in the file.\1"))
-  pbMessageDisplay(msgwindow, _INTL("After translating, choose \"Compile Text.\""))
-  pbDisposeMessageWindow(msgwindow)
-end
-
-def pbCompileTextUI
-  msgwindow = pbCreateMessageWindow
-  pbMessageDisplay(msgwindow, _INTL("Please wait.\\wtnp[0]"))
-  begin
-    pbCompileText
-    pbMessageDisplay(msgwindow, _INTL("Successfully compiled text and saved it to intl.dat.\1"))
-    pbMessageDisplay(msgwindow, _INTL("To use the file in a game, place the file in the Data folder under a different name, and edit the Settings::LANGUAGES array in the scripts."))
-  rescue RuntimeError
-    pbMessageDisplay(msgwindow, _INTL("Failed to compile text: {1}", $!.message))
-  end
-  pbDisposeMessageWindow(msgwindow)
-end
-
 #===============================================================================
 # Battle animations import/export
 #===============================================================================
@@ -588,9 +562,9 @@ def pbExportAllAnimations
         Graphics.update
         safename = anim.name.gsub(/\W/, "_")
         Dir.mkdir("Animations/#{safename}") rescue nil
-        File.open("Animations/#{safename}/#{safename}.anm", "wb") { |f|
-          f.write(dumpBase64Anim(anim))
-        }
+        File.open("Animations/#{safename}/#{safename}.anm", "wb") do |f|
+          f.write(BattleAnimationEditor.dumpBase64Anim(anim))
+        end
         if anim.graphic && anim.graphic != ""
           graphicname = RTP.getImagePath("Graphics/Animations/" + anim.graphic)
           pbSafeCopyFile(graphicname, "Animations/#{safename}/" + File.basename(graphicname))
@@ -622,13 +596,11 @@ end
 
 def pbImportAllAnimations
   animationFolders = []
-  if safeIsDirectory?("Animations")
-    Dir.foreach("Animations") { |fb|
+  if FileTest.directory?("Animations")
+    Dir.foreach("Animations") do |fb|
       f = "Animations/" + fb
-      if safeIsDirectory?(f) && fb != "." && fb != ".."
-        animationFolders.push(f)
-      end
-    }
+      animationFolders.push(f) if FileTest.directory?(f) && fb != "." && fb != ".."
+    end
   end
   if animationFolders.length == 0
     pbMessage(_INTL("There are no animations to import. Put each animation in a folder within the Animations folder."))
@@ -641,47 +613,47 @@ def pbImportAllAnimations
       Graphics.update
       audios = []
       files = Dir.glob(folder + "/*.*")
-      ["wav", "ogg", "mid", "wma"].each { |ext|   # mp3
+      ["wav", "ogg", "mid", "wma"].each do |ext|   # mp3
         upext = ext.upcase
         audios.concat(files.find_all { |f| f[f.length - 3, 3] == ext })
         audios.concat(files.find_all { |f| f[f.length - 3, 3] == upext })
-      }
+      end
       audios.each do |audio|
         pbSafeCopyFile(audio, RTP.getAudioPath("Audio/SE/Anim/" + File.basename(audio)), "Audio/SE/Anim/" + File.basename(audio))
       end
       images = []
-      ["png", "gif"].each { |ext|   # jpg jpeg bmp
+      ["png", "gif"].each do |ext|   # jpg jpeg bmp
         upext = ext.upcase
         images.concat(files.find_all { |f| f[f.length - 3, 3] == ext })
         images.concat(files.find_all { |f| f[f.length - 3, 3] == upext })
-      }
+      end
       images.each do |image|
         pbSafeCopyFile(image, RTP.getImagePath("Graphics/Animations/" + File.basename(image)), "Graphics/Animations/" + File.basename(image))
       end
-      Dir.glob(folder + "/*.anm") { |f|
-        textdata = loadBase64Anim(IO.read(f)) rescue nil
+      Dir.glob(folder + "/*.anm") do |f|
+        textdata = BattleAnimationEditor.loadBase64Anim(IO.read(f)) rescue nil
         if textdata.is_a?(PBAnimation)
           index = pbAllocateAnimation(animations, textdata.name)
           missingFiles = []
           textdata.name = File.basename(folder) if textdata.name == ""
           textdata.id = -1   # This is not an RPG Maker XP animation
-          pbConvertAnimToNewFormat(textdata)
+          BattleAnimationEditor.pbConvertAnimToNewFormat(textdata)
           if textdata.graphic && textdata.graphic != "" &&
-             !safeExists?(folder + "/" + textdata.graphic) &&
+             !FileTest.exist?(folder + "/" + textdata.graphic) &&
              !FileTest.image_exist?("Graphics/Animations/" + textdata.graphic)
             textdata.graphic = ""
             missingFiles.push(textdata.graphic)
           end
           textdata.timing.each do |timing|
             next if !timing.name || timing.name == "" ||
-                    safeExists?(folder + "/" + timing.name) ||
+                    FileTest.exist?(folder + "/" + timing.name) ||
                     FileTest.audio_exist?("Audio/SE/Anim/" + timing.name)
             timing.name = ""
             missingFiles.push(timing.name)
           end
           animations[index] = textdata
         end
-      }
+      end
     end
     save_data(animations, "Data/PkmnAnimations.rxdata")
     $game_temp.battle_animations_data = nil
@@ -698,14 +670,14 @@ def pbDebugFixInvalidTiles
   num_error_maps = 0
   tilesets = $data_tilesets
   mapData = Compiler::MapData.new
-  t = Time.now.to_i
+  t = System.uptime
   Graphics.update
   total_maps = mapData.mapinfos.keys.length
-  Console.echo_h1 _INTL("Checking {1} maps for invalid tiles", total_maps)
+  Console.echo_h1(_INTL("Checking {1} maps for invalid tiles", total_maps))
   mapData.mapinfos.keys.sort.each do |id|
-    if Time.now.to_i - t >= 5
+    if System.uptime - t >= 5
+      t += 5
       Graphics.update
-      t = Time.now.to_i
     end
     map_errors = 0
     map = mapData.getMap(id)
@@ -734,7 +706,7 @@ def pbDebugFixInvalidTiles
     end
     next if map_errors == 0
     # Map was changed; save it
-    Console.echoln_li _INTL("{1} error tile(s) found on map {2}: {3}.", map_errors, id, mapData.mapinfos[id].name)
+    Console.echoln_li(_INTL("{1} error tile(s) found on map {2}: {3}.", map_errors, id, mapData.mapinfos[id].name))
     total_errors += map_errors
     num_error_maps += 1
     mapData.saveMap(id)
@@ -745,7 +717,7 @@ def pbDebugFixInvalidTiles
   else
     echoln ""
     Console.echo_h2(_INTL("Done. {1} errors found and fixed.", total_errors), text: :green)
-    Console.echo_warn _INTL("RMXP data was altered. Close RMXP now to ensure changes are applied.")
+    Console.echo_warn(_INTL("RMXP data was altered. Close RMXP now to ensure changes are applied."))
     echoln ""
     pbMessage(_INTL("{1} error(s) were found across {2} map(s) and fixed.", total_errors, num_error_maps))
     pbMessage(_INTL("Close RPG Maker XP to ensure the changes are applied properly."))
@@ -765,8 +737,6 @@ def pbCheckTileValidity(tile_id, map, tilesets, passages)
   end
   return false
 end
-
-
 
 #===============================================================================
 # Pseudo-party screen for editing Pokémon being set up for a wild battle
@@ -821,7 +791,7 @@ class PokemonDebugPartyScreen
     @messageBox.text    = text
     @messageBox.visible = true
     @helpWindow.visible = false
-    using(cmdwindow = Window_CommandPokemon.new([_INTL("Yes"), _INTL("No")])) {
+    using(cmdwindow = Window_CommandPokemon.new([_INTL("Yes"), _INTL("No")])) do
       cmdwindow.visible = false
       pbBottomRight(cmdwindow)
       cmdwindow.y -= @messageBox.height
@@ -842,7 +812,7 @@ class PokemonDebugPartyScreen
           end
         end
       end
-    }
+    end
     @messageBox.visible = false
     @helpWindow.visible = true
     return ret
@@ -851,7 +821,7 @@ class PokemonDebugPartyScreen
   def pbShowCommands(text, commands, index = 0)
     ret = -1
     @helpWindow.visible = true
-    using(cmdwindow = Window_CommandPokemonColor.new(commands)) {
+    using(cmdwindow = Window_CommandPokemonColor.new(commands)) do
       cmdwindow.z     = @viewport.z + 1
       cmdwindow.index = index
       pbBottomRight(cmdwindow)
@@ -873,7 +843,7 @@ class PokemonDebugPartyScreen
           break
         end
       end
-    }
+    end
     return ret
   end
 

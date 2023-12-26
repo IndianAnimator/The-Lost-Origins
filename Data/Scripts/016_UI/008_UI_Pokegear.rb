@@ -14,12 +14,12 @@ class PokegearButton < Sprite
     @image = command[0]
     @name  = command[1]
     @selected = false
-    if $player.female? && pbResolveBitmap(sprintf("Graphics/Pictures/Pokegear/icon_button_f"))
-      @button = AnimatedBitmap.new("Graphics/Pictures/Pokegear/icon_button_f")
+    if $player.female? && pbResolveBitmap("Graphics/UI/Pokegear/icon_button_f")
+      @button = AnimatedBitmap.new("Graphics/UI/Pokegear/icon_button_f")
     else
-      @button = AnimatedBitmap.new("Graphics/Pictures/Pokegear/icon_button")
+      @button = AnimatedBitmap.new("Graphics/UI/Pokegear/icon_button")
     end
-    @contents = BitmapWrapper.new(@button.width, @button.height)
+    @contents = Bitmap.new(@button.width, @button.height)
     self.bitmap = @contents
     self.x = x - (@button.width / 2)
     self.y = y
@@ -45,11 +45,11 @@ class PokegearButton < Sprite
     rect.y = @button.height / 2 if @selected
     self.bitmap.blt(0, 0, @button.bitmap, rect)
     textpos = [
-      [@name, rect.width / 2, (rect.height / 2) - 10, 2, TEXT_BASE_COLOR, TEXT_SHADOW_COLOR]
+      [@name, rect.width / 2, (rect.height / 2) - 10, :center, TEXT_BASE_COLOR, TEXT_SHADOW_COLOR]
     ]
     pbDrawTextPositions(self.bitmap, textpos)
     imagepos = [
-      [sprintf("Graphics/Pictures/Pokegear/icon_" + @image), 18, 10]
+      [sprintf("Graphics/UI/Pokegear/icon_%s", @image), 18, 10]
     ]
     pbDrawImagePositions(self.bitmap, imagepos)
   end
@@ -73,10 +73,10 @@ class PokemonPokegear_Scene
     @viewport.z = 99999
     @sprites = {}
     @sprites["background"] = IconSprite.new(0, 0, @viewport)
-    if $player.female? && pbResolveBitmap(sprintf("Graphics/Pictures/Pokegear/bg_f"))
-      @sprites["background"].setBitmap("Graphics/Pictures/Pokegear/bg_f")
+    if $player.female? && pbResolveBitmap("Graphics/UI/Pokegear/bg_f")
+      @sprites["background"].setBitmap("Graphics/UI/Pokegear/bg_f")
     else
-      @sprites["background"].setBitmap("Graphics/Pictures/Pokegear/bg")
+      @sprites["background"].setBitmap("Graphics/UI/Pokegear/bg")
     end
     @commands.length.times do |i|
       @sprites["button#{i}"] = PokegearButton.new(@commands[i], Graphics.width / 2, 0, @viewport)
@@ -162,7 +162,7 @@ MenuHandlers.add(:pokegear_menu, :map, {
   "icon_name" => "map",
   "order"     => 10,
   "effect"    => proc { |menu|
-    pbFadeOutIn {
+    pbFadeOutIn do
       scene = PokemonRegionMap_Scene.new(-1, false)
       screen = PokemonRegionMapScreen.new(scene)
       ret = screen.pbStartScreen
@@ -171,7 +171,7 @@ MenuHandlers.add(:pokegear_menu, :map, {
         menu.dispose
         next 99999
       end
-    }
+    end
     next $game_temp.fly_destination
   }
 })
@@ -180,9 +180,13 @@ MenuHandlers.add(:pokegear_menu, :phone, {
   "name"      => _INTL("Phone"),
   "icon_name" => "phone",
   "order"     => 20,
-  "condition" => proc { next $PokemonGlobal.phoneNumbers && $PokemonGlobal.phoneNumbers.length > 0 },
+#  "condition" => proc { next $PokemonGlobal.phone && $PokemonGlobal.phone.contacts.length > 0 },
   "effect"    => proc { |menu|
-    pbFadeOutIn { PokemonPhoneScene.new.start }
+    pbFadeOutIn do
+      scene = PokemonPhone_Scene.new
+      screen = PokemonPhoneScreen.new(scene)
+      screen.pbStartScreen
+    end
     next false
   }
 })
@@ -192,11 +196,11 @@ MenuHandlers.add(:pokegear_menu, :jukebox, {
   "icon_name" => "jukebox",
   "order"     => 30,
   "effect"    => proc { |menu|
-    pbFadeOutIn {
+    pbFadeOutIn do
       scene = PokemonJukebox_Scene.new
       screen = PokemonJukeboxScreen.new(scene)
       screen.pbStartScreen
-    }
+    end
     next false
   }
 })

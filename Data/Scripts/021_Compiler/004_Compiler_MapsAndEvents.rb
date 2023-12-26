@@ -46,12 +46,12 @@ module Compiler
     return false if !$DEBUG
     mapfiles = {}
     # Get IDs of all maps in the Data folder
-    Dir.chdir("Data") {
+    Dir.chdir("Data") do
       mapData = sprintf("Map*.rxdata")
       Dir.glob(mapData).each do |map|
         mapfiles[$1.to_i(10)] = true if map[/map(\d+)\.rxdata/i]
       end
-    }
+    end
     mapinfos = pbLoadMapInfos
     maxOrder = 0
     # Exclude maps found in mapinfos
@@ -93,19 +93,19 @@ module Compiler
     i = 0
     while i < commands.length
       case commands[i]
-      when PBMoveRoute::Wait, PBMoveRoute::SwitchOn, PBMoveRoute::SwitchOff,
-           PBMoveRoute::ChangeSpeed, PBMoveRoute::ChangeFreq, PBMoveRoute::Opacity,
-           PBMoveRoute::Blending, PBMoveRoute::PlaySE, PBMoveRoute::Script
+      when PBMoveRoute::WAIT, PBMoveRoute::SWITCH_ON, PBMoveRoute::SWITCH_OFF,
+           PBMoveRoute::CHANGE_SPEED, PBMoveRoute::CHANGE_FREQUENCY, PBMoveRoute::OPACITY,
+           PBMoveRoute::BLENDING, PBMoveRoute::PLAY_SE, PBMoveRoute::SCRIPT
         route.list.push(RPG::MoveCommand.new(commands[i], [commands[i + 1]]))
         i += 1
-      when PBMoveRoute::ScriptAsync
-        route.list.push(RPG::MoveCommand.new(PBMoveRoute::Script, [commands[i + 1]]))
-        route.list.push(RPG::MoveCommand.new(PBMoveRoute::Wait, [0]))
+      when PBMoveRoute::SCRIPT_ASYNC
+        route.list.push(RPG::MoveCommand.new(PBMoveRoute::SCRIPT, [commands[i + 1]]))
+        route.list.push(RPG::MoveCommand.new(PBMoveRoute::WAIT, [0]))
         i += 1
-      when PBMoveRoute::Jump
+      when PBMoveRoute::JUMP
         route.list.push(RPG::MoveCommand.new(commands[i], [commands[i + 1], commands[i + 2]]))
         i += 2
-      when PBMoveRoute::Graphic
+      when PBMoveRoute::GRAPHIC
         route.list.push(RPG::MoveCommand.new(commands[i], [commands[i + 1], commands[i + 2], commands[i + 3], commands[i + 4]]))
         i += 4
       else
@@ -198,6 +198,21 @@ module Compiler
     list.push(RPG::EventCommand.new(412, indent - 1, []))
   end
 
+  # cancel is 1/2/3/4 for the options, 0 for disallow, 5 for branch
+  def push_choices(list, choices, cancel = 0, indent = 0)
+    list.push(RPG::EventCommand.new(102, indent, [choices, cancel, [0, 1, 2, 3]]))
+  end
+
+  def push_choice(list, index, text, indent = 0)
+    list.push(RPG::EventCommand.new(0, indent, [])) if index > 0
+    list.push(RPG::EventCommand.new(402, indent - 1, [index, text]))
+  end
+
+  def push_choices_end(list, indent = 0)
+    list.push(RPG::EventCommand.new(0, indent, []))
+    list.push(RPG::EventCommand.new(404, indent - 1, []))
+  end
+
   def push_self_switch(list, swtch, switchOn, indent = 0)
     list.push(RPG::EventCommand.new(123, indent, [swtch, switchOn ? 0 : 1]))
   end
@@ -226,7 +241,7 @@ module Compiler
     push_event(list, 208, [0], 1)   # Change Transparent Flag
     push_wait(list, 6, 1)          # Wait
     push_event(list, 208, [1], 1)   # Change Transparent Flag
-    push_move_route_and_wait(list, -1, [PBMoveRoute::Down], 1)
+    push_move_route_and_wait(list, -1, [PBMoveRoute::DOWN], 1)
     push_branch_end(list, 1)
     push_script(list, "setTempSwitchOn(\"A\")")
     push_end(list)
@@ -498,13 +513,13 @@ module Compiler
     battleid       = 0
     doublebattle   = false
     backdrop       = nil
-    endspeeches    = []
     outcome        = 0
     continue       = false
     endbattles     = []
     endifswitch    = []
     vanishifswitch = []
     regspeech      = nil
+    common_event   = 0
     commands.each do |command|
       if command[/^Battle\:\s*([\s\S]+)$/i]
         battles.push($~[1])
@@ -522,21 +537,9 @@ module Compiler
         value = $~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")
         doublebattle = true if value.upcase == "TRUE" || value.upcase == "YES"
         push_comment(firstpage.list, command) if rewriteComments
-      elsif command[/^Backdrop\:\s*([\s\S]+)$/i]
-        backdrop = $~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")
-        push_comment(firstpage.list, command) if rewriteComments
-      elsif command[/^EndSpeech\:\s*([\s\S]+)$/i]
-        endspeeches.push(command)
-        push_comment(firstpage.list, command) if rewriteComments
-      elsif command[/^Outcome\:\s*(\d+)$/i]
-        outcome = $~[1].to_i
-        push_comment(firstpage.list, command) if rewriteComments
       elsif command[/^Continue\:\s*([\s\S]+)$/i]
         value = $~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")
         continue = true if value.upcase == "TRUE" || value.upcase == "YES"
-        push_comment(firstpage.list, command) if rewriteComments
-      elsif command[/^EndBattle\:\s*([\s\S]+)$/i]
-        endbattles.push($~[1].gsub(/^\s+/, "").gsub(/\s+$/, ""))
         push_comment(firstpage.list, command) if rewriteComments
       elsif command[/^EndIfSwitch\:\s*([\s\S]+)$/i]
         endifswitch.push(($~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")).to_i)
@@ -544,12 +547,25 @@ module Compiler
       elsif command[/^VanishIfSwitch\:\s*([\s\S]+)$/i]
         vanishifswitch.push(($~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")).to_i)
         push_comment(firstpage.list, command) if rewriteComments
+      elsif command[/^Backdrop\:\s*([\s\S]+)$/i]
+        backdrop = $~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")
+        push_comment(firstpage.list, command) if rewriteComments
+      elsif command[/^Outcome\:\s*(\d+)$/i]
+        outcome = $~[1].to_i
+        push_comment(firstpage.list, command) if rewriteComments
+      elsif command[/^EndBattle\:\s*([\s\S]+)$/i]
+        endbattles.push($~[1].gsub(/^\s+/, "").gsub(/\s+$/, ""))
+        push_comment(firstpage.list, command) if rewriteComments
       elsif command[/^RegSpeech\:\s*([\s\S]+)$/i]
         regspeech = $~[1].gsub(/^\s+/, "").gsub(/\s+$/, "")
+        push_comment(firstpage.list, command) if rewriteComments
+      elsif command[/^CommonEvent\:\s*(\d+)$/i]
+        common_event = $~[1].to_i
         push_comment(firstpage.list, command) if rewriteComments
       end
     end
     return nil if battles.length <= 0
+    endbattles.push("...") if endbattles.length == 0
     # Run trainer check now, except in editor
     trainerChecker.pbTrainerBattleCheck(trtype, trname, battleid)
     # Set the event's charset to one depending on the trainer type if the event
@@ -558,36 +574,59 @@ module Compiler
       trainerid = GameData::TrainerType.get(trtype).id
       filename = GameData::TrainerType.charset_filename_brief(trainerid)
       if FileTest.image_exist?("Graphics/Characters/" + filename)
-        firstpage.graphic.character_name = sprintf(filename)
+        firstpage.graphic.character_name = filename
       end
     end
     # Create strings that will be used repeatedly
-    safetrcombo = sprintf(":%s,\"%s\"", trtype, safequote(trname))   # :YOUNGSTER,"Joey"
+    safetrcombo = sprintf(":%s, \"%s\"", trtype, safequote(trname))   # :YOUNGSTER, "Joey"
+    brieftrcombo = safetrcombo
+    safetrcombo = sprintf("%s, %d", safetrcombo, battleid) if battleid > 0   # :YOUNGSTER, "Joey", 1
     introplay   = sprintf("pbTrainerIntro(:%s)", trtype)
     # Write first page
-    push_comment(firstpage.list, endspeeches[0]) if endspeeches[0]   # Just so it isn't lost
     push_script(firstpage.list, introplay)   # pbTrainerIntro
     push_script(firstpage.list, "pbNoticePlayer(get_self)")
     push_text(firstpage.list, battles[0])
     if battles.length > 1   # Has rematches
-      push_script(firstpage.list, sprintf("pbTrainerCheck(%s,%d,%d)", safetrcombo, battles.length, battleid))
+      if battleid > 0
+        push_script(firstpage.list, sprintf("pbTrainerCheck(%s, %d, %d)", brieftrcombo, battles.length, battleid))
+      else
+        push_script(firstpage.list, sprintf("pbTrainerCheck(%s, %d)", brieftrcombo, battles.length))
+      end
     end
     push_script(firstpage.list, "setBattleRule(\"double\")") if doublebattle
-    push_script(firstpage.list, sprintf("setBattleRule(\"backdrop\",\"%s\")", safequote(backdrop))) if backdrop
-    push_script(firstpage.list, sprintf("setBattleRule(\"outcomeVar\",%d)", outcome)) if outcome > 1
+    push_script(firstpage.list, sprintf("setBattleRule(\n  \"backdrop\", \"%s\"\n)", safequote(backdrop))) if backdrop
+    push_script(firstpage.list, sprintf("setBattleRule(\"outcomeVar\", %d)", outcome)) if outcome > 1
     push_script(firstpage.list, "setBattleRule(\"canLose\")") if continue
-    if battleid > 0
-      battleString = sprintf("TrainerBattle.start(%s,%d)", safetrcombo, battleid)
-    else
-      battleString = sprintf("TrainerBattle.start(%s)", safetrcombo)
-    end
+    battleString = sprintf("TrainerBattle.start(%s)", safetrcombo)
     push_branch(firstpage.list, battleString)
     if battles.length > 1   # Has rematches
-      push_script(firstpage.list,
-                  sprintf("pbPhoneRegisterBattle(_I(\"%s\"),get_self,%s,%d)",
-                          regspeech, safetrcombo, battles.length), 1)
+      push_branch(firstpage.list, sprintf("Phone.can_add?(%s)", safetrcombo), 1)
+      push_text(firstpage.list, regspeech, 2)
+      push_choices(firstpage.list, ["Yes", "No"], 2, 2)
+      push_choice(firstpage.list, 0, "Yes", 3)
+      if common_event > 0
+        if battleid > 0
+          push_script(firstpage.list, sprintf("Phone.add(get_self,\n  %s, %d, %d, %d\n)",
+                                              brieftrcombo, battles.length, battleid, common_event), 3)
+        else
+          push_script(firstpage.list, sprintf("Phone.add(get_self,\n  %s, %d, nil, %d\n)",
+                                              brieftrcombo, battles.length, common_event), 3)
+        end
+      else
+        if battleid > 0
+          push_script(firstpage.list, sprintf("Phone.add(get_self,\n  %s, %d, %d\n)",
+                                              brieftrcombo, battles.length, battleid), 3)
+        else
+          push_script(firstpage.list, sprintf("Phone.add(get_self,\n  %s, %d\n)",
+                                              brieftrcombo, battles.length), 3)
+        end
+      end
+      push_choice(firstpage.list, 1, "No", 3)
+      push_choices_end(firstpage.list, 3)
+      push_branch_end(firstpage.list, 2)
     end
     push_self_switch(firstpage.list, "A", true, 1)
+    push_self_switch(firstpage.list, "B", true, 1) if battles.length > 1
     push_branch_end(firstpage.list, 1)
     push_script(firstpage.list, "pbTrainerEnd", 0)
     push_end(firstpage.list)
@@ -604,53 +643,79 @@ module Compiler
     rematchpage.condition = lastpage.condition.clone
     rematchpage.condition.self_switch_valid = true
     rematchpage.condition.self_switch_ch    = "B"
-    # Write rematch and last pages
-    (1...battles.length).each do |i|
-      # Run trainer check now, except in editor
-      trainerChecker.pbTrainerBattleCheck(trtype, trname, battleid + i)
-      if i == battles.length - 1
-        push_branch(rematchpage.list, sprintf("pbPhoneBattleCount(%s)>=%d", safetrcombo, i))
-        push_branch(lastpage.list, sprintf("pbPhoneBattleCount(%s)>%d", safetrcombo, i))
-      else
-        push_branch(rematchpage.list, sprintf("pbPhoneBattleCount(%s)==%d", safetrcombo, i))
-        push_branch(lastpage.list, sprintf("pbPhoneBattleCount(%s)==%d", safetrcombo, i))
+    # Write rematch page
+    push_script(rematchpage.list, introplay, 0)   # pbTrainerIntro
+    if battles.length == 2
+      push_text(rematchpage.list, battles[1], 0)
+    else
+      (1...battles.length).each do |i|
+        # Run trainer check now, except in editor
+        trainerChecker.pbTrainerBattleCheck(trtype, trname, battleid + i)
+        case i
+        when 1
+          push_branch(rematchpage.list, sprintf("Phone.variant(%s) <= %d", safetrcombo, i))
+        when battles.length - 1
+          push_branch(rematchpage.list, sprintf("Phone.variant(%s) >= %d", safetrcombo, i))
+        else
+          push_branch(rematchpage.list, sprintf("Phone.variant(%s) == %d", safetrcombo, i))
+        end
+        push_text(rematchpage.list, battles[i], 1)
+        push_branch_end(rematchpage.list, 1)
       end
-      # Rematch page
-      push_script(rematchpage.list, introplay, 1)   # pbTrainerIntro
-      push_text(rematchpage.list, battles[i], 1)
-      push_script(rematchpage.list, "setBattleRule(\"double\")", 1) if doublebattle
-      push_script(rematchpage.list, sprintf("setBattleRule(\"backdrop\",%s)", safequote(backdrop)), 1) if backdrop
-      push_script(rematchpage.list, sprintf("setBattleRule(\"outcomeVar\",%d)", outcome), 1) if outcome > 1
-      push_script(rematchpage.list, "setBattleRule(\"canLose\")", 1) if continue
-      battleString = sprintf("TrainerBattle.start(%s,%d)", safetrcombo, battleid + i)
-      push_branch(rematchpage.list, battleString, 1)
-      push_script(rematchpage.list, sprintf("pbPhoneIncrement(%s,%d)", safetrcombo, battles.length), 2)
-      push_self_switch(rematchpage.list, "A", true, 2)
-      push_self_switch(rematchpage.list, "B", false, 2)
-      push_script(rematchpage.list, "pbTrainerEnd", 2)
-      push_branch_end(rematchpage.list, 2)
-      push_exit(rematchpage.list, 1)   # Exit Event Processing
-      push_branch_end(rematchpage.list, 1)
-      # Last page
-      if endbattles.length > 0
-        ebattle = (endbattles[i]) ? endbattles[i] : endbattles[endbattles.length - 1]
-        push_text(lastpage.list, ebattle, 1)
-      end
-      push_script(lastpage.list,
-                  sprintf("pbPhoneRegisterBattle(_I(\"%s\"),get_self,%s,%d)",
-                          regspeech, safetrcombo, battles.length), 1)
-      push_exit(lastpage.list, 1)   # Exit Event Processing
-      push_branch_end(lastpage.list, 1)
     end
-    # Finish writing rematch page
+    push_script(rematchpage.list, "setBattleRule(\"double\")", 1) if doublebattle
+    push_script(rematchpage.list, sprintf("setBattleRule(\n  \"backdrop\", %s\n)", safequote(backdrop)), 1) if backdrop
+    push_script(rematchpage.list, sprintf("setBattleRule(\"outcomeVar\", %d)", outcome), 1) if outcome > 1
+    push_script(rematchpage.list, "setBattleRule(\"canLose\")", 1) if continue
+    battleString = sprintf("Phone.battle(%s)", safetrcombo)
+    push_branch(rematchpage.list, battleString, 0)
+    push_script(rematchpage.list, sprintf("Phone.reset_after_win(\n  %s\n)", safetrcombo), 1)
+    push_self_switch(rematchpage.list, "A", true, 1)
+    push_script(rematchpage.list, "pbTrainerEnd", 1)
+    push_branch_end(rematchpage.list, 1)
     push_end(rematchpage.list)
-    # Finish writing last page
-    ebattle = (endbattles[0]) ? endbattles[0] : "..."
-    push_text(lastpage.list, ebattle)
+    # Write last page
+    if endbattles.length > 0
+      if battles.length == 1
+        push_text(lastpage.list, endbattles[0], 0)
+      else
+        (0...battles.length).each do |i|
+          if i == battles.length - 1
+            push_branch(lastpage.list, sprintf("Phone.variant(%s) >= %d", safetrcombo, i))
+          else
+            push_branch(lastpage.list, sprintf("Phone.variant(%s) == %d", safetrcombo, i))
+          end
+          ebattle = (endbattles[i]) ? endbattles[i] : endbattles[endbattles.length - 1]
+          push_text(lastpage.list, ebattle, 1)
+          push_branch_end(lastpage.list, 1)
+        end
+      end
+    end
     if battles.length > 1
-      push_script(lastpage.list,
-                  sprintf("pbPhoneRegisterBattle(_I(\"%s\"),get_self,%s,%d)",
-                          regspeech, safetrcombo, battles.length))
+      push_branch(lastpage.list, sprintf("Phone.can_add?(%s)", safetrcombo), 0)
+      push_text(lastpage.list, regspeech, 1)
+      push_choices(lastpage.list, ["Yes", "No"], 2, 1)
+      push_choice(lastpage.list, 0, "Yes", 2)
+      if common_event > 0
+        if battleid > 0
+          push_script(lastpage.list, sprintf("Phone.add(get_self,\n  %s, %d, %d, %d\n)",
+                                             brieftrcombo, battles.length, battleid, common_event), 2)
+        else
+          push_script(lastpage.list, sprintf("Phone.add(get_self,\n  %s, %d, nil, %d\n)",
+                                             brieftrcombo, battles.length, common_event), 2)
+        end
+      else
+        if battleid > 0
+          push_script(lastpage.list, sprintf("Phone.add(get_self,\n  %s, %d, %d\n)",
+                                             brieftrcombo, battles.length, battleid), 2)
+        else
+          push_script(lastpage.list, sprintf("Phone.add(get_self,\n  %s, %d\n)",
+                                             brieftrcombo, battles.length), 2)
+        end
+      end
+      push_choice(lastpage.list, 1, "No", 2)
+      push_choices_end(lastpage.list, 2)
+      push_branch_end(lastpage.list, 1)
     end
     push_end(lastpage.list)
     # Add pages to the new event
@@ -781,24 +846,24 @@ module Compiler
           list.clear
           push_move_route_and_wait(   # Move Route for door opening
             list, 0,
-            [PBMoveRoute::PlaySE, RPG::AudioFile.new("Door enter"), PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnLeft, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnRight, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnUp, PBMoveRoute::Wait, 2]
+            [PBMoveRoute::PLAY_SE, RPG::AudioFile.new("Door enter"), PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_LEFT, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_RIGHT, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_UP, PBMoveRoute::WAIT, 2]
           )
           push_move_route_and_wait(   # Move Route for player entering door
             list, -1,
-            [PBMoveRoute::ThroughOn, PBMoveRoute::Up, PBMoveRoute::ThroughOff]
+            [PBMoveRoute::THROUGH_ON, PBMoveRoute::UP, PBMoveRoute::THROUGH_OFF]
           )
           push_event(list, 208, [0])   # Change Transparent Flag (invisible)
           push_script(list, "Followers.follow_into_door")
           push_event(list, 210, [])   # Wait for Move's Completion
           push_move_route_and_wait(   # Move Route for door closing
             list, 0,
-            [PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnRight, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnLeft, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnDown, PBMoveRoute::Wait, 2]
+            [PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_RIGHT, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_LEFT, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_DOWN, PBMoveRoute::WAIT, 2]
           )
           push_event(list, 223, [Tone.new(-255, -255, -255), 6])   # Change Screen Color Tone
           push_wait(list, 8)   # Wait
@@ -814,17 +879,17 @@ module Compiler
           push_script(list, "Followers.hide_followers", 1)
           push_move_route_and_wait(   # Move Route for setting door to open
             list, 0,
-            [PBMoveRoute::TurnLeft, PBMoveRoute::Wait, 6],
+            [PBMoveRoute::TURN_LEFT, PBMoveRoute::WAIT, 6],
             1
           )
           push_event(list, 208, [1], 1)   # Change Transparent Flag (visible)
-          push_move_route_and_wait(list, -1, [PBMoveRoute::Down], 1)   # Move Route for player exiting door
+          push_move_route_and_wait(list, -1, [PBMoveRoute::DOWN], 1)   # Move Route for player exiting door
           push_script(list, "Followers.put_followers_on_player", 1)
           push_move_route_and_wait(   # Move Route for door closing
             list, 0,
-            [PBMoveRoute::TurnUp, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnRight, PBMoveRoute::Wait, 2,
-             PBMoveRoute::TurnDown, PBMoveRoute::Wait, 2],
+            [PBMoveRoute::TURN_UP, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_RIGHT, PBMoveRoute::WAIT, 2,
+             PBMoveRoute::TURN_DOWN, PBMoveRoute::WAIT, 2],
             1
           )
           push_branch_end(list, 1)
@@ -955,13 +1020,13 @@ module Compiler
       list[index].parameters[1] = sprintf("WildBattle.start(#{pkmn1}, #{pkmn2})")
       old_indent = list[index].indent
       new_events = []
-      if battle_params[3] && battle_params[5][/false/]
+      if battle_params[5] && battle_params[5][/false/]
         push_script(new_events, "setBattleRule(\"cannotRun\")", old_indent)
       end
-      if battle_params[4] && battle_params[6][/true/]
+      if battle_params[6] && battle_params[6][/true/]
         push_script(new_events, "setBattleRule(\"canLose\")", old_indent)
       end
-      if battle_params[2] && battle_params[4] != "1"
+      if battle_params[4] && battle_params[4] != "1"
         push_script(new_events, "setBattleRule(\"outcome\", #{battle_params[4]})", old_indent)
       end
       list[index, 0] = new_events if new_events.length > 0
@@ -974,31 +1039,26 @@ module Compiler
       list[index].parameters[1] = sprintf("WildBattle.start(#{pkmn1}, #{pkmn2}, #{pkmn3})")
       old_indent = list[index].indent
       new_events = []
-      if battle_params[3] && battle_params[7][/false/]
+      if battle_params[7] && battle_params[7][/false/]
         push_script(new_events, "setBattleRule(\"cannotRun\")", old_indent)
       end
-      if battle_params[4] && battle_params[8][/true/]
+      if battle_params[8] && battle_params[8][/true/]
         push_script(new_events, "setBattleRule(\"canLose\")", old_indent)
       end
-      if battle_params[2] && battle_params[6] != "1"
+      if battle_params[6] && battle_params[6] != "1"
         push_script(new_events, "setBattleRule(\"outcome\", #{battle_params[6]})", old_indent)
       end
       list[index, 0] = new_events if new_events.length > 0
       changed = true
     elsif script[/^\s*pbTrainerBattle\((.+)\)\s*$/]
-      echoln ""
-      echoln $1
       battle_params = split_string_with_quotes($1)   # Split on commas
-      echoln battle_params
       trainer1 = "#{battle_params[0]}, #{battle_params[1]}"
       trainer1 += ", #{battle_params[4]}" if battle_params[4] && battle_params[4] != "nil"
       list[index].parameters[1] = "TrainerBattle.start(#{trainer1})"
       old_indent = list[index].indent
       new_events = []
       if battle_params[2] && !battle_params[2].empty? && battle_params[2] != "nil"
-        echoln battle_params[2]
         speech = battle_params[2].gsub(/^\s*_I\(\s*"\s*/, "").gsub(/\"\s*\)\s*$/, "")
-        echoln speech
         push_comment(new_events, "EndSpeech: #{speech.strip}", old_indent)
       end
       if battle_params[3] && battle_params[3][/true/]
@@ -1056,7 +1116,7 @@ module Compiler
         speech = battle_params[7].gsub(/^\s*_I\(\s*"\s*/, "").gsub(/\"\s*\)\s*$/, "")
         push_comment(new_events, "EndSpeech2: #{speech.strip}", old_indent)
       end
-      if battle_params[7] && !battle_params[7].empty? && battle_params[11] != "nil"
+      if battle_params[11] && !battle_params[11].empty? && battle_params[11] != "nil"
         speech = battle_params[11].gsub(/^\s*_I\(\s*"\s*/, "").gsub(/\"\s*\)\s*$/, "")
         push_comment(new_events, "EndSpeech3: #{speech.strip}", old_indent)
       end
@@ -1112,17 +1172,13 @@ module Compiler
           # Using old method of recovering
           case script
           when "foriin$player.partyi.healend"
-            (i..lastScript).each do |j|
-              list.delete_at(i)
-            end
+            (lastScript - i).times { list.delete_at(i) }
             list.insert(i,
                         RPG::EventCommand.new(314, list[i].indent, [0]))   # Recover All
             changed = true
           when "pbFadeOutIn(99999){foriin$player.partyi.healend}"
             oldIndent = list[i].indent
-            (i..lastScript).each do |j|
-              list.delete_at(i)
-            end
+            (lastScript - i).times { list.delete_at(i) }
             list.insert(
               i,
               RPG::EventCommand.new(223, oldIndent, [Tone.new(-255, -255, -255), 6]),   # Fade to black
@@ -1626,23 +1682,23 @@ module Compiler
   #=============================================================================
   def compile_trainer_events(_mustcompile)
     mapData = MapData.new
-    t = Time.now.to_i
+    t = System.uptime
     Graphics.update
     trainerChecker = TrainerChecker.new
     change_record = []
-    Console.echo_li _INTL("Processing {1} maps...", mapData.mapinfos.keys.length)
+    Console.echo_li(_INTL("Processing {1} maps...", mapData.mapinfos.keys.length))
     idx = 0
     mapData.mapinfos.keys.sort.each do |id|
-      echo "." if idx % 20 == 0
+      echo "." if idx % 100 == 0
       idx += 1
-      Graphics.update if idx % 250 == 0
+      Graphics.update if idx % 500 == 0
       changed = false
       map = mapData.getMap(id)
       next if !map || !mapData.mapinfos[id]
       map.events.each_key do |key|
-        if Time.now.to_i - t >= 5
+        if System.uptime - t >= 5
+          t += 5
           Graphics.update
-          t = Time.now.to_i
         end
         newevent = convert_to_trainer_event(map.events[key], trainerChecker)
         if newevent
@@ -1662,9 +1718,9 @@ module Compiler
           changed = true
         end
       end
-      if Time.now.to_i - t >= 5
+      if System.uptime - t >= 5
+        t += 5
         Graphics.update
-        t = Time.now.to_i
       end
       changed = true if check_counters(map, id, mapData)
       if changed
@@ -1674,11 +1730,11 @@ module Compiler
       end
     end
     Console.echo_done(true)
-    change_record.each { |msg| Console.echo_warn msg }
+    change_record.each { |msg| Console.echo_warn(msg) }
     changed = false
     Graphics.update
     commonEvents = load_data("Data/CommonEvents.rxdata")
-    Console.echo_li _INTL("Processing common events...")
+    Console.echo_li(_INTL("Processing common events..."))
     commonEvents.length.times do |key|
       newevent = fix_event_use(commonEvents[key], 0, mapData)
       if newevent
@@ -1689,7 +1745,7 @@ module Compiler
     save_data(commonEvents, "Data/CommonEvents.rxdata") if changed
     Console.echo_done(true)
     if change_record.length > 0 || changed
-      Console.echo_warn _INTL("RMXP data was altered. Close RMXP now to ensure changes are applied.")
+      Console.echo_warn(_INTL("RMXP data was altered. Close RMXP now to ensure changes are applied."))
     end
   end
 end

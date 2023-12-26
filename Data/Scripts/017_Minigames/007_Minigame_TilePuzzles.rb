@@ -1,4 +1,4 @@
-################################################################################
+#===============================================================================
 # "Tile Puzzle" mini-games
 # By Maruno
 # Graphics by the__end
@@ -14,7 +14,7 @@
 # board = The name/number of the graphics to be used.
 # width,height = Optional, the number of tiles wide/high the puzzle is (0 for
 #                the default value of 4).
-################################################################################
+#===============================================================================
 class TilePuzzleCursor < BitmapSprite
   attr_accessor :game
   attr_accessor :position
@@ -35,7 +35,7 @@ class TilePuzzleCursor < BitmapSprite
     @arrows = []
     @selected = false
     @holding = false
-    @cursorbitmap = AnimatedBitmap.new("Graphics/Pictures/Tile Puzzle/cursor")
+    @cursorbitmap = AnimatedBitmap.new("Graphics/UI/Tile Puzzle/cursor")
     update
   end
 
@@ -83,8 +83,9 @@ class TilePuzzleCursor < BitmapSprite
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class TilePuzzleScene
   def initialize(game, board, width, height)
     @game = game
@@ -148,23 +149,23 @@ class TilePuzzleScene
     @sprites = {}
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
-    if pbResolveBitmap("Graphics/Pictures/Tile Puzzle/bg#{@board}")
+    if pbResolveBitmap("Graphics/UI/Tile Puzzle/bg#{@board}")
       addBackgroundPlane(@sprites, "bg", "Tile Puzzle/bg#{@board}", @viewport)
     else
       addBackgroundPlane(@sprites, "bg", "Tile Puzzle/bg", @viewport)
     end
-    @tilebitmap = AnimatedBitmap.new("Graphics/Pictures/Tile Puzzle/tiles#{@board}")
+    @tilebitmap = AnimatedBitmap.new("Graphics/UI/Tile Puzzle/tiles#{@board}")
     @tilebitmap1 = nil
     @tilebitmap2 = nil
     @tilebitmap3 = nil
-    if pbResolveBitmap("Graphics/Pictures/Tile Puzzle/tiles#{@board}_1")
-      @tilebitmap1 = AnimatedBitmap.new("Graphics/Pictures/Tile Puzzle/tiles#{@board}_1")
+    if pbResolveBitmap("Graphics/UI/Tile Puzzle/tiles#{@board}_1")
+      @tilebitmap1 = AnimatedBitmap.new("Graphics/UI/Tile Puzzle/tiles#{@board}_1")
     end
-    if pbResolveBitmap("Graphics/Pictures/Tile Puzzle/tiles#{@board}_2")
-      @tilebitmap2 = AnimatedBitmap.new("Graphics/Pictures/Tile Puzzle/tiles#{@board}_2")
+    if pbResolveBitmap("Graphics/UI/Tile Puzzle/tiles#{@board}_2")
+      @tilebitmap2 = AnimatedBitmap.new("Graphics/UI/Tile Puzzle/tiles#{@board}_2")
     end
-    if pbResolveBitmap("Graphics/Pictures/Tile Puzzle/tiles#{@board}_3")
-      @tilebitmap3 = AnimatedBitmap.new("Graphics/Pictures/Tile Puzzle/tiles#{@board}_3")
+    if pbResolveBitmap("Graphics/UI/Tile Puzzle/tiles#{@board}_3")
+      @tilebitmap3 = AnimatedBitmap.new("Graphics/UI/Tile Puzzle/tiles#{@board}_3")
     end
     @tilewidth = @tilebitmap.width / @boardwidth
     @tileheight = @tilebitmap.height / @boardheight
@@ -308,17 +309,16 @@ class TilePuzzleScene
       if anim
         @sprites["cursor"].visible = false
         @sprites["tile#{@heldtile}"].z = 1
-        oldAngle = @sprites["tile#{@heldtile}"].angle
-        rotateTime = Graphics.frame_rate / 4
-        angleDiff = 90.0 / rotateTime
-        rotateTime.times do
-          @sprites["tile#{@heldtile}"].angle -= angleDiff
+        old_angle = @sprites["tile#{@heldtile}"].angle
+        timer_start = System.uptime
+        loop do
+          @sprites["tile#{@heldtile}"].angle = lerp(old_angle, old_angle - 90, 0.25, timer_start, System.uptime)
           pbUpdateSpriteHash(@sprites)
           Graphics.update
           Input.update
+          break if @sprites["tile#{@heldtile}"].angle == old_angle - 90
         end
         @sprites["tile#{@heldtile}"].z = 0
-        @sprites["tile#{@heldtile}"].angle = oldAngle - 90
         @sprites["cursor"].visible = true if !pbCheckWin
       end
       @angles[@heldtile] -= 1
@@ -328,24 +328,23 @@ class TilePuzzleScene
       group = pbGetNearTiles(pos)
       if anim
         @sprites["cursor"].visible = false
-        oldAngles = []
+        old_angles = []
         group.each do |i|
           @sprites["tile#{@tiles[i]}"].z = 1
-          oldAngles[i] = @sprites["tile#{@tiles[i]}"].angle
+          old_angles.push(@sprites["tile#{@tiles[i]}"].angle)
         end
-        rotateTime = Graphics.frame_rate / 4
-        angleDiff = 90.0 / rotateTime
-        rotateTime.times do
-          group.each do |i|
-            @sprites["tile#{@tiles[i]}"].angle -= angleDiff
+        timer_start = System.uptime
+        loop do
+          group.each_with_index do |idx, i|
+            @sprites["tile#{@tiles[idx]}"].angle = lerp(old_angles[i], old_angles[i] - 90, 0.25, timer_start, System.uptime)
           end
           pbUpdateSpriteHash(@sprites)
           Graphics.update
           Input.update
+          break if @sprites["tile#{@tiles[group[0]]}"].angle == old_angles[0] - 90
         end
         group.each do |i|
           @sprites["tile#{@tiles[i]}"].z = 0
-          @sprites["tile#{@tiles[i]}"].angle = oldAngles[i] - 90
         end
         @sprites["cursor"].visible = true if !pbCheckWin
       end
@@ -373,26 +372,33 @@ class TilePuzzleScene
     movetile = pbMoveCursor(cursor, dir)
     @sprites["cursor"].visible = false
     @sprites["tile#{@tiles[cursor]}"].z = 1
-    swapTime = Graphics.frame_rate * 3 / 10
+    duration = 0.3
+    timer_start = System.uptime
     if [2, 8].include?(dir)   # Swap vertically
-      distancePerFrame = (@tileheight.to_f / swapTime).ceil
+      start_sprite_pos = @sprites["tile#{@tiles[movetile]}"].y
+      start_cursor_pos = @sprites["tile#{@tiles[cursor]}"].y
       dist = (dir / 4).floor - 1
-      swapTime.times do
-        @sprites["tile#{@tiles[movetile]}"].y += dist * distancePerFrame
-        @sprites["tile#{@tiles[cursor]}"].y   -= dist * distancePerFrame
+      loop do
+        delta_y = lerp(0, @tileheight * dist, duration, timer_start, System.uptime)
+        @sprites["tile#{@tiles[movetile]}"].y = start_sprite_pos + delta_y
+        @sprites["tile#{@tiles[cursor]}"].y = start_cursor_pos - delta_y
         pbUpdateSpriteHash(@sprites)
         Graphics.update
         Input.update
+        break if @sprites["tile#{@tiles[movetile]}"].y == start_sprite_pos + (@tileheight * dist)
       end
     else   # Swap horizontally
-      distancePerFrame = (@tilewidth.to_f / swapTime).ceil
+      start_sprite_pos = @sprites["tile#{@tiles[movetile]}"].x
+      start_cursor_pos = @sprites["tile#{@tiles[cursor]}"].x
       dist = dir - 5
-      swapTime.times do
-        @sprites["tile#{@tiles[movetile]}"].x -= dist * distancePerFrame
-        @sprites["tile#{@tiles[cursor]}"].x   += dist * distancePerFrame
+      loop do
+        delta_x = lerp(0, @tilewidth * dist, duration, timer_start, System.uptime)
+        @sprites["tile#{@tiles[movetile]}"].x = start_sprite_pos - delta_x
+        @sprites["tile#{@tiles[cursor]}"].x = start_cursor_pos + delta_x
         pbUpdateSpriteHash(@sprites)
         Graphics.update
         Input.update
+        break if @sprites["tile#{@tiles[movetile]}"].x == start_sprite_pos - (@tilewidth * dist)
       end
     end
     @tiles[cursor], @tiles[movetile] = @tiles[movetile], @tiles[cursor]
@@ -427,35 +433,41 @@ class TilePuzzleScene
       end
     end
     # Shift tiles
-    fadeTime = Graphics.frame_rate * 4 / 10
-    fadeDiff = (255.0 / fadeTime).ceil
+    fade_duration = 0.4
     if anim
       @sprites["cursor"].visible = false
-      fadeTime.times do
-        @sprites["tile#{@tiles[tiles[tiles.length - 1]]}"].opacity -= fadeDiff
+      timer_start = System.uptime
+      loop do
+        end_tile = @sprites["tile#{@tiles[tiles[tiles.length - 1]]}"]
+        end_tile.opacity = lerp(255, 0, fade_duration, timer_start, System.uptime)
         Graphics.update
         Input.update
+        break if end_tile.opacity == 0
       end
-      shiftTime = Graphics.frame_rate * 3 / 10
+      duration = 0.3
+      timer_start = System.uptime
+      start_pos = []
       if [2, 8].include?(dir)
-        distancePerFrame = (@tileheight.to_f / shiftTime).ceil
-        shiftTime.times do
-          tiles.each do |i|
-            @sprites["tile#{@tiles[i]}"].y -= dist * distancePerFrame
+        tiles.each { |i| start_pos.push(@sprites["tile#{@tiles[i]}"].y) }
+        loop do
+          tiles.each_with_index do |idx, i|
+            @sprites["tile#{@tiles[idx]}"].y = lerp(start_pos[i], start_pos[i] - (@tileheight * dist), duration, timer_start, System.uptime)
           end
           pbUpdateSpriteHash(@sprites)
           Graphics.update
           Input.update
+          break if @sprites["tile#{@tiles[tiles[0]]}"].y == start_pos[0] - (@tileheight * dist)
         end
       else
-        distancePerFrame = (@tilewidth.to_f / shiftTime).ceil
-        shiftTime.times do
-          tiles.each do |i|
-            @sprites["tile#{@tiles[i]}"].x += dist * distancePerFrame
+        tiles.each { |i| start_pos.push(@sprites["tile#{@tiles[i]}"].x) }
+        loop do
+          tiles.each_with_index do |idx, i|
+            @sprites["tile#{@tiles[idx]}"].x = lerp(start_pos[i], start_pos[i] + (@tilewidth * dist), duration, timer_start, System.uptime)
           end
           pbUpdateSpriteHash(@sprites)
           Graphics.update
           Input.update
+          break if @sprites["tile#{@tiles[tiles[0]]}"].x == start_pos[0] + (@tilewidth * dist)
         end
       end
     end
@@ -468,10 +480,13 @@ class TilePuzzleScene
     end
     if anim
       update
-      fadeTime.times do
-        @sprites["tile#{@tiles[tiles[0]]}"].opacity += fadeDiff
+      timer_start = System.uptime
+      loop do
+        end_tile = @sprites["tile#{@tiles[tiles[0]]}"]
+        end_tile.opacity = lerp(0, 255, fade_duration, timer_start, System.uptime)
         Graphics.update
         Input.update
+        break if end_tile.opacity == 255
       end
       @sprites["cursor"].selected = false
       @sprites["cursor"].visible = true if !pbCheckWin
@@ -508,15 +523,15 @@ class TilePuzzleScene
                                Rect.new(@tilewidth * (@boardwidth - 1), @tileheight * (@boardheight - 1),
                                         @tilewidth, @tileheight))
           extratile.opacity = 0
-          appearTime = Graphics.frame_rate * 8 / 10
-          opacityDiff = (255.0 / appearTime).ceil
-          appearTime.times do
-            extratile.opacity += opacityDiff
+          timer_start = System.uptime
+          loop do
+            extratile.opacity = lerp(0, 255, 0.8, timer_start, System.uptime)
             Graphics.update
             Input.update
+            break if extratile.opacity >= 255
           end
         else
-          pbWait(Graphics.frame_rate / 2)
+          pbWait(0.5)
         end
         loop do
           Graphics.update
@@ -563,8 +578,9 @@ class TilePuzzleScene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class TilePuzzle
   def initialize(scene)
     @scene = scene
@@ -578,14 +594,15 @@ class TilePuzzle
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbTilePuzzle(game, board, width = 0, height = 0)
   ret = false
-  pbFadeOutIn {
+  pbFadeOutIn do
     scene = TilePuzzleScene.new(game, board, width, height)
     screen = TilePuzzle.new(scene)
     ret = screen.pbStartScreen
-  }
+  end
   return ret
 end

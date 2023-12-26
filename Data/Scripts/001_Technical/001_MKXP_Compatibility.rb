@@ -1,7 +1,7 @@
-# Using mkxp-z v2.3.1 - https://gitlab.com/mkxp-z/mkxp-z/-/releases/v2.3.1
+# Using mkxp-z v2.4.2/c9378cf - built 2023-07-07
+# https://github.com/mkxp-z/mkxp-z/actions/runs/5482601942
 $VERBOSE = nil
 Font.default_shadow = false if Font.respond_to?(:default_shadow)
-Graphics.frame_rate = 40
 Encoding.default_internal = Encoding::UTF_8
 Encoding.default_external = Encoding::UTF_8
 
@@ -27,12 +27,6 @@ class Bitmap
   end
 end
 
-module Graphics
-  def self.delta_s
-    return self.delta.to_f / 1_000_000
-  end
-end
-
 def pbSetResizeFactor(factor)
   if !$ResizeInitialized
     Graphics.resize_screen(Settings::SCREEN_WIDTH, Settings::SCREEN_HEIGHT)
@@ -45,4 +39,10 @@ def pbSetResizeFactor(factor)
     Graphics.scale = (factor + 1) * 0.5
     Graphics.center
   end
+end
+
+if System::VERSION != Essentials::MKXPZ_VERSION
+  printf(sprintf("\e[1;33mWARNING: mkxp-z version %s detected, but this version of Pokémon Essentials was designed for mkxp-z version %s.\e[0m\r\n",
+                 System::VERSION, Essentials::MKXPZ_VERSION))
+  printf("\e[1;33mWARNING: Pokémon Essentials may not work properly.\e[0m\r\n")
 end

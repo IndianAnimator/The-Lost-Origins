@@ -1,8 +1,0 @@
----
-include:
-  - "Data/Scripts/**/*.rb"
-  - "Plugins/**/*.rb"
-exclude:
-  # I FOUND THE REASON THE LSP WAS CRASHING ON STARTUP its this one file for some reason
-  - "Data/Scripts/011_Battle/005_AI/005_AI_Move_EffectScores.rb"
-...

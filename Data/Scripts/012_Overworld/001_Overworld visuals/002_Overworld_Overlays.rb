@@ -2,6 +2,9 @@
 # Location signpost
 #===============================================================================
 class LocationWindow
+  APPEAR_TIME = 0.4   # In seconds; is also the disappear time
+  LINGER_TIME = 1.6   # In seconds; time during which self is fully visible
+
   def initialize(name)
     @window = Window_AdvancedTextPokemon.new(name)
     @window.resizeToFit(name, Graphics.width)
@@ -10,11 +13,11 @@ class LocationWindow
     @window.viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @window.viewport.z = 99999
     @currentmap = $game_map.map_id
-    @frames = 0
+    @timer_start = System.uptime
   end
 
   def disposed?
-    @window.disposed?
+    return @window.disposed?
   end
 
   def dispose
@@ -28,17 +31,14 @@ class LocationWindow
       @window.dispose
       return
     end
-    if @frames > Graphics.frame_rate * 2
-      @window.y -= 4
-      @window.dispose if @window.y + @window.height < 0
+    if System.uptime - @timer_start >= APPEAR_TIME + LINGER_TIME
+      @window.y = lerp(0, -@window.height, APPEAR_TIME, @timer_start + APPEAR_TIME + LINGER_TIME, System.uptime)
+      @window.dispose if @window.y + @window.height <= 0
     else
-      @window.y += 4 if @window.y < 0
-      @frames += 1
+      @window.y = lerp(-@window.height, 0, APPEAR_TIME, @timer_start, System.uptime)
     end
   end
 end
-
-
 
 #===============================================================================
 # Visibility circle in dark maps
@@ -48,7 +48,7 @@ class DarknessSprite < Sprite
 
   def initialize(viewport = nil)
     super(viewport)
-    @darkness = BitmapWrapper.new(Graphics.width, Graphics.height)
+    @darkness = Bitmap.new(Graphics.width, Graphics.height)
     @radius = radiusMin
     self.bitmap = @darkness
     self.z      = 99998
@@ -64,12 +64,12 @@ class DarknessSprite < Sprite
   def radiusMax; return 176; end   # After using Flash
 
   def radius=(value)
-    @radius = value
+    @radius = value.round
     refresh
   end
 
   def refresh
-    @darkness.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0, 255))
+    @darkness.fill_rect(0, 0, Graphics.width, Graphics.height, Color.black)
     cx = Graphics.width / 2
     cy = Graphics.height / 2
     cradius = @radius
@@ -84,8 +84,6 @@ class DarknessSprite < Sprite
     end
   end
 end
-
-
 
 #===============================================================================
 # Light effects
@@ -120,8 +118,9 @@ class LightEffect
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LightEffect_Lamp < LightEffect
   def initialize(event, viewport = nil, map = nil)
     lamp = AnimatedBitmap.new("Graphics/Pictures/LE")
@@ -138,8 +137,9 @@ class LightEffect_Lamp < LightEffect
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LightEffect_Basic < LightEffect
   def initialize(event, viewport = nil, map = nil, filename = nil)
     super
@@ -164,8 +164,9 @@ class LightEffect_Basic < LightEffect
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class LightEffect_DayNight < LightEffect
   def initialize(event, viewport = nil, map = nil, filename = nil)
     super
@@ -203,8 +204,9 @@ class LightEffect_DayNight < LightEffect
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 EventHandlers.add(:on_new_spriteset_map, :add_light_effects,
   proc { |spriteset, viewport|
     map = spriteset.map   # Map associated with the spriteset (not necessarily the current map)
@@ -221,6 +223,5 @@ EventHandlers.add(:on_new_spriteset_map, :add_light_effects,
         spriteset.addUserSprite(LightEffect_Basic.new(map.events[i], viewport, map))
       end
     end
-    spriteset.addUserSprite(Particle_Engine.new(viewport, map))
   }
 )

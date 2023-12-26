@@ -150,9 +150,8 @@ class DayCare
       egg.nature = new_natures.sample
     end
 
-    # If a Pokémon is bred with a Ditto, that Pokémon can pass down its Hidden
-    # Ability (80% chance). If neither Pokémon are Ditto, then the mother can
-    # pass down its ability (80% chance if Hidden, 60% chance if not).
+    # The female parent (or the non-Ditto parent) can pass down its Hidden
+    # Ability (60% chance) or its regular ability (80% chance).
     # NOTE: This is how ability inheritance works in Gen 6+. Gen 5 is more
     #       restrictive, and even works differently between BW and B2W2, and I
     #       don't think that is worth adding in. Gen 4 and lower don't have
@@ -164,26 +163,25 @@ class DayCare
       parent = (mother[1]) ? father[0] : mother[0]   # The female or non-Ditto parent
       if parent.hasHiddenAbility?
         egg.ability_index = parent.ability_index if rand(100) < 60
-      elsif !mother[1] && !father[1]   # If neither parent is a Ditto
-        if rand(100) < 80
-          egg.ability_index = mother[0].ability_index
-        else
-          egg.ability_index = (mother[0].ability_index + 1) % 2
-        end
+      elsif rand(100) < 80
+        egg.ability_index = parent.ability_index
+      else
+        egg.ability_index = (parent.ability_index + 1) % 2
       end
     end
 
     def inherit_IVs(egg, mother, father)
       # Get all stats
       stats = []
-      GameData::Stat.each_main { |s| stats.push(s) }
-      # Get the number of stats to inherit
+      GameData::Stat.each_main { |s| stats.push(s.id) }
+      # Get the number of stats to inherit (includes ones inherited via Power items)
       inherit_count = 3
       if Settings::MECHANICS_GENERATION >= 6
         inherit_count = 5 if mother.hasItem?(:DESTINYKNOT) || father.hasItem?(:DESTINYKNOT)
       end
-      # Inherit IV because of Power items (if both parents have a Power item,
-      # then only a random one of them is inherited)
+      # Inherit IV because of Power items (if both parents have the same Power
+      # item, then the parent that passes that Power item's stat down is chosen
+      # randomly)
       power_items = [
         [:POWERWEIGHT, :HP],
         [:POWERBRACER, :ATTACK],
@@ -192,18 +190,20 @@ class DayCare
         [:POWERBAND,   :SPECIAL_DEFENSE],
         [:POWERANKLET, :SPEED]
       ]
-      power_stats = []
+      power_stats = {}
       [mother, father].each do |parent|
         power_items.each do |item|
           next if !parent.hasItem?(item[0])
-          power_stats.push(item[1], parent.iv[item[1]])
+          power_stats[item[1]] ||= []
+          power_stats[item[1]].push(parent.iv[item[1]])
           break
         end
       end
-      if power_stats.length > 0
-        power_stat = power_stats.sample
-        egg.iv[power_stat[0]] = power_stat[1]
-        stats.delete(power_stat[0])   # Don't try to inherit this stat's IV again
+      power_stats.each_pair do |stat, new_stats|
+        next if !new_stats || new_stats.length == 0
+        new_stat = new_stats.sample
+        egg.iv[stat] = new_stat
+        stats.delete(stat)   # Don't try to inherit this stat's IV again
         inherit_count -= 1
       end
       # Inherit the rest of the IVs
@@ -404,7 +404,7 @@ class DayCare
     end
   end
 
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   def self.count
     return $PokemonGlobal.day_care.count
@@ -494,7 +494,7 @@ class DayCare
     day_care.reset_egg_counters
   end
 
-  #=============================================================================
+  #-----------------------------------------------------------------------------
 
   private
 
@@ -562,60 +562,3 @@ EventHandlers.add(:on_player_step_taken, :update_day_care,
     $PokemonGlobal.day_care.update_on_step_taken
   }
 )
-
-#===============================================================================
-# Deprecated methods
-#===============================================================================
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareDeposited
-  Deprecation.warn_method("pbDayCareDeposited", "v21", "DayCare.count")
-  return DayCare.count
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareGetDeposited(index, name_var, cost_var)
-  Deprecation.warn_method("pbDayCareGetDeposited", "v21", "DayCare.get_details(index, name_var, cost_var)")
-  DayCare.get_details(index, name_var, cost_var)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareGetLevelGain(index, name_var, level_var)
-  Deprecation.warn_method("pbDayCareGetLevelGain", "v21", "DayCare.get_level_gain(index, name_var, level_var)")
-  DayCare.get_level_gain(index, name_var, level_var)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareDeposit(party_index)
-  Deprecation.warn_method("pbDayCareDeposit", "v21", "DayCare.deposit(party_index)")
-  DayCare.deposit(party_index)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareWithdraw(index)
-  Deprecation.warn_method("pbDayCareWithdraw", "v21", "DayCare.withdraw(index)")
-  DayCare.withdraw(index)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareChoose(text, choice_var)
-  Deprecation.warn_method("pbDayCareChoose", "v21", "DayCare.choose(text, choice_var)")
-  DayCare.choose(text, choice_var)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareGetCompatibility(compat_var)
-  Deprecation.warn_method("pbDayCareGetCompatibility", "v21", "DayCare.get_compatibility(compat_var)")
-  DayCare.get_compatibility(compat_var)
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbEggGenerated?
-  Deprecation.warn_method("pbEggGenerated?", "v21", "DayCare.egg_generated?")
-  return DayCare.egg_generated?
-end
-
-# @deprecated This method is slated to be removed in v21.
-def pbDayCareGenerateEgg
-  Deprecation.warn_method("pbDayCareGenerateEgg", "v21", "DayCare.collect_egg")
-  DayCare.collect_egg
-end

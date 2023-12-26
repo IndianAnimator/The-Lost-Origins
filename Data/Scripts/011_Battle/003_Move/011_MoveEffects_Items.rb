@@ -137,7 +137,7 @@ class Battle::Move::RestoreUserConsumedItem < Battle::Move
   def canSnatch?; return true; end
 
   def pbMoveFailed?(user, targets)
-    if !user.recycleItem
+    if !user.recycleItem || user.item
       @battle.pbDisplay(_INTL("But it failed!"))
       return true
     end
@@ -169,8 +169,8 @@ class Battle::Move::RemoveTargetItem < Battle::Move
   def pbBaseDamage(baseDmg, user, target)
     if Settings::MECHANICS_GENERATION >= 6 &&
        target.item && !target.unlosableItem?(target.item)
-       # NOTE: Damage is still boosted even if target has Sticky Hold or a
-       #       substitute.
+      # NOTE: Damage is still boosted even if target has Sticky Hold or a
+      #       substitute.
       baseDmg = (baseDmg * 1.5).round
     end
     return baseDmg
@@ -196,6 +196,8 @@ class Battle::Move::DestroyTargetBerryOrGem < Battle::Move
     return if target.damageState.substitute || target.damageState.berryWeakened
     return if !target.item || (!target.item.is_berry? &&
               !(Settings::MECHANICS_GENERATION >= 6 && target.item.is_gem?))
+    return if target.unlosableItem?(target.item)
+    return if target.hasActiveAbility?(:STICKYHOLD) && !@battle.moldBreaker
     item_name = target.itemName
     target.pbRemoveItem
     @battle.pbDisplay(_INTL("{1}'s {2} was incinerated!", target.pbThis, item_name))
@@ -287,10 +289,10 @@ class Battle::Move::StartNegateHeldItems < Battle::Move
 end
 
 #===============================================================================
-# The user consumes its held berry and gains its effect. Also, increases the
-# user's Defense by 2 stages. The berry can be consumed even if Unnerve/Magic
-# Room apply. Fails if the user is not holding a berry. This move cannot be
-# chosen to be used if the user is not holding a berry. (Stuff Cheeks)
+# The user consumes its held berry increases its Defense by 2 stages. It also
+# gains the berry's effect if it has one. The berry can be consumed even if
+# Unnerve/Magic Room apply. Fails if the user is not holding a berry. This move
+# cannot be chosen to be used if the user is not holding a berry. (Stuff Cheeks)
 #===============================================================================
 class Battle::Move::UserConsumeBerryRaiseDefense2 < Battle::Move::StatUpMove
   def initialize(battle, move)
@@ -325,7 +327,7 @@ class Battle::Move::UserConsumeBerryRaiseDefense2 < Battle::Move::StatUpMove
     @battle.pbDisplay(_INTL("{1} ate its {2}!", user.pbThis, user.itemName))
     item = user.item
     user.pbConsumeItem(true, false)   # Don't trigger Symbiosis yet
-    user.pbHeldItemTriggerCheck(item, false)
+    user.pbHeldItemTriggerCheck(item.id, false)
   end
 end
 
@@ -367,7 +369,7 @@ class Battle::Move::AllBattlersConsumeBerry < Battle::Move
     @battle.pbCommonAnimation("EatBerry", target)
     item = target.item
     target.pbConsumeItem(true, false)   # Don't trigger Symbiosis yet
-    target.pbHeldItemTriggerCheck(item, false)
+    target.pbHeldItemTriggerCheck(item.id, false)
   end
 end
 
@@ -375,16 +377,23 @@ end
 # User consumes target's berry and gains its effect. (Bug Bite, Pluck)
 #===============================================================================
 class Battle::Move::UserConsumeTargetBerry < Battle::Move
+  def preventsBattlerConsumingHealingBerry?(battler, targets)
+    return targets.any? { |b| b.index == battler.index } &&
+           battler.item&.is_berry? && Battle::ItemEffects::HPHeal[battler.item]
+  end
+
   def pbEffectAfterAllHits(user, target)
     return if user.fainted? || target.fainted?
     return if target.damageState.unaffected || target.damageState.substitute
-    return if !target.item || !target.item.is_berry?
+    return if !target.item || !target.item.is_berry? || target.unlosableItem?(target.item)
     return if target.hasActiveAbility?(:STICKYHOLD) && !@battle.moldBreaker
     item = target.item
     itemName = target.itemName
+    user.setBelched
     target.pbRemoveItem
     @battle.pbDisplay(_INTL("{1} stole and ate its target's {2}!", user.pbThis, itemName))
-    user.pbHeldItemTriggerCheck(item, false)
+    user.pbHeldItemTriggerCheck(item.id, false)
+    user.pbSymbiosis
   end
 end
 
@@ -442,8 +451,13 @@ class Battle::Move::ThrowUserItemAtTarget < Battle::Move
     when :KINGSROCK, :RAZORFANG
       target.pbFlinch(user)
     else
-      target.pbHeldItemTriggerCheck(user.item, true)
+      target.pbHeldItemTriggerCheck(user.item_id, true)
     end
+    # NOTE: The official games only let the target use Belch if the berry flung
+    #       at it has some kind of effect (i.e. it isn't an effectless berry). I
+    #       think this isn't in the spirit of "consuming a berry", so I've said
+    #       that Belch is usable after having any kind of berry flung at you.
+    target.setBelched if user.item.is_berry?
   end
 
   def pbEndOfMoveUsageEffect(user, targets, numHits, switchedBattlers)

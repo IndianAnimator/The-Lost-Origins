@@ -15,7 +15,6 @@ class Battle
       when :Sandstorm then pbDisplay(_INTL("The sandstorm subsided."))
       when :Hail      then pbDisplay(_INTL("The hail stopped."))
       when :ShadowSky then pbDisplay(_INTL("The shadow sky faded."))
-      when :Moon      then pbDisplay(_INTL("The moonlight faded."))
       end
       @field.weather = :None
       # Check for form changes caused by the weather changing
@@ -28,13 +27,13 @@ class Battle
     weather_data = GameData::BattleWeather.try_get(@field.weather)
     pbCommonAnimation(weather_data.animation) if weather_data
     case @field.weather
-#    when :Sun         then pbDisplay(_INTL("The sunlight is strong."))
-#    when :Rain        then pbDisplay(_INTL("Rain continues to fall."))
+    when :Sun         then pbDisplay(_INTL("The sunlight is strong."))
+    when :Rain        then pbDisplay(_INTL("Rain continues to fall."))
     when :Sandstorm   then pbDisplay(_INTL("The sandstorm is raging."))
     when :Hail        then pbDisplay(_INTL("The hail is crashing down."))
-#    when :HarshSun    then pbDisplay(_INTL("The sunlight is extremely harsh."))
-#    when :HeavyRain   then pbDisplay(_INTL("It is raining heavily."))
-#    when :StrongWinds then pbDisplay(_INTL("The wind is strong."))
+    when :HarshSun    then pbDisplay(_INTL("The sunlight is extremely harsh."))
+    when :HeavyRain   then pbDisplay(_INTL("It is raining heavily."))
+    when :StrongWinds then pbDisplay(_INTL("The wind is strong."))
     when :ShadowSky   then pbDisplay(_INTL("The shadow sky continues."))
     end
     # Effects due to weather
@@ -136,15 +135,38 @@ class Battle
   def pbEORSeaOfFireDamage(priority)
     2.times do |side|
       next if sides[side].effects[PBEffects::SeaOfFire] == 0
+      sides[side].effects[PBEffects::SeaOfFire] -= 1
+      next if sides[side].effects[PBEffects::SeaOfFire] == 0
       pbCommonAnimation("SeaOfFire") if side == 0
       pbCommonAnimation("SeaOfFireOpp") if side == 1
       priority.each do |battler|
         next if battler.opposes?(side)
         next if !battler.takesIndirectDamage? || battler.pbHasType?(:FIRE)
         @scene.pbDamageAnimation(battler)
-        battler.pbTakeEffectDamage(battler.totalhp / 8, false) { |hp_lost|
+        battler.pbTakeEffectDamage(battler.totalhp / 8, false) do |hp_lost|
           pbDisplay(_INTL("{1} is hurt by the sea of fire!", battler.pbThis))
-        }
+        end
+      end
+    end
+  end
+
+  #=============================================================================
+  # End Of Round Delusion Damage 
+  #=============================================================================
+  def pbEORDelusionalDamage(priority,pokemon)
+    # Damage from rambling(delusional)
+    if pokemon.attribute == :DELUSIONAL
+      2.times do |side|
+        pbCommonAnimation("SeaOfFire") if side == 0
+        pbCommonAnimation("SeaOfFireOpp") if side == 1
+        priority.each do |battler|
+          next if battler.opposes?(side)
+          next if !battler.takesIndirectDamage? || battler.attribute == :DELUSIONAL
+          @scene.pbDamageAnimation(battler)
+          battler.pbTakeEffectDamage(battler.totalhp / 8, false) do |hp_lost|
+            pbDisplay(_INTL("{1} is hurt by opponent's rambling!", battler.pbThis))
+          end
+        end
       end
     end
   end
@@ -191,11 +213,11 @@ class Battle
       recipient = @battlers[battler.effects[PBEffects::LeechSeed]]
       next if !recipient || recipient.fainted?
       pbCommonAnimation("LeechSeed", recipient, battler)
-      battler.pbTakeEffectDamage(battler.totalhp / 8) { |hp_lost|
+      battler.pbTakeEffectDamage(battler.totalhp / 8) do |hp_lost|
         recipient.pbRecoverHPFromDrain(hp_lost, battler,
                                        _INTL("{1}'s health is sapped by Leech Seed!", battler.pbThis))
         recipient.pbAbilitiesOnDamageTaken
-      }
+      end
       recipient.pbFaint if recipient.fainted?
     end
   end
@@ -260,23 +282,16 @@ class Battle
     priority.each do |battler|
       battler.effects[PBEffects::Nightmare] = false if !battler.asleep?
       next if !battler.effects[PBEffects::Nightmare] || !battler.takesIndirectDamage?
-      battler.pbTakeEffectDamage(battler.totalhp / 4) { |hp_lost|
+      battler.pbTakeEffectDamage(battler.totalhp / 4) do |hp_lost|
         pbDisplay(_INTL("{1} is locked in a nightmare!", battler.pbThis))
-      }
+      end
     end
     # Curse
     priority.each do |battler|
       next if !battler.effects[PBEffects::Curse] || !battler.takesIndirectDamage?
-      battler.pbTakeEffectDamage(battler.totalhp / 4) { |hp_lost|
+      battler.pbTakeEffectDamage(battler.totalhp / 4) do |hp_lost|
         pbDisplay(_INTL("{1} is afflicted by the curse!", battler.pbThis))
-      }
-    end
-    # Delusional
-    priority.each do |battler|
-      next if !battler.attribute == :DELUSIONAL || !battler.takesIndirectDamage?
-      battler.pbTakeEffectDamage(battler.totalhp / 8) { |hp_lost|
-        pbDisplay(_INTL("{1} is losing it's sanity from the rambling", battler.pbThis))
-      }
+      end
     end
   end
 
@@ -309,9 +324,9 @@ class Battle
       hpLoss = (Settings::MECHANICS_GENERATION >= 6) ? battler.totalhp / 6 : battler.totalhp / 8
     end
     @scene.pbDamageAnimation(battler)
-    battler.pbTakeEffectDamage(hpLoss, false) { |hp_lost|
+    battler.pbTakeEffectDamage(hpLoss, false) do |hp_lost|
       pbDisplay(_INTL("{1} is hurt by {2}!", battler.pbThis, move_name))
-    }
+    end
   end
 
   #=============================================================================
@@ -327,9 +342,9 @@ class Battle
 
   def pbEOREndBattlerEffects(priority)
     # Taunt
-    pbEORCountDownBattlerEffect(priority, PBEffects::Taunt) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::Taunt) do |battler|
       pbDisplay(_INTL("{1}'s taunt wore off!", battler.pbThis))
-    }
+    end
     # Encore
     priority.each do |battler|
       next if battler.fainted? || battler.effects[PBEffects::Encore] == 0
@@ -347,34 +362,34 @@ class Battle
       end
     end
     # Disable/Cursed Body
-    pbEORCountDownBattlerEffect(priority, PBEffects::Disable) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::Disable) do |battler|
       battler.effects[PBEffects::DisableMove] = nil
       pbDisplay(_INTL("{1} is no longer disabled!", battler.pbThis))
-    }
+    end
     # Magnet Rise
-    pbEORCountDownBattlerEffect(priority, PBEffects::MagnetRise) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::MagnetRise) do |battler|
       pbDisplay(_INTL("{1}'s electromagnetism wore off!", battler.pbThis))
-    }
+    end
     # Telekinesis
-    pbEORCountDownBattlerEffect(priority, PBEffects::Telekinesis) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::Telekinesis) do |battler|
       pbDisplay(_INTL("{1} was freed from the telekinesis!", battler.pbThis))
-    }
+    end
     # Heal Block
-    pbEORCountDownBattlerEffect(priority, PBEffects::HealBlock) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::HealBlock) do |battler|
       pbDisplay(_INTL("{1}'s Heal Block wore off!", battler.pbThis))
-    }
+    end
     # Embargo
-    pbEORCountDownBattlerEffect(priority, PBEffects::Embargo) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::Embargo) do |battler|
       pbDisplay(_INTL("{1} can use items again!", battler.pbThis))
       battler.pbItemTerrainStatBoostCheck
-    }
+    end
     # Yawn
-    pbEORCountDownBattlerEffect(priority, PBEffects::Yawn) { |battler|
+    pbEORCountDownBattlerEffect(priority, PBEffects::Yawn) do |battler|
       if battler.pbCanSleepYawn?
         PBDebug.log("[Lingering effect] #{battler.pbThis} fell asleep because of Yawn")
         battler.pbSleep
       end
-    }
+    end
     # Perish Song
     perishSongUsers = []
     priority.each do |battler|
@@ -589,7 +604,7 @@ class Battle
       swaps.each do |pair|
         next if pbSideSize(pair[0]) == 2 && swaps.length > 1
         next if !pbSwapBattlers(pair[0], pair[1])
-        case pbSideSize(side)
+        case pbSideSize(pair[1])
         when 2
           pbDisplay(_INTL("{1} moved across!", @battlers[pair[1]].pbThis))
         when 3
@@ -604,7 +619,7 @@ class Battle
   #=============================================================================
   def pbEndOfRoundPhase
     PBDebug.log("")
-    PBDebug.log("[End of round]")
+    PBDebug.log("[End of round #{@turnCount + 1}]")
     @endOfRound = true
     @scene.pbBeginEndOfRoundPhase
     pbCalculatePriority           # recalculate speeds
@@ -619,9 +634,11 @@ class Battle
     pbEORSeaOfFireDamage(priority)
     # Status-curing effects/abilities and HP-healing items
     priority.each do |battler|
-      pbEORTerrainHealing(battler)
+      #delusional AttributeEffects
+      pbEORDelusionalDamage(priority,battler)
       # priest AttributeEffects
       Battle::AttributeEffects.triggerEndOfRoundHealing(battler.attribute, battler, self)
+      pbEORTerrainHealing(battler)
       # Healer, Hydration, Shed Skin
       if battler.abilityActive?
         Battle::AbilityEffects.triggerEndOfRoundHealing(battler.ability, battler, self)
@@ -759,6 +776,7 @@ class Battle
       battler.lastHPLostFromFoe                    = 0
       battler.droppedBelowHalfHP                   = false
       battler.statsDropped                         = false
+      battler.tookMoveDamageThisRound              = false
       battler.tookDamageThisRound                  = false
       battler.tookPhysicalHit                      = false
       battler.statsRaisedThisRound                 = false
