@@ -426,7 +426,7 @@ class PokemonPartyPanel < Sprite
     base_color   = (@pokemon.male?) ? Color.new(0, 112, 248) : Color.new(232, 32, 16)
     shadow_color = (@pokemon.male?) ? Color.new(120, 184, 232) : Color.new(248, 168, 184)
     pbDrawTextPositions(@overlaysprite.bitmap,
-                        [[gender_text, 224, 22, :left, base_color, shadow_color]])
+                        [[gender_text, 64, 68, :left, base_color, shadow_color]])
   end
 
   def draw_hp

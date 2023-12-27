@@ -307,11 +307,11 @@ class Battle::Move
       target.attribute, user, target, self, multipliers, baseDmg, type
     )
     if @battle.pbCheckGlobalAttribute(:DEVASTATION)
-      multipliers[:base_damage_multiplier] *= 1.2
+      multipliers[:power_multiplier] *= 1.2
     end
     #SCREECHINGSOULS
     if (@battle.pbCheckGlobalAbility(:SCREECHINGSOULS) && type == :DARK || type == :GHOST || type == :DEMON)
-      multipliers[:base_damage_multiplier] *= 4 / 3.0
+      multipliers[:power_multiplier] *= 4 / 3.0
     end
     # Global abilities
     if (@battle.pbCheckGlobalAbility(:DARKAURA) && type == :DARK) ||
