@@ -3287,15 +3287,15 @@ Battle::AbilityEffects::OnSwitchIn.add(:SCREECHINGSOULS,
 Battle::AbilityEffects::DamageCalcFromTarget.add(:TWINKLETOES,
   proc { |ability, user, target, move, mults, baseDmg, type|
     case type
-    when :FLYING then mults[:base_damage_multiplier] *= 2
-    when :GROUND then mults[:base_damage_multiplier] /= 2
+    when :FLYING then mults[:power_multiplier] *= 2
+    when :GROUND then mults[:power_multiplier] /= 2
     end
   }
 )
 
 Battle::AbilityEffects::DamageCalcFromUser.add(:ASCENDEDWINGS,
   proc { |ability, user, target, move, mults, baseDmg, type|
-    mults[:base_damage_multiplier] *= 1.2 if move.wingMove?
+    mults[:power_multiplier] *= 1.2 if move.wingMove?
   }
 )
 
