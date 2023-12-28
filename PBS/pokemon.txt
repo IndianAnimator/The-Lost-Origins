@@ -23602,7 +23602,10 @@ Category = King
 Pokedex = Calyrex is a merciful Pokémon, capable of providing healing and blessings. It reigned over the Galar region in times of yore.
 Generation = 8
 Flags = Legendary
-#-------------------------------
+
+#==============================================================
+#PTLO Gods
+#==============================================================
 [ZEUS]
 Name = Zeus
 Types = ELECTRIC,DIVINE
@@ -23614,15 +23617,63 @@ EVs = HP,3
 CatchRate = 0
 Happiness = 100
 Abilities = THUNDERSTORM
-Moves = 1,THUNDER,1,ANCIENTGRUDGE,1,THUNDEROUSKICK,1,HURRICANE
+Moves = 1,THUNDER,1,SMITE,1,THUNDEROUSKICK,1,HURRICANE
 Compatibility = Undiscovered
 HatchSteps= 100000000000
 Height = 12.2
 Weight = 999.9
-Color = Green
+Color = Yellow
 Shape = Bipedal
 Habitat = Rare
-Category = King of Gods
+Category = God of Storms
 Pokedex =  In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
 Generation = 10
 Flags = Legendary
+#-------------------------------
+[HERMES1] # route 2 god battle(may include post-game battle with a bst of 730)
+Name = Hermes
+Types = FLYING,DIVINE
+BaseStats = 50,110,50,150,60,70
+GenderRatio = AlwaysMale
+GrowthRate = Fluctuating
+BaseExp = 350
+EVs = HP,3
+CatchRate = 0
+Happiness = 100
+Abilities = SPEEDBOOST
+Moves = 1,QUICKATTACK,1,DOUBLEKICK,1,SKYDROP,1,ANCIENTGRUDGE
+Compatibility = Undiscovered
+HatchSteps= 100000000000
+Height = 12.2
+Weight = 999.9
+Color = White
+Shape = Bipedal
+Habitat = Rare
+Category = God of Messengers
+Pokedex =  In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
+Generation = 10
+Flags = Legendary 
+#-------------------------------
+[DIONYSUS1] # route 2 god battle(may include post-game battle with a bst of 730)
+Name = Dionysus
+Types = POISON,DIVINE
+BaseStats = 150,90,55,30,100,75 # +150 if traunt
+GenderRatio = AlwaysMale
+GrowthRate = Fluctuating
+BaseExp = 350
+EVs = HP,3
+CatchRate = 0
+Happiness = 100
+Abilities = THUNDERSTORM
+Moves = 1,SLUDGE,1,SMITE,1,MEGADRAIN,1,SNARL
+Compatibility = Undiscovered
+HatchSteps= 100000000000
+Height = 12.2
+Weight = 999.9
+Color = Purple
+Shape = Bipedal
+Habitat = Rare
+Category = God of Pleasure
+Pokedex =  In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
+Generation = 10
+Flags = Legendary 

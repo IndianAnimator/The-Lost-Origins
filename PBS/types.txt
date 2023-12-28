@@ -132,7 +132,7 @@ Immunities = DRAGON
 Name = Divine
 IconPosition = 19
 IsSpecialType = true
-Weaknesses = PSYCHIC,NORMAL
+Weaknesses = PSYCHIC,NORMAL,POISON
 Resistances = DEMON,DARK,DRAGON,STEEL,DIVINE
 Immunities = FAIRY
 #-------------------------------
