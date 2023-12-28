@@ -399,3 +399,11 @@ Gender = Male
 BaseMoney = 100
 BattleBGM = Battle Champion
 VictoryBGM = Battle victory leader
+#-------------------------------
+[ANCIENTBEING]
+Name = Ancient Being 
+BaseMoney = 20
+SkillLevel = 100
+Flags = ConsiderSwitching, HPAware, ScoreMoves, PredictMoveFailure, AntiReserveLastPokemon, AntiUsePokemonInOrder
+BattleBGM = Battle Champion
+VictoryBGM = Battle victory leader

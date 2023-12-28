@@ -23602,27 +23602,3 @@ Category = King
 Pokedex = Calyrex is a merciful Pokémon, capable of providing healing and blessings. It reigned over the Galar region in times of yore.
 Generation = 8
 Flags = Legendary
-#-------------------------------
-[ZEUS]
-Name = Zeus
-Types = ELECTRIC,DIVINE
-BaseStats = 100,100,100,150,150,130
-GenderRatio = AlwaysMale
-GrowthRate = Fluctuating
-BaseExp = 350
-EVs = HP,3
-CatchRate = 0
-Happiness = 100
-Abilities = THUNDERSTORM
-Moves = 1,THUNDER,1,ANCIENTGRUDGE,1,THUNDEROUSKICK,1,HURRICANE
-Compatibility = Undiscovered
-HatchSteps= 100000000000
-Height = 12.2
-Weight = 999.9
-Color = Green
-Shape = Bipedal
-Habitat = Rare
-Category = King of Gods
-Pokedex =  In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
-Generation = 10
-Flags = Legendary

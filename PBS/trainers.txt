@@ -116,3 +116,11 @@ Pokemon = CHARIZARD,63
     Item = SITRUSBERRY
 Pokemon = BLASTOISE,63
     Item = SITRUSBERRY
+
+#-------------------------------
+[ANCIENTBEING,Zeus]
+LoseText = THIS IS NOT THE END.
+Pokemon = ZEUS,50
+    IV = 31
+    EV = 0,0,4,252,252,0
+    Attribute = KING
