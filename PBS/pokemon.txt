@@ -23677,3 +23677,32 @@ Category = God of Pleasure
 Pokedex =  In normal gameplay, you wouldn’t have this. So hello there hacker/modder.
 Generation = 10
 Flags = Legendary 
+
+#==============================================================
+#PTLO Fakemon and others?
+#==============================================================
+[PYTHRACON]
+Name = Pythracon
+Types = FIRE,DEMON
+BaseStats = 60,30,55,90,75,50
+GenderRatio = FemaleOneEighth
+GrowthRate = Medium
+BaseExp = 64
+EVs = SPEED,3
+CatchRate = 45
+Happiness = 50
+Abilities = BLAZE
+HiddenAbilities = SOLARPOWER
+Moves = 1,SCRATCH,1,GROWL,4,EMBER,8,SMOKESCREEN,12,DRAGONBREATH,17,FIREFANG,20,SLASH,24,FLAMETHROWER,28,SCARYFACE,32,FIRESPIN,36,INFERNO,40,FLAREBLITZ
+TutorMoves = BODYSLAM,BRICKBREAK,CRUNCH,DIG,DRAGONCLAW,DRAGONDANCE,DRAGONPULSE,DRAGONTAIL,ENDURE,FACADE,FALSESWIPE,FIREBLAST,FIREFANG,FIREPLEDGE,FIREPUNCH,FIRESPIN,FLAMECHARGE,FLAMETHROWER,FLAREBLITZ,FLING,FOCUSBLAST,FOCUSPUNCH,HEATWAVE,HELPINGHAND,METALCLAW,OUTRAGE,OVERHEAT,PROTECT,REST,ROAR,ROCKSLIDE,ROCKTOMB,SCARYFACE,SHADOWCLAW,SLEEPTALK,SUBSTITUTE,SUNNYDAY,SWIFT,SWORDSDANCE,TAKEDOWN,THUNDERPUNCH,WEATHERBALL,WILLOWISP
+EggGroups = Monster,Dragon
+HatchSteps = 5120
+Height = 0.6
+Weight = 8.5
+Color = Red
+Shape = Serpentine
+Habitat = Rare
+Category = Lizard Demon
+Pokedex = A pokemon without much info. It's existence is special as it seems to be a descendent to Arceus.
+Generation = 10
+#-------------------------------
