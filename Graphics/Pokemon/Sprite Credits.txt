@@ -1,0 +1,10 @@
+Battler Sprites:
+
+Gen 1-5 Pokemon Sprites      - veekun
+Gen 6 Pokemon Sprites        - All Contributors To Smogon X/Y Sprite Project
+Gen 7 Pokemon Sprites        - All Contributors To Smogon Sun/Moon Sprite Project
+Gen 8 Pokemon Sprites        - All Contributors To Smogon  Sword/Shield Sprite Project
+
+Gen 9 Pokemon Sprites:
+  KingOfThe-X-Roads, Caruban, Mak, Abnayami, Skyflyer, OldSoulja, jinxed, leParagon,
+  Katten, Sopita_Yorita, Divaruta 666, Azria, Mashirosakura, Clara, JordanosArt, AshnixsLaw
