@@ -23683,7 +23683,7 @@ Flags = Legendary
 #==============================================================
 [PYTHRACON]
 Name = Pythracon
-Types = FIRE,DEMON
+Types = DEMON
 BaseStats = 60,30,55,90,75,50
 GenderRatio = FemaleOneEighth
 GrowthRate = Medium

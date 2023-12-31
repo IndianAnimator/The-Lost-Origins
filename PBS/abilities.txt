@@ -1074,7 +1074,6 @@ Description = Combines Unnerve and Grim Neigh Abilities.
 #========================================================================
 #PTLO ABILITIES
 #========================================================================
-
 [THUNDERSTORM]
 Name = Thunderstorm
 Description = Combines Drizzle and Electric Surge Abilities.
@@ -1107,7 +1106,6 @@ Description = Resists ground type moves, however makes it more weak to flying ty
 Name = Twilight
 Description = Summons the night if it is in battle.
 #-------------------------------
-[NEUROTOXIN]
 [NEUROTOXIN]
 Name = Neurotoxin
 Description = All biting moves have a chance to paralyze or poison.
