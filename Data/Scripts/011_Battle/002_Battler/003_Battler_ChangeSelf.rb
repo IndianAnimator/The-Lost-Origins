@@ -88,16 +88,16 @@ class Battle::Battler
          #delete the current form from the list of forms we can change to
          availableForms.delete(self.form)
          availableNames.delete(self.form)
-         if self.hasMega?
-           availableForms.delete(self.getMegaForm)
-           availableForms.delete(self.getMegaForm)
-         end
          if availableForms.length > 0
-           #there is more than one form, so we can change it
-           sel = rand(availableForms.length)
-           #set the form
-           self.pbChangeForm(sel,nil)
-           msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
+          #there is more than one form, so we can change it
+          sel = rand(availableForms.length)
+          #set the form
+          @battle.pbAnimation(:TRANSFORM,self,nil)
+          self.pokemon.form_simple = sel
+           if MultipleForms.hasFunction?(self.pokemon, "getForm")
+            self.pokemon.forced_form = f
+          end
+          msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
          else
            msg = _INTL("{1} was reincarnated!", pbThis)
            self.pbRaiseStatStage(:ATTACK, 1, self)
