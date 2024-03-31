@@ -8834,7 +8834,10 @@ Target = User
 FunctionCode = RaiseUserDefense1
 Flags = ZPower_DEFENSE_1
 Description = The user withdraws its body into its hard shell, raising its Defense stat.
-#-------------------------------
+
+#===============================
+#PTLO DIVINE Type
+#===============================
 [ANCIENTGRUDGE]
 Name = Ancient Grudge
 Type = DIVINE
@@ -8860,7 +8863,10 @@ FunctionCode = FlinchTarget
 Flags = CanProtect,CanMirrorMove
 EffectChance = 30
 Description = The user uses it's divine strength to attack. It may also make the target flinch.
-#-------------------------------
+
+#===============================
+#PTLO DEMON Type
+#===============================
 [DEVOUR]
 Name = Devour
 Type = DEMON
