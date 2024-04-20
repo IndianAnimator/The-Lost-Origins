@@ -3213,13 +3213,19 @@ Battle::AbilityEffects::CertainEscapeFromBattle.add(:RUNAWAY,
 
 Battle::AbilityEffects::OnSwitchIn.add(:THUNDERSTORM,
   proc { |ability, battler, battle, switch_in|
-    battle.pbStartTerrainAbility(:Electric, battler, !battle.pbStartWeatherAbility(:Rain, battler))
+    battle.pbStartWeatherAbility(:Rain, battler)
+    next if battle.field.terrain != :Electric
+    battle.pbShowAbilitySplash(battler)
+    battle.pbStartTerrain(battler, :Electric)
   }
 )
 
 Battle::AbilityEffects::OnSwitchIn.add(:SUNRISE,
   proc { |ability, battler, battle, switch_in|
-    battle.pbStartTerrainAbility(:Grassy, battler, !battle.pbStartWeatherAbility(:Sun, battler))
+    battle.pbStartWeatherAbility(:Sun, battler)
+    next if battle.field.terrain != :Electric
+    battle.pbShowAbilitySplash(battler)
+    battle.pbStartTerrain(battler, :Grassy)
   }
 )
 
@@ -3353,4 +3359,3 @@ Battle::AbilityEffects::DamageCalcFromUser.add(:SAVAGERY,
     end
   }
 )
-

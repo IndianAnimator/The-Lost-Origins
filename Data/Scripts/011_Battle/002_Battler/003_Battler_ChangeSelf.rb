@@ -84,30 +84,34 @@ class Battle::Battler
           availableForms.push(sp.form)
           availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
         end
-         #there is more than one form, so we can change it
-         #delete the current form from the list of forms we can change to
-         availableForms.delete(self.form)
-         availableNames.delete(self.form)
-         if availableForms.length > 0
+        #there is more than one form, so we can change it
+        #delete the current form from the list of forms we can change to
+        availableForms.delete_at(self.form)
+        availableNames.delete_at(self.form)
+        echoln("available forms: #{availableForms}")
+        echoln("available names: #{availableNames}")
+        if availableForms.length > 0
           #there is more than one form, so we can change it
           sel = rand(availableForms.length)
           #set the form
+          self.pokemon.form = availableForms[sel]
+          self.form = self.pokemon.form
           @battle.pbAnimation(:TRANSFORM,self,nil)
-          self.pokemon.form_simple = sel
-           if MultipleForms.hasFunction?(self.pokemon, "getForm")
-            self.pokemon.forced_form = f
-          end
+          pbUpdate(true)
+          @battle.scene.pbChangePokemon(self,self.pokemon)
           msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
-         else
-           msg = _INTL("{1} was reincarnated!", pbThis)
-           self.pbRaiseStatStage(:ATTACK, 1, self)
-           self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
-         end
+        else
+          msg = _INTL("{1} was reincarnated!", pbThis)
+          self.pbRaiseStatStage(:ATTACK, 1, self)
+          self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
+        end
+        echoln("form changed to: #{self.form}")
+        echoln("form name: #{GameData::Species.get(self.pokemon.species).form_name}")
+        echoln(msg)
       else
         msg = _INTL("problem here")
       end
       @battle.pbDisplay(msg)
-      @battle.scene.pbRefresh
       @fainted = true
     end
 
