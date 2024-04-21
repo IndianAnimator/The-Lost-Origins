@@ -422,6 +422,7 @@ module Battle::AttributeEffects
         battle.pbDisplay(_INTL("{1}'s Attribute became {2}!", user.pbThis, user.attribute.name))
       end
       user.pbOnLosingAttribute(oldAtr)
+      user.pbTriggerAttributeOnGainingIt
     }
   )
 

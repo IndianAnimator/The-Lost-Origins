@@ -428,7 +428,7 @@ class Pokemon
   # defined at this index. Is recalculated (as 0 or 1) if made nil.
   # @return [Integer] the index of this Pokémon's ability
   def ability_index
-    @ability_index = (@personalID & 1) if !@ability_index
+    @ability_index = (@personalID & 2) == 2 ? 2 : (@personalID & 1) == 1 ? 1 : 0 if !@ability_index
     return @ability_index
   end
 
@@ -448,9 +448,10 @@ class Pokemon
     if !@ability
       sp_data = species_data
       abil_index = ability_index
+      echoln("ability_index: #{abil_index}")
       if abil_index >= 2   # Hidden ability
         @ability = sp_data.hidden_abilities[abil_index - 2]
-        abil_index = (@personalID & 1) if !@ability
+        abil_index = (@personalID & 2) == 2 ? 2 : (@personalID & 1) == 1 ? 1 : 0 if !@ability
       end
       if !@ability   # Natural ability or no hidden ability defined
         @ability = sp_data.abilities[abil_index] || sp_data.abilities[0]

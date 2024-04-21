@@ -200,7 +200,7 @@ class Battle::Battler
   #=============================================================================
     # Attribute change
     #=============================================================================
-    def pbOnLosingAttribute(oldAtr, suppressed = false)
+    def pbOnLosingAttribute(oldAtr)
       @effects[PBEffects::Phoenix]       = false if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
       @effects[PBEffects::Embargo]       = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
       @effects[PBEffects::Substitute]    = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
