@@ -88,8 +88,6 @@ class Battle::Battler
         #delete the current form from the list of forms we can change to
         availableForms.delete_at(self.form)
         availableNames.delete_at(self.form)
-        echoln("available forms: #{availableForms}")
-        echoln("available names: #{availableNames}")
         if availableForms.length > 0
           #there is more than one form, so we can change it
           sel = rand(availableForms.length)
@@ -105,9 +103,6 @@ class Battle::Battler
           self.pbRaiseStatStage(:ATTACK, 1, self)
           self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
         end
-        echoln("form changed to: #{self.form}")
-        echoln("form name: #{GameData::Species.get(self.pokemon.species).form_name}")
-        echoln(msg)
       else
         msg = _INTL("problem here")
       end
