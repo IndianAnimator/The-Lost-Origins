@@ -492,7 +492,7 @@ module Battle::AttributeEffects
     }
   )
 
-  Battle::AbilityEffects::OnSwitchIn.add(:PROPHET,
+  Battle::AttributeEffects::OnSwitchIn.add(:PROPHET,
   proc { |ability, battler, battle, switch_in|
     next if !battler.pbOwnedByPlayer?
     next if battle.futureSight

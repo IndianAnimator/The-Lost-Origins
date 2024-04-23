@@ -456,8 +456,6 @@ class Pokemon
         @ability = sp_data.abilities[abil_index] || sp_data.abilities[0]
       end
     end
-    ability_index = abil_index
-    echoln("ability_index: #{abil_index}")
     return @ability
   end
 

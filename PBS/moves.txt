@@ -8847,7 +8847,7 @@ Accuracy = 100
 TotalPP = 10
 Target = NearOther
 FunctionCode = TypeDependsOnTargetsType
-Description = Two turns after this move is used, a hunk of psychic energy attacks the target.
+Description = should not be learned by any pokemon >:(
 
 #===============================
 #PTLO DIVINE Type

@@ -18,7 +18,7 @@ class Battle::Move
   end
 
   def pbDisplayUseMessage(user)
-    @battle.pbDisplayBrief(_INTL("{1} used {2}!", user.pbThis, @name))
+    @battle.pbDisplayBrief(_INTL("{1} used {2}!", user.pbThis, @name)) if @id != :PROPHECY
   end
 
   def pbShowFailMessages?(targets); return true; end
