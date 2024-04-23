@@ -1,7 +1,7 @@
 ################################################################################
-# 
+#
 # Battle::Battler class changes.
-# 
+#
 ################################################################################
 
 
@@ -32,15 +32,15 @@ class Battle::Battler
     @mirrorHerbUsed  = false
     @legendPlateType = nil
   end
-  
+
   def ability_triggered?
     return @battle.pbAbilityTriggered?(self)
   end
-  
+
   def num_times_hit
     return @battle.pbRageHitCount(self)
   end
-  
+
   def num_fainted_allies
     return @battle.pbFaintedAllyCount(self)
   end
@@ -55,19 +55,19 @@ class Battle::Battler
   # Aliased for Double Shock effect.
   #-----------------------------------------------------------------------------
   alias paldea_pbTypes pbTypes
-  def pbTypes(withType3 = false)
-    ret = paldea_pbTypes(withType3)
+  def pbTypes(withExtraType = false)
+    ret = paldea_pbTypes(withExtraType)
     ret.delete(:ELECTRIC) if @effects[PBEffects::DoubleShock]
     return ret
   end
-  
+
   alias paldea_pbChangeTypes pbChangeTypes
   def pbChangeTypes(newType)
     paldea_pbChangeTypes(newType)
     @effects[PBEffects::DoubleShock] = false
     if abilityActive? && @proteanTrigger # Protean/Libero
       Battle::AbilityEffects.triggerOnTypeChange(self.ability, self, newType)
-    end 
+    end
   end
 
   alias paldea_pbResetTypes pbResetTypes
@@ -75,12 +75,12 @@ class Battle::Battler
     paldea_pbResetTypes
     @effects[PBEffects::DoubleShock] = false
   end
-  
-  
+
+
   ##############################################################################
   # Related to changing stats.
   ##############################################################################
-  
+
 
   #-----------------------------------------------------------------------------
   # Aliased for Clear Amulet checks.
@@ -95,7 +95,7 @@ class Battle::Battler
     end
     return paldea_pbCanLowerStatStage?(*args)
   end
-  
+
   alias paldea_pbLowerAttackStatStageIntimidate pbLowerAttackStatStageIntimidate
   def pbLowerAttackStatStageIntimidate(user)
     return false if fainted?
@@ -106,7 +106,7 @@ class Battle::Battler
     end
     return paldea_pbLowerAttackStatStageIntimidate(user)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased for Guard Dog.
   #-----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class Battle::Battler
     end
     return paldea_pbLowerStatStageByAbility(stat, increment, user, splashAnim)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased for Opportunist and Mirror Herb checks.
   #-----------------------------------------------------------------------------
@@ -129,23 +129,23 @@ class Battle::Battler
     end
     return ret
   end
-  
+
   alias paldea_pbRaiseStatStageByCause pbRaiseStatStageByCause
   def pbRaiseStatStageByCause(*args)
     ret = paldea_pbRaiseStatStageByCause(*args)
     if ret && !@mirrorHerbUsed && !(hasActiveAbility?(:CONTRARY) && !args[5] && !@battle.moldBreaker)
-      addSideStatUps(args[0], args[1]) 
+      addSideStatUps(args[0], args[1])
     end
     return ret
   end
-  
+
   alias paldea_pbRaiseStatStageByAbility pbRaiseStatStageByAbility
   def pbRaiseStatStageByAbility(*args)
     ret = paldea_pbRaiseStatStageByAbility(*args)
     pbMirrorStatUpsOpposing
     return ret
   end
-  
+
   #-----------------------------------------------------------------------------
   # Used for triggering and consuming Mirror Herb.
   #-----------------------------------------------------------------------------
@@ -157,7 +157,7 @@ class Battle::Battler
       pbHeldItemTriggered(itm, item_to_use.nil?, false)
     end
   end
-  
+
   #-----------------------------------------------------------------------------
   # General proc for Opportunist and Mirror Herb.
   #-----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ class Battle::Battler
     end
     statUps.clear
   end
-  
+
   #-----------------------------------------------------------------------------
   # Used to tally up the amount of stats raised on each side.
   #-----------------------------------------------------------------------------
@@ -184,13 +184,13 @@ class Battle::Battler
     statUps[stat] = 0 if !statUps[stat]
     statUps[stat] += increment
   end
-  
+
 
   ##############################################################################
   # Related to battler ability checks.
   ##############################################################################
-  
-  
+
+
   #-----------------------------------------------------------------------------
   # Aliased to add Gen 9 unstoppable abilities to blacklist.
   #-----------------------------------------------------------------------------
@@ -203,11 +203,11 @@ class Battle::Battler
     return [
       :COMMANDER,
       :PROTOSYNTHESIS,
-      :QUARKDRIVE,	  
+      :QUARKDRIVE,
       :ZEROTOHERO
     ].include?(abil.id)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased to add Gen 9 ungainable abilities to blacklist.
   #-----------------------------------------------------------------------------
@@ -221,7 +221,7 @@ class Battle::Battler
       :WONDERGUARD,
       :COMMANDER,
       :PROTOSYNTHESIS,
-      :QUARKDRIVE,	  
+      :QUARKDRIVE,
       :ZEROTOHERO,
       :EMBODYASPECT,
       :EMBODYASPECT_1,
@@ -229,7 +229,7 @@ class Battle::Battler
       :EMBODYASPECT_3
     ].include?(abil.id)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Returns true if ability cannot be copied.
   #-----------------------------------------------------------------------------
@@ -244,7 +244,7 @@ class Battle::Battler
       :TRACE
     ].include?(abil.id)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Specifically used to check for an Ability Shield for Neutralizing Gas.
   #-----------------------------------------------------------------------------
@@ -257,7 +257,7 @@ class Battle::Battler
     return false if check_ability == :KLUTZ || self.ability == :KLUTZ
     return true
   end
-  
+
   #-----------------------------------------------------------------------------
   # -Edited to ensure the trigger of Gen 9 versions of certain abilities.
   # -Allows the Ability Shield to ignore Neutralizing Gas.
@@ -276,7 +276,7 @@ class Battle::Battler
                     !activeAbilityShield?(check_ability) && @battle.pbCheckGlobalAbility(:NEUTRALIZINGGAS)
     return true
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased for new continuous ability checks.
   #-----------------------------------------------------------------------------
@@ -298,7 +298,7 @@ class Battle::Battler
     end
     pbMirrorStatUpsOpposing
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased for Protosynthesis checks whenever weather is changed.
   #-----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ class Battle::Battler
     end
     paldea_pbCheckFormOnWeatherChange(ability_changed)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Commander utilities.
   #-----------------------------------------------------------------------------
@@ -317,12 +317,12 @@ class Battle::Battler
     commander = @effects[PBEffects::Commander]
     return commander && commander.length == 1
   end
-  
+
   def isCommanderHost?
     commander = @effects[PBEffects::Commander]
     return commander && commander.length == 2
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased to prevent Pokemon under the effects of Commander from switching.
   #-----------------------------------------------------------------------------
@@ -331,7 +331,7 @@ class Battle::Battler
     return true if @effects[PBEffects::Commander]
     return paldea_trappedInBattle?
   end
-  
+
   #-----------------------------------------------------------------------------
   # -Aliased to end the effects of Commander when one of the pair faints
   # -Adds to the number of fainted party members this battle.
@@ -350,14 +350,14 @@ class Battle::Battler
       end
       commanderMsg = _INTL("{1} comes out of {2}'s mouth!", *order)
     end
-    paldea_pbFaint(showMessage) 
+    paldea_pbFaint(showMessage)
     @battle.pbAddFaintedAlly(self)
     if commanderMsg
       @battle.pbDisplay(commanderMsg)
       batSprite.visible = true
     end
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased to run initial checks for effects that would ignore abilities.
   #-----------------------------------------------------------------------------
@@ -370,7 +370,7 @@ class Battle::Battler
     end
     return targets
   end
-  
+
   alias paldea_pbChangeTargets pbChangeTargets
   def pbChangeTargets(move, user, targets)
     targets = paldea_pbChangeTargets(move, user, targets)
@@ -380,13 +380,13 @@ class Battle::Battler
     end
     return targets
   end
-  
-  
+
+
   ##############################################################################
   # Related to battler move usage.
   ##############################################################################
-  
-  
+
+
   #-----------------------------------------------------------------------------
   # -Aliased so the Charge effect ends only after using an Electric-type move.
   # -Moves that cause electrocution heals Drowsiness.
@@ -409,12 +409,12 @@ class Battle::Battler
       targets.each do |b|
         next if b.damageState.unaffected || b.damageState.substitute
         b.pbCureStatus if b.status == :DROWSY && move.electrocuteUser?
-        b.pbCureStatus if b.status == :FROSTBITE && move.thawsUser?  
+        b.pbCureStatus if b.status == :FROSTBITE && move.thawsUser?
       end
     end
     paldea_pbEffectsAfterMove(user, targets, move, numHits)
   end
-  
+
   #-----------------------------------------------------------------------------
   # -Aliased to power up Rage Fist when struck.
   # -Adds counter for Basculin -> Basculegion evolution method.
@@ -430,7 +430,7 @@ class Battle::Battler
       user.pokemon.recoil_evolution(recoil)
     end
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased to copy the number of hits taken by the target when transforming.
   #-----------------------------------------------------------------------------
@@ -440,7 +440,7 @@ class Battle::Battler
     rage_counter = @battle.rage_hit_count[@index & 1][@pokemonIndex]
     rage_counter = @battle.pbRageHitCount(target)
   end
-  
+
   #-----------------------------------------------------------------------------
   # Aliased so Gigaton Hammer/Blood Moon can't be selected consecutively.
   #-----------------------------------------------------------------------------
@@ -456,7 +456,7 @@ class Battle::Battler
     end
     return paldea_pbCanChooseMove?(move, commandPhase, showMessages, specialUsage)
   end
-  
+
   #-----------------------------------------------------------------------------
   # -Aliased to add Silk Trap to move success check.
   # -Rechecks for effects that ignore abilities before running success check.

@@ -448,7 +448,6 @@ class Pokemon
     if !@ability
       sp_data = species_data
       abil_index = ability_index
-      echoln("ability_index: #{abil_index}")
       if abil_index >= 2   # Hidden ability
         @ability = sp_data.hidden_abilities[abil_index - 2]
         abil_index = (@personalID & 2) == 2 ? 2 : (@personalID & 1) == 1 ? 1 : 0 if !@ability
@@ -457,6 +456,8 @@ class Pokemon
         @ability = sp_data.abilities[abil_index] || sp_data.abilities[0]
       end
     end
+    ability_index = abil_index
+    echoln("ability_index: #{abil_index}")
     return @ability
   end
 

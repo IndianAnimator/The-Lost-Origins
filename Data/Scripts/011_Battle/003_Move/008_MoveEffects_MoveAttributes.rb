@@ -1618,3 +1618,21 @@ class Battle::Move::NormalMovesBecomeElectric < Battle::Move
     @battle.pbDisplay(_INTL("A deluge of ions showers the battlefield!"))
   end
 end
+
+#===============================================================================
+# Type is dependent on targets's type
+#===============================================================================
+class Battle::Move::TypeDependsOnTargetsType < Battle::Move
+  def pbBaseType(user)
+    types = []
+    target = user.pbDirectOpposing
+    GameData::Type.each do |t|
+      ret = Effectiveness.calculate(t.id, *target.pbTypes(true))
+      if ret == 2
+        types.push(t.id)
+      end
+    end
+    typeIdx = rand(types.length)
+    return types[typeIdx]
+  end
+end

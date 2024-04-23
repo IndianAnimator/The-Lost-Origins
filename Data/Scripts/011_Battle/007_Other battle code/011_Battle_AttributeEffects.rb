@@ -385,7 +385,7 @@ module Battle::AttributeEffects
   Battle::AttributeEffects::DamageCalcFromUser.add(:CORRUPTED,
     proc { |attribute, user, target, move, mults, baseDmg, type|
       mults[:power_multiplier] *= 1.5
-      user.effects[PBEffects::Type3] = :GHOST
+      user.effects[PBEffects::ExtraType] = :GHOST
       user.effects[PBEffects::Curse] = true
     }
   )
@@ -460,7 +460,7 @@ module Battle::AttributeEffects
   )
 
   Battle::AttributeEffects::OnSwitchIn.add(:BEASTMASTER,
-    proc { |ability, battler, battle, switch_in|
+    proc { |attribute, battler, battle, switch_in|
       if battler.pokemon.species_data.get_evolutions(true).length > 0
         battler.pbRaiseStatStage(:DEFENSE, 1, battler)
         battler.pbRaiseStatStage(:SPECIAL_DEFENSE, 1, battler)
@@ -477,7 +477,7 @@ module Battle::AttributeEffects
     }
   )
 
-  Battle::AbilityEffects::ModifyMoveBaseType.add(:ENTREPRENEUR,
+  Battle::AttributeEffects::ModifyMoveBaseType.add(:ENTREPRENEUR,
     proc { |attribute, user, move, type|
       moveType = pbRandom(user.types)
       next if type != :NORMAL || !GameData::Type.exists?(moveType)
@@ -486,8 +486,51 @@ module Battle::AttributeEffects
     }
   )
 
-  Battle::AbilityEffects::DamageCalcFromUser.add(:ENTREPRENEUR,
+  Battle::AttributeEffects::DamageCalcFromUser.add(:ENTREPRENEUR,
     proc { |attribute, user, target, move, mults, baseDmg, type|
       mults[:power_multiplier] *= 1.2 if move.powerBoost
     }
   )
+
+  Battle::AbilityEffects::OnSwitchIn.add(:PROPHET,
+  proc { |ability, battler, battle, switch_in|
+    next if !battler.pbOwnedByPlayer?
+    next if battle.futureSight
+    effects = battle.positions[battler.pbDirectOpposing.index].effects
+    effects[PBEffects::FutureSightCounter]        = 2
+    effects[PBEffects::FutureSightMove]           = :PROPHECY
+    effects[PBEffects::FutureSightUserIndex]      = battler.index
+    effects[PBEffects::FutureSightUserPartyIndex] = battler.pokemonIndex
+    battle.pbDisplay(_INTL("{1} is foretelling a prophecy!", battler.pbThis))
+
+    # anticipation shit
+    battlerTypes = battler.pbTypes(true)
+    types = battlerTypes
+    found = false
+    battle.allOtherSideBattlers(battler.index).each do |b|
+      b.eachMove do |m|
+        next if m.statusMove?
+        if types.length > 0
+          moveType = m.type
+          if Settings::MECHANICS_GENERATION >= 6 && m.function_code == "TypeDependsOnUserIVs"   # Hidden Power
+            moveType = pbHiddenPower(b.pokemon)[0]
+          end
+          eff = Effectiveness.calculate(moveType, *types)
+          next if Effectiveness.ineffective?(eff)
+          next if !Effectiveness.super_effective?(eff) &&
+                  !["OHKO", "OHKOIce", "OHKOHitsUndergroundTarget"].include?(m.function_code)
+        elsif !["OHKO", "OHKOIce", "OHKOHitsUndergroundTarget"].include?(m.function_code)
+          next
+        end
+        found = true
+        break
+      end
+      break if found
+    end
+    if found
+      battle.pbShowAbilitySplash(battler)
+      battle.pbDisplay(_INTL("{1} shuddered with anticipation!", battler.pbThis))
+      battle.pbHideAbilitySplash(battler)
+    end
+  }
+)

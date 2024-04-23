@@ -206,7 +206,7 @@ class Battle::Battler
       @effects[PBEffects::Substitute]    = 0 if oldAtr == :PHOENIX || oldAtr == :REINCARNATED
       @effects[PBEffects::Taunt]         = 0 if oldAtr == :DEMIGOD
       @effects[PBEffects::Confusion]     = 0 if oldAtr == :DELUSIONAL
-      @effects[PBEffects::Type3]         = nil if oldAtr == :CORRUPTED
+      @effects[PBEffects::ExtraType]         = nil if oldAtr == :CORRUPTED
       @effects[PBEffects::Curse]         = false if oldAtr == :CORRUPTED
       @effects[PBEffects::MagicCoat]     = false if oldAtr == :FORGOTTEN
     end

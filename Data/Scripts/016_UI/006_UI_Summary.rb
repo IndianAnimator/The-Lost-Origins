@@ -79,7 +79,7 @@ class RibbonSelectionSprite < MoveSelectionSprite
     w = @movesel.width
     h = @movesel.height / 2
     self.x = 228 + ((self.index % 4) * 68)
-    self.y = 76 + ((self.index / 4).floor * 68)
+    self.y = 76 + ((self.index/4).floor * 68)
     self.bitmap = @movesel.bitmap
     if self.preselected
       self.src_rect.set(0, h, w, h)
@@ -588,7 +588,7 @@ class PokemonSummary_Scene
     end
     #write attribute
     name = @pokemon.attribute.name
-		memo += _INTL("Attribute of <c3=F83820,E09890>{1}<c3=404040,B0B0B0>\n", name)
+		memo += _INTL("Attribute of the <c3=F83820,E09890>{1}<c3=404040,B0B0B0>\n", name)
 		memo += "\n"  # Empty line
 		memo += _INTL( @pokemon.attribute.description)
     # Write all text
