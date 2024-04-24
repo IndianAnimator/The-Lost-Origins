@@ -349,16 +349,6 @@ class Battle::Move::TwoTurnMove < Battle::Move
       user.pbConsumeItem
     end
     if @demigod
-      # Moves that would make the user semi-invulnerable will hide the user
-      # after the charging animation, so the "UseItem" animation shouldn't show
-      # for it
-      if !["TwoTurnAttackInvulnerableInSky",
-           "TwoTurnAttackInvulnerableUnderground",
-           "TwoTurnAttackInvulnerableUnderwater",
-           "TwoTurnAttackInvulnerableInSkyParalyzeTarget",
-           "TwoTurnAttackInvulnerableRemoveProtections",
-           "TwoTurnAttackInvulnerableInSkyTargetCannotAct"].include?(@function)
-      end
       @battle.pbDisplay(_INTL("{1} became fully charged due to its divine energy", user.pbThis))
     end
   end

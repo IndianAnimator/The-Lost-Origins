@@ -537,12 +537,12 @@ class Battle::Move
     return 0 if target.hasActiveAbility?(:SHIELDDUST) && !@battle.moldBreaker
     ret = 0
     if user.hasActiveAbility?(:STENCH, true) ||
-       user.hasActiveItem?([:KINGSROCK, :RAZORFANG], true)
+       user.hasActiveItem?([:KINGSROCK, :RAZORFANG], true) ||
        user.attribute == :KING
       ret = 10
     end
     ret *= 2 if user.hasActiveAbility?(:SERENEGRACE) ||
-                user.pbOwnSide.effects[PBEffects::Rainbow] > 0 || 
+                user.pbOwnSide.effects[PBEffects::Rainbow] > 0 ||
                 user.attribute == :MONK
     return ret
   end

@@ -519,13 +519,13 @@ class Battle::Move::UserFaintsExplosive < Battle::Move
   end
 
   def pbBaseDamage(baseDmg, user, target)
-    return baseDmg *= 1.3 if user.attribute == :MATYR
+    return baseDmg *= 1.3 if user.attribute == :MARTYR
     return baseDmg
   end
 
   def pbSelfKO(user)
     no_faint = @battle.pbRandom(9)
-    return false if user.attribute == :MATYR && no_faint == 0
+    return false if user.attribute == :MARTYR && no_faint == 0
     return if user.fainted?
     user.pbReduceHP(user.hp, false)
     user.pbItemHPHealCheck
@@ -539,13 +539,13 @@ end
 class Battle::Move::UserFaintsPowersUpInMistyTerrainExplosive < Battle::Move::UserFaintsExplosive
   def pbBaseDamage(baseDmg, user, target)
     baseDmg = baseDmg * 3 / 2 if @battle.field.terrain == :Misty
-    return baseDmg *= 1.3 if user.attribute == :MATYR
+    return baseDmg *= 1.3 if user.attribute == :MARTYR
     return baseDmg
   end
 
   def pbSelfKO(user)
     no_faint = @battle.pbRandom(9)
-    return false if user.attribute == :MATYR && no_faint == 0
+    return false if user.attribute == :MARTYR && no_faint == 0
     return if user.fainted?
     user.pbReduceHP(user.hp, false)
     user.pbItemHPHealCheck
@@ -564,13 +564,13 @@ class Battle::Move::UserFaintsFixedDamageUserHP < Battle::Move::FixedDamageMove
   end
 
   def pbFixedDamage(user, target)
-    return @finalGambitDamage *= 1.3 if user.attribute == :MATYR
+    return @finalGambitDamage *= 1.3 if user.attribute == :MARTYR
     return @finalGambitDamage
   end
 
   def pbSelfKO(user)
     no_faint = @battle.pbRandom(9)
-    return false if user.attribute == :MATYR && no_faint == 0
+    return false if user.attribute == :MARTYR && no_faint == 0
     return if user.fainted?
     user.pbReduceHP(user.hp, false)
     user.pbItemHPHealCheck

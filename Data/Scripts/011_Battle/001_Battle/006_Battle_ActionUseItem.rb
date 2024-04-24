@@ -8,10 +8,14 @@ class Battle
       return false
     end
     # Embargo
-    if battler && battler.effects[PBEffects::Embargo] > 0
+    if battler && (battler.effects[PBEffects::Embargo] > 0 || battler.attribute == :DEMIGOD)
       if showMessages
-        scene.pbDisplay(_INTL("Embargo's effect prevents the item's use on {1}!",
+        if battler.effects[PBEffects::Embargo] > 0
+          scene.pbDisplay(_INTL("Embargo's effect prevents the item's use on {1}!",
                               battler.pbThis(true)))
+        else
+          scene.pbDisplay(_INTL("Typical items don't affect divine beings!"))
+        end
       end
       return false
     end

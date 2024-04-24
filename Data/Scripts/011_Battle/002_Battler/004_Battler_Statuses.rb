@@ -570,6 +570,7 @@ class Battle::Battler
   #=============================================================================
   def pbFlinch(_user = nil)
     return if hasActiveAbility?(:INNERFOCUS) && !@battle.moldBreaker
+    return if attribute == :KING
     @effects[PBEffects::Flinch] = true
   end
 end

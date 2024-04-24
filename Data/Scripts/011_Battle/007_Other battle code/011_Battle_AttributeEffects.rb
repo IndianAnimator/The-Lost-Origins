@@ -441,7 +441,7 @@ module Battle::AttributeEffects
   )
 
   Battle::AttributeEffects::OnSwitchIn.add(:BERSERKER,
-    proc { |ability, battler, battle, switch_in|
+    proc { |attribute, battler, battle, switch_in|
       battler.pbRaiseStatStage(:ATTACK, 1, battler)
     }
   )
@@ -479,10 +479,12 @@ module Battle::AttributeEffects
 
   Battle::AttributeEffects::ModifyMoveBaseType.add(:ENTREPRENEUR,
     proc { |attribute, user, move, type|
-      moveType = pbRandom(user.types)
+      types = user.pbTypes(true)
+      typeIdx = rand(user.types.length)
+      moveType = types[typeIdx]
       next if type != :NORMAL || !GameData::Type.exists?(moveType)
       move.powerBoost = true
-      next :moveType
+      next moveType
     }
   )
 
@@ -493,7 +495,7 @@ module Battle::AttributeEffects
   )
 
   Battle::AttributeEffects::OnSwitchIn.add(:PROPHET,
-  proc { |ability, battler, battle, switch_in|
+  proc { |attribute, battler, battle, switch_in|
     next if !battler.pbOwnedByPlayer?
     next if battle.futureSight
     effects = battle.positions[battler.pbDirectOpposing.index].effects
@@ -529,7 +531,7 @@ module Battle::AttributeEffects
     end
     if found
       battle.pbShowAbilitySplash(battler)
-      battle.pbDisplay(_INTL("{1} shuddered with anticipation!", battler.pbThis))
+      battle.pbDisplay(_INTL("{1} foretells the use of a dangerous move!", battler.pbThis))
       battle.pbHideAbilitySplash(battler)
     end
   }

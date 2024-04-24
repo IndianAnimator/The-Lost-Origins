@@ -1626,11 +1626,15 @@ class Battle::Move::TypeDependsOnTargetsType < Battle::Move
   def pbBaseType(user)
     types = []
     target = user.pbDirectOpposing
-    GameData::Type.each do |t|
-      ret = Effectiveness.calculate(t.id, *target.pbTypes(true))
-      if ret == 2
-        types.push(t.id)
+    if target
+      GameData::Type.each do |t|
+        ret = Effectiveness.calculate(t.id, *target.pbTypes(true))
+        if ret == 2
+          types.push(t.id)
+        end
       end
+    else
+      types = user.pbTypes(true)
     end
     typeIdx = rand(types.length)
     return types[typeIdx]

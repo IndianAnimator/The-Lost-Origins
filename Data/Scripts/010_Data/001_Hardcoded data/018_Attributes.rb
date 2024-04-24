@@ -37,7 +37,7 @@ module GameData
   #===============================================================================
 
   GameData::Attribute.register({
-    :id           => :MATYR, # mispelled
+    :id           => :MARTYR,
     :name         => _INTL("Martyr"),
     :description  => _INTL("Self-destructing moves are boosted by 1.3x, 10% to not self-destruct")
   })
@@ -76,7 +76,7 @@ module GameData
   GameData::Attribute.register({
     :id           => :KING,
     :name         => _INTL("King"),
-    :description  => _INTL("All allied pokemons accuracy are boosted by 10%, crit by 10%")
+    :description  => _INTL("All allied pokemons accuracy and crit are boosted by 10%, and the pokemon will not flinch")
   })
 
   GameData::Attribute.register({
