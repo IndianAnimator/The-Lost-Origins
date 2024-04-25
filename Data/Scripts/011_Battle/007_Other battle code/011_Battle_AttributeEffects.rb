@@ -63,6 +63,8 @@ module Battle::AttributeEffects
     OnIntimidated                    = AttributeHandlerHash.new   # Rattled (Gen 8)
     # Running from battle
     CertainEscapeFromBattle          = AttributeHandlerHash.new   # Run Away
+    # Custom methods
+    BeforeBeingHit                   = AttributeHandlerHash.new   # Forgotten (attribute)
 
     #=============================================================================
 
@@ -290,6 +292,12 @@ module Battle::AttributeEffects
     def self.triggerCertainEscapeFromBattle(attribute, battler)
       return trigger(CertainEscapeFromBattle, attribute, battler)
     end
+
+    #=============================================================================
+
+    def self.triggerBeforeBeingHit(attribute, user, target, move, battle)
+      return trigger(BeforeBeingHit, attribute, user, target, move, battle)
+    end
   end
 
   Battle::AttributeEffects::OnEndOfUsingMove.add(:HERO,
@@ -379,6 +387,28 @@ module Battle::AttributeEffects
     proc { |attribute, mods, user, target, move, type|
       mods[:evasion_multiplier] *= 1.25
       target.effects[PBEffects::MagicCoat] = true
+    }
+  )
+
+  Battle::AttributeEffects::BeforeBeingHit.add(:FORGOTTEN,
+    proc { |attribute, user, target, move, battle|
+      battle.pbDisplay(_INTL("{1} forgot who its target was!", target.pbThis))
+      newTargArr = []
+      battle.allBattlers.each do |b|
+        next if b == user
+        next if b.attribute == :FORGOTTEN
+        newTargArr.push(b)
+      end
+      newTargIdx = battle.pbRandom(newTargArr.length)
+
+      newTarg = newTargArr[newTargIdx]
+      echoln("new targ: #{newTarg.pbThis} possible targets: ")
+      newTargArr.each { |b| echoln("  #{b.pbThis}") }
+      if newTarg && newTargArr.length > 0
+        target.pbUseMove([:UseMove, -1, move, newTarg.index])
+      else
+        target.pbUseMove([:UseMove, -1, move, user.index])
+      end
     }
   )
 

@@ -114,7 +114,7 @@ class Battle::Battler
     badge_level = 10 * (@battle.pbPlayer.badge_count + 1)
     badge_level = GameData::GrowthRate.max_level if @battle.pbPlayer.badge_count >= 8
     if Settings::ANY_HIGH_LEVEL_POKEMON_CAN_DISOBEY ||
-       (Settings::FOREIGN_HIGH_LEVEL_POKEMON_CAN_DISOBEY && @pokemon.foreign?(@battle.pbPlayer))|| 
+       (Settings::FOREIGN_HIGH_LEVEL_POKEMON_CAN_DISOBEY && @pokemon.foreign?(@battle.pbPlayer))||
        self.attribute == :BERSERKER
       if @level > badge_level
         a = ((@level + badge_level) * @battle.pbRandom(256) / 256).floor
@@ -521,6 +521,13 @@ class Battle::Battler
        !move.ignoresSubstitute?(user) && user.index != target.index
       PBDebug.log("[Target immune] #{target.pbThis} is protected by its Substitute")
       @battle.pbDisplay(_INTL("{1} avoided the attack!", target.pbThis(true))) if show_message
+      return false
+    end
+    # Forgotten
+    iforgor = rand(100) # funny name for for a certain attribute
+    if iforgor < 10 && target.attribute == :FORGOTTEN
+      # technically the pokemon being hit is the user of the attribute so we switch it around
+      Battle::AttributeEffects.triggerBeforeBeingHit(target.attribute, target, user, move, @battle)
       return false
     end
     return true

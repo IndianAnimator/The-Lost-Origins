@@ -437,6 +437,10 @@ class Battle::Move::PowerUpAllyMove < Battle::Move
       return true
     end
     return true if pbMoveFailedTargetAlreadyMoved?(target, show_message)
+    if target.attribute == :PROUD
+      @battle.pbDisplay(_INTL("{1} refuses help from {2}!", target.pbThis, user.pbThis(true)))
+      return true
+    end
     return false
   end
 

@@ -907,7 +907,7 @@ class PokemonParty_Scene
     lastselected = Settings::MAX_PARTY_SIZE if lastselected < 0
     Settings::MAX_PARTY_SIZE.times do |i|
       if @party[i]
-        sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
+        @sprites["pokemon#{i}"] = PokemonPartyPanel.new(@party[i], i, @viewport, (@all_evoreqs[i] = []))
       else
         @sprites["pokemon#{i}"] = PokemonPartyBlankPanel.new(@party[i], i, @viewport)
       end
