@@ -343,7 +343,8 @@ class PokemonSummary_Scene
                 _INTL("TRAINER MEMO"),
                 _INTL("SKILLS"),
                 _INTL("MOVES"),
-                _INTL("RIBBONS")][page - 1]
+                _INTL("EV's/IV's"),
+                _INTL("ATTRIBUTE INFO")][page - 1]
     textpos = [
       [pagename, 26, 22, :left, base, shadow],
       [@pokemon.name, 46, 68, :left, base, shadow],
@@ -586,9 +587,69 @@ class PokemonSummary_Scene
     else
       memo += "\n"   # Empty line
     end
+    # Write characteristic
+    if showNature
+      best_stat = nil
+      best_iv = 0
+      stats_order = [:HP, :ATTACK, :DEFENSE, :SPEED, :SPECIAL_ATTACK, :SPECIAL_DEFENSE]
+      start_point = @pokemon.personalID % stats_order.length   # Tiebreaker
+      stats_order.length.times do |i|
+        stat = stats_order[(i + start_point) % stats_order.length]
+        if !best_stat || @pokemon.iv[stat] > @pokemon.iv[best_stat]
+          best_stat = stat
+          best_iv = @pokemon.iv[best_stat]
+        end
+      end
+      characteristics = {
+        :HP              => [_INTL("Loves to eat."),
+                             _INTL("Takes plenty of siestas."),
+                             _INTL("Nods off a lot."),
+                             _INTL("Scatters things often."),
+                             _INTL("Likes to relax.")],
+        :ATTACK          => [_INTL("Proud of its power."),
+                             _INTL("Likes to thrash about."),
+                             _INTL("A little quick tempered."),
+                             _INTL("Likes to fight."),
+                             _INTL("Quick tempered.")],
+        :DEFENSE         => [_INTL("Sturdy body."),
+                             _INTL("Capable of taking hits."),
+                             _INTL("Highly persistent."),
+                             _INTL("Good endurance."),
+                             _INTL("Good perseverance.")],
+        :SPECIAL_ATTACK  => [_INTL("Highly curious."),
+                             _INTL("Mischievous."),
+                             _INTL("Thoroughly cunning."),
+                             _INTL("Often lost in thought."),
+                             _INTL("Very finicky.")],
+        :SPECIAL_DEFENSE => [_INTL("Strong willed."),
+                             _INTL("Somewhat vain."),
+                             _INTL("Strongly defiant."),
+                             _INTL("Hates to lose."),
+                             _INTL("Somewhat stubborn.")],
+        :SPEED           => [_INTL("Likes to run."),
+                             _INTL("Alert to sounds."),
+                             _INTL("Impetuous and silly."),
+                             _INTL("Somewhat of a clown."),
+                             _INTL("Quick to flee.")]
+      }
+      memo += black_text_tag + characteristics[best_stat][best_iv % 5] + "\n"
+    end
+    # Write all text
+    drawFormattedTextEx(overlay, 232, 86, 268, memo)
+  end
+
+  def drawAttributeInfoPage
+    #make shift solution :thumbsup: ~ IndianAnimator
+    drawPage(0)
+    @sprites["background"].setBitmap("Graphics/UI/Summary/bg_2")
+    #actual needed logic
+    overlay = @sprites["overlay"].bitmap
+    red_text_tag = shadowc3tag(RED_TEXT_BASE, RED_TEXT_SHADOW)
+    black_text_tag = shadowc3tag(BLACK_TEXT_BASE, BLACK_TEXT_SHADOW)
+    memo = "" + black_text_tag
     #write attribute
-    name = @pokemon.attribute.name
-		memo += _INTL("Attribute of the <c3=F83820,E09890>{1}<c3=404040,B0B0B0>\n", name)
+    name =  red_text_tag + @pokemon.attribute.name + black_text_tag
+		memo += _INTL("Attribute of the {1}", name) + "\n"
 		memo += "\n"  # Empty line
 		memo += _INTL( @pokemon.attribute.description)
     # Write all text
@@ -1160,6 +1221,19 @@ class PokemonSummary_Scene
     return false
   end
 
+  def pbAttributeInfoPage
+    drawAttributeInfoPage
+    loop do
+      Graphics.update
+      Input.update
+      pbUpdate
+      if Input.trigger?(Input::BACK)
+        pbPlayCloseMenuSE
+        break
+      end
+    end
+  end
+
   def pbOptions
     dorefresh = false
     commands = []
@@ -1257,7 +1331,6 @@ class PokemonSummary_Scene
           dorefresh = true
         elsif @page == 5
           pbPlayDecisionSE
-          pbRibbonSelection
           dorefresh = true
         elsif !@inbattle
           pbPlayDecisionSE

@@ -100,7 +100,7 @@ module GameData
   GameData::Attribute.register({
     :id           => :FORGOTTEN,
     :name         => _INTL("Forgotten"),
-    :description  => _INTL("1.25x evasion, applies magic coat for 1 turn, chance to redirect moves")
+    :description  => _INTL("1.25x evasion, applies magic coat for 1 turn, 5% chance to redirect moves")
   })
 
   GameData::Attribute.register({

@@ -525,7 +525,7 @@ class Battle::Battler
     end
     # Forgotten
     iforgor = rand(100) # funny name for for a certain attribute
-    if iforgor < 10 && target.attribute == :FORGOTTEN
+    if iforgor < 5 && target.attribute == :FORGOTTEN
       # technically the pokemon being hit is the user of the attribute so we switch it around
       Battle::AttributeEffects.triggerBeforeBeingHit(target.attribute, target, user, move, @battle)
       return false
