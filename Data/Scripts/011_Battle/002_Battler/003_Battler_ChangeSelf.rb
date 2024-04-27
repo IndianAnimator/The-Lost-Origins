@@ -66,65 +66,7 @@ class Battle::Battler
       PBDebug.log("!!!***Can't faint with HP greater than 0")
       return
     end
-
-    if (self.attribute == :PHOENIX || self.attribute == :REINCARNATED) && self.effects[PBEffects::Phoenix] == false #stops pokemon from fainting if it has one of these attributes
-      self.effects[PBEffects::Phoenix] = true
-      self.effects[PBEffects::Embargo] = 9999 # I dont ever think round count will go to 9999
-      self.effects[PBEffects::Substitute] = 0
-      if self.attribute == :PHOENIX
-        self.pbRecoverHP(self.totalhp / 4)
-        msg = _INTL("{1}'s {2} made it come back from the ashes!", pbThis, self.attribute.name)
-      elsif self.attribute == :REINCARNATED
-        self.pbRecoverHP(self.totalhp / 8)
-        availableForms = []
-        availableNames = []
-        #there is more than one form, so we can change it
-        GameData::Species.each do |sp|
-          next if sp.species != self.species
-          availableForms.push(sp.form)
-          availableNames.push(sp.form_name.to_s.empty? ? _INTL("alternate") : sp.form_name)
-        end
-        #there is more than one form, so we can change it
-        #delete the current form from the list of forms we can change to
-        availableForms.delete_at(self.form)
-        availableNames.delete_at(self.form)
-        if availableForms.length > 0
-          #there is more than one form, so we can change it
-          sel = rand(availableForms.length)
-          #set the form
-          self.pokemon.form = availableForms[sel]
-          self.form = self.pokemon.form
-          @battle.pbAnimation(:TRANSFORM,self,nil)
-          pbUpdate(true)
-          @battle.scene.pbChangePokemon(self,self.pokemon)
-          msg = _INTL("{1} reincarnated into its {2} form!", pbThis, availableNames[sel])
-        else
-          msg = _INTL("{1} was reincarnated!", pbThis)
-          self.pbRaiseStatStage(:ATTACK, 1, self)
-          self.pbRaiseStatStage(:SPECIAL_ATTACK, 1, self)
-        end
-      else
-        msg = _INTL("problem here")
-      end
-      @battle.pbDisplay(msg)
-      @fainted = true
-    end
-
-    if self.attribute == :SOULKEEPER
-      if @battle.pbSideBattlerCount(self.index) > 1
-        self.allAllies.each do |b|
-          next if !b.canHeal?
-          b.pbRecoverHP(b.totalhp / 2)
-          battle.pbDisplay(_INTL("{1}'s {2} restored {3}'s' hp!", self.name, self.attribute.name, b.pbThis))
-        end
-      else
-        @battle.positions[self.index].effects[PBEffects::Wish]       = 2
-        @battle.positions[self.index].effects[PBEffects::WishAmount] = (self.totalhp / 2.0).round
-        @battle.positions[self.index].effects[PBEffects::WishMaker]  = self.pokemonIndex
-        battle.pbDisplay(_INTL("{1}'s {2} set a wish for it's allies!", self.name, self.attribute.name))
-      end
-    end
-
+    Battle::AttributeEffects.triggerOnFaint(self.attribute, self, @battle)
     return if @fainted   # Has already fainted properly
     @battle.pbDisplayBrief(_INTL("{1} fainted!", pbThis)) if showMessage
     PBDebug.log("[Pokémon fainted] #{pbThis} (#{@index})") if !showMessage

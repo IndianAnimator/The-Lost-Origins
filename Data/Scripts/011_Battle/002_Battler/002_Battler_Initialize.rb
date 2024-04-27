@@ -328,4 +328,9 @@ class Battle::Battler
       @participants.push(b.pokemonIndex) if !@participants.include?(b.pokemonIndex)
     end
   end
+
+  #added for PTLO reviving stuff
+  def fainted= (value)
+    @fainted = value
+  end
 end
