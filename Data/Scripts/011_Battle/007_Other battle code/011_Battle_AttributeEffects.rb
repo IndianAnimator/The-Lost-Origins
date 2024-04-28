@@ -644,3 +644,29 @@ Battle::AttributeEffects::EndOfRoundHealing.add(:SOULKEEPER,
     end
   }
 )
+
+Battle::AttributeEffects::OnBeingHit.add(:PRODIGY,
+  proc { |attribute, battler, target, move, battle|
+    next if target.effects[PBEffects::Prodigy]
+    next if !Effectiveness.super_effective?(move.type)
+    target.effects[PBEffects::ProdigyTurns] = 4
+    target.effects[PBEffects::ProdigyType] = move.type
+  }
+)
+
+Battle::AttributeEffects::OnDealingHit.add(:POISONTOUCH,
+  proc { |ability, user, target, move, battle|
+    next if !move.contactMove?
+    next if battle.pbRandom(100) >= 30
+    battle.pbShowAbilitySplash(user)
+    if target.pbCanPoison?(user)
+      msg = nil
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        msg = _INTL("{1}'s {2} poisoned {3}!", user.pbThis, user.attribute.name, target.pbThis(true))
+      end
+      target.pbPoison(user, msg)
+      target.effects[PBEffects::Bioweapon] = 3
+    end
+    battle.pbHideAbilitySplash(user)
+  }
+)

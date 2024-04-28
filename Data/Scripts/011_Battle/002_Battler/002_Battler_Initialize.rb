@@ -283,6 +283,10 @@ class Battle::Battler
     @effects[PBEffects::Phoenix]             = false  #Phoenix and Reincarnated stuff
     @effects[PBEffects::Savagery]            = 0
     @effects[PBEffects::HeroCount]           = 0
+    @effects[PBEffects::Prodigy]             = false
+    @effects[PBEffects::ProdigyTurns]        = 0
+    @effects[PBEffects::ProdigyType]         = nil
+    @effects[PBEffects::Bioweapon]           = 0
   end
 
   #=============================================================================

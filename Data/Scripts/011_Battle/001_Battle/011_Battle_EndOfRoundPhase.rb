@@ -151,7 +151,7 @@ class Battle
   end
 
   #=============================================================================
-  # End Of Round Delusion Damage 
+  # End Of Round Delusion Damage
   #=============================================================================
   def pbEORDelusionalDamage(priority,pokemon)
     # Damage from rambling(delusional)
@@ -408,6 +408,22 @@ class Battle
        ((perishSongUsers.find_all { |idxBattler| opposes?(idxBattler) }.length == perishSongUsers.length) ||
        (perishSongUsers.find_all { |idxBattler| !opposes?(idxBattler) }.length == perishSongUsers.length))
       pbJudgeCheckpoint(@battlers[perishSongUsers[0]])
+    end
+    # prodigy stuff
+    priority.each do |battler|
+      next if battler.fainted? || (battler.effects[PBEffects::Prodigy] && battler.effects[PBEffects::ProdigyTurns] == 0)
+      battler.effects[PBEffects::ProdigyTurns] -= 1
+      if battler.effects[PBEffects::ProdigyTurns] == 0
+        battler.effects[PBEffects::Prodigy] = true
+      end
+    end
+    # bioweapon stuff
+    priority.each do |battler|
+      next if battler.fainted? || (battler.effects[PBEffects::Bioweapon] == 0)
+      battler.effects[PBEffects::Bioweapon] -= 1
+      if battler.effects[PBEffects::Bioweapon] == 0
+        battler.pbPoison(nil, _INTL("{1}'s disease worsened!"), true)
+      end
     end
     return if @decision > 0
   end

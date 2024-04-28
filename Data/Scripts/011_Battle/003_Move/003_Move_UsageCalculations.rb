@@ -69,6 +69,8 @@ class Battle::Move
       else
         ret = Effectiveness::SUPER_EFFECTIVE_MULTIPLIER
       end
+    elsif moveType == user.effects[PBEffects::ProdigyType] && user.effects[PBEffects::Prodigy]
+      ret *= 1/2
     else
       target.pbTypes(true).each do |type|
         ret *= pbCalcTypeModSingle(moveType, type, user, target)
